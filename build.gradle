@@ -24,9 +24,93 @@ buildscript {
 
 apply plugin: 'forge'
 
-version = "1.0.0"
-group = "com.glowingfederal.examplemod"    // Adjust to your package
-archivesBaseName = "examplemod"             // Adjust to your mod ID
+// Semantic release version + automatic build iteration support.
+ext.versionPropertiesFile = file('version.properties')
+
+if (!versionPropertiesFile.exists()) {
+    versionPropertiesFile.text = '# Combatives version state\n# Edit mod_version for releases; build_number is managed automatically for production builds.\nmod_version=1.0.0\nbuild_number=0\n'
+}
+
+ext.readVersionState = {
+    Properties props = new Properties()
+    versionPropertiesFile.withInputStream { props.load(it) }
+
+    String loadedModVersion = props.getProperty('mod_version')
+    String loadedBuildNumber = props.getProperty('build_number')
+
+    if (!loadedModVersion) {
+        throw new GradleException("version.properties must define mod_version=x.y.z")
+    }
+    if (!(loadedBuildNumber ==~ /\d+/)) {
+        throw new GradleException("version.properties build_number must be a non-negative integer")
+    }
+
+    ext.modVersion = loadedModVersion
+    ext.buildNumber = loadedBuildNumber as int
+    ext.fullVersion = "${modVersion}.${buildNumber}"
+    version = fullVersion
+}
+
+ext.writeBuildNumberPreservingFormat = { int nextBuildNumber ->
+    String originalText = versionPropertiesFile.getText('UTF-8')
+    def buildNumberPattern = ~/(?m)^(\s*build_number\s*=\s*)\d+(\s*(?:[#!].*)?)$/
+    String updatedText = originalText.replaceFirst(buildNumberPattern) { String fullMatch, String prefix, String suffix ->
+        "${prefix}${nextBuildNumber}${suffix}"
+    }
+
+    if (updatedText == originalText) {
+        String separator = originalText.endsWith(System.lineSeparator()) || originalText.length() == 0 ? '' : System.lineSeparator()
+        updatedText = originalText + separator + "build_number=${nextBuildNumber}" + System.lineSeparator()
+    }
+
+    versionPropertiesFile.write(updatedText, 'UTF-8')
+}
+
+readVersionState()
+
+def productionTaskNames = [
+    'build',
+    'jar',
+    'assemble',
+    'reobf',
+    'reobfJar',
+    'uploadArchives'
+] as Set
+
+def shouldIncrementBuildNumber = { graph ->
+    graph.allTasks.any { task ->
+        productionTaskNames.contains(task.name) || task.name.toLowerCase(Locale.ROOT).contains('reobf')
+    }
+}
+
+def buildNumberWasIncremented = false
+def originalBuildNumber = null
+
+gradle.taskGraph.whenReady { graph ->
+    if (shouldIncrementBuildNumber(graph)) {
+        originalBuildNumber = buildNumber
+        writeBuildNumberPreservingFormat(originalBuildNumber + 1)
+        readVersionState()
+        buildNumberWasIncremented = true
+
+        tasks.withType(org.gradle.jvm.tasks.Jar) { jarTask ->
+            jarTask.archiveName = "${jarTask.baseName}-${fullVersion}.${jarTask.extension}"
+        }
+
+        logger.lifecycle("Using production version ${fullVersion}")
+    }
+}
+
+gradle.buildFinished { result ->
+    if (buildNumberWasIncremented && result.failure != null) {
+        writeBuildNumberPreservingFormat(originalBuildNumber)
+        readVersionState()
+        logger.lifecycle("Restored build_number to ${originalBuildNumber} after failed build")
+    }
+}
+
+group = "com.glowingfederal.combatives"
+archivesBaseName = "combatives"
 
 minecraft {
     version = "1.7.10-10.13.4.1614-1.7.10"
@@ -57,5 +141,12 @@ processResources {
     rename '(.+)_at.cfg', 'META-INF/$1_at.cfg'
 }
 
-
-
+jar {
+    manifest {
+        attributes(
+            'ForceLoadAsMod': 'true',
+            'TweakClass': 'org.spongepowered.asm.launch.MixinTweaker',
+            'MixinConfigs': 'mixins.combatives.json'
+        )
+    }
+}

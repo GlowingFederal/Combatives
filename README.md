@@ -1,80 +1,32 @@
-# 1.7-Forge-Mod-Template
-A clean, modernized development template for **Minecraft Forge 1.7.10** modding — using [anatawa12’s ForgeGradle fork](https://github.com/anatawa12/ForgeGradle) for compatibility with current JDKs and Gradle versions.
+# Combatives
 
-This template provides a minimal, functional starting point for anyone building or maintaining 1.7.10 mods in 2025 and beyond.
+Combatives is a Battlefield-inspired movement and camera overhaul foundation for Minecraft Forge 1.7.10.
 
----
+## Clean reference policy
 
-## 📦 Features
-- ✅ Pre-configured **ForgeGradle 1.2 (anatawa12 fork)**  
-- ✅ Compatible with modern **Java 8 / Gradle 8+** environments  
-- ✅ Includes proper `mcmod.info` expansion for metadata  
-- ✅ Clean and minimal file structure  
-- ✅ `gradlew` wrapper for out-of-the-box builds  
-- ✅ Safe resource processing (handles `_at.cfg` renames automatically)
+Aqua Acrobatics Legacy is included in this repository only as public-domain (Unlicense) reference material. It is not compiled, packaged, renamed into Combatives packages, or directly depended on by this mod.
 
----
+Combatives is a clean, original implementation. Reference source may be used only as inspiration while future systems are implemented independently.
 
-## 🛠 Requirements
-| Dependency | Recommended Version |
-|-------------|--------------------|
-| Java | 8 (do **not** use Java 9+) |
-| Gradle | Included via `gradlew` |
-| Minecraft Forge | `1.7.10-10.13.4.1614` |
-| JDK Compatibility | Works on modern systems with proper Gradle wrapper |
+## Current foundation
 
+- Mod name: Combatives
+- Mod ID: `combatives`
+- Root package: `com.glowingfederal.combatives`
+- Forge target: `1.7.10-10.13.4.1614`
+- UniMixins-compatible mixin config: `mixins.combatives.json`
+- Common/client proxy structure
+- Initial config options:
+  - `enableAngelicaCompat = true`
+  - `debugMovement = false`
+  - `debugCamera = false`
 
-# ⚙️ Setup Instructions
+## Future work
 
-### 1. Clone and enter the project
-```bash
-git clone https://github.com/GlowingFederal/1.7-Forge-Mod-Template.git
-cd 1.7-Forge-Mod-Template
-```
+Future work will include modern swimming, crawling, Battlefield-inspired movement inertia, procedural camera motion, recoil, landing effects, and optional Angelica compatibility.
 
-### 2. Initialize the Forge workspace
-Run the following command to decompile and set up the 1.7.10 development environment:
-```bash
-gradlew setupDecompWorkspace
-```
+Angelica compatibility must remain optional. Angelica is not a hard runtime dependency.
 
-### 3. Generate IDE project files
-For Eclipse:
-```bash
-gradlew eclipse
-```
-For IntelliJ IDEA:
-```bash
-gradlew idea
-```
+## Development notes
 
-### 4. Open the project in your IDE
-- **Eclipse:** Import as *Existing Gradle Project*  
-- **IntelliJ:** Open the folder directly and let Gradle sync
-
-### 5. Build the mod
-Once you’ve edited the source, compile it with:
-```bash
-gradlew build
-```
-
-Your compiled `.jar` will appear under:
-```
-build/libs/
-```
-
-### 6. Run the mod in development
-You can test it directly by running:
-```bash
-gradlew runClient
-```
-and for server testing:
-```bash
-gradlew runServer
-```
-
----
-
-**Note:**  
-Use `gradlew` on Linux/macOS and `gradlew.bat` on Windows.  
-Stick to **Java 8** — ForgeGradle 1.2 doesn’t play well with newer JDKs.
+Do not compile anything inside the reference folder. Do not copy Aqua Acrobatics code directly, and do not port unrelated camera systems as part of this foundation work.

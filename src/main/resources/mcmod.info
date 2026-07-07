@@ -1,16 +1,14 @@
 [{
-  "modid": "examplemod",
-  "name": "Example Mod",
-  "description": "A Forge 1.7.10 mod by GlowingFederal.",
+  "modid": "combatives",
+  "name": "Combatives",
+  "description": "A Battlefield-inspired movement and camera overhaul foundation for Forge 1.7.10.",
   "version": "1.0.0",
   "mcversion": "1.7.10",
-  "url": "https://github.com/GlowingFederal/ExampleMod",
+  "url": "",
   "updateUrl": "",
   "authorList": ["GlowingFederal"],
-  "credits": "Made by GlowingFederal",
+  "credits": "Aqua Acrobatics Legacy is public-domain reference material only; no reference source is compiled into Combatives.",
   "logoFile": "",
   "screenshots": [],
   "dependencies": []
 }]
-
-

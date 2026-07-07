@@ -61,6 +61,8 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     private Pose lastLoggedPose = Pose.STANDING;
     private boolean lastLoggedSwimming;
     private boolean crawlKeyDown;
+    private Pose combativesPose = Pose.STANDING;
+    private boolean combativesPoseWatcherReady;
 
     public EntityPlayerMixin(World world) {
         super(world);
@@ -70,7 +72,9 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     private void combatives$constructed(CallbackInfo ci) {
         this.combativesSize = STANDING_SIZE;
         this.combativesEyeHeight = this.getEyeHeight(Pose.STANDING, this.combativesSize);
+        this.combativesPose = Pose.STANDING;
         this.getDataWatcher().addObject(POSE_WATCHER_ID, Pose.STANDING.ordinal());
+        this.combativesPoseWatcherReady = true;
     }
 
     @Override
@@ -179,7 +183,10 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         if (old != pose) {
             MovementDiagnostics.debug(this.getPlayer(), "setPose " + old + " -> " + pose + " via " + this.combatives$getPoseCaller());
         }
-        this.getDataWatcher().updateObject(POSE_WATCHER_ID, pose.ordinal());
+        this.combativesPose = pose;
+        if (this.combativesPoseWatcherReady) {
+            this.getDataWatcher().updateObject(POSE_WATCHER_ID, pose.ordinal());
+        }
     }
 
     private String combatives$getPoseCaller() {
@@ -192,7 +199,18 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         }
         return "unknown";
     }
-    @Override public Pose getPose() { int id = this.getDataWatcher().getWatchableObjectInt(POSE_WATCHER_ID); return id >= 0 && id < Pose.values().length ? Pose.values()[id] : Pose.STANDING; }
+    @Override public Pose getPose() {
+        if (!this.combativesPoseWatcherReady) {
+            return this.combativesPose == null ? Pose.STANDING : this.combativesPose;
+        }
+        try {
+            int id = this.getDataWatcher().getWatchableObjectInt(POSE_WATCHER_ID);
+            this.combativesPose = id >= 0 && id < Pose.values().length ? Pose.values()[id] : Pose.STANDING;
+            return this.combativesPose;
+        } catch (RuntimeException e) {
+            return this.combativesPose == null ? Pose.STANDING : this.combativesPose;
+        }
+    }
     @Override public boolean isPoseClear(Pose pose) { return this.worldObj.getCollidingBoundingBoxes(this, this.getBoundingBox(pose)).isEmpty(); }
     @Override public boolean getShouldBeDead() { return this.deathTime > 0; }
     @Override public boolean isSwimming() { return !this.capabilities.isFlying && this.getFlag(6); }

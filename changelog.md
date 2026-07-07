@@ -1,5 +1,11 @@
 # Changelog
 
+## Fix mixin shadows and construction-safe pose state
+
+- Removed invalid inherited-method shadows from `EntityPlayerSPMixin` and call sprint/water/item/riding methods through the concrete client player instance instead.
+- Added construction-safe pose fallback state so `getPose()` returns standing until the pose DataWatcher entry exists.
+- Changed `setPose()` to update local pose state first and only write the DataWatcher after registration.
+
 ## Verify Aqua interaction and visual overlay call sites
 
 - Ported Aqua's `PlayerControllerMP#onPlayerRightClick` actual-sneak redirect so forced crawl/crouch pose does not corrupt right-click interaction semantics.

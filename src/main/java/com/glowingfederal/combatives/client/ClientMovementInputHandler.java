@@ -24,10 +24,16 @@ public class ClientMovementInputHandler {
         this.lastCrawlDown = crawlDown;
         EntityPlayer player = Minecraft.getMinecraft().thePlayer;
         MovementDiagnostics.debug(player, "crawl key " + (crawlDown ? "pressed" : "released"));
-        if (player instanceof ICombativesPlayerPose) {
-            ((ICombativesPlayerPose) player).setCrawlKeyDown(crawlDown);
+        if (!crawlDown) {
+            MovementDiagnostics.debug(player, "crawl toggle key released; Aqua toggle state unchanged");
+            return;
         }
-        MovementDiagnostics.debug(player, "crawl request sent: " + (crawlDown ? "pressed" : "released"));
-        NetworkHandler.channel.sendToServer(new PacketCrawlKeyState(crawlDown));
+        if (player instanceof ICombativesPlayerPose) {
+            ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
+            pose.setCrawlKeyDown(!pose.isCrawlKeyDown());
+            MovementDiagnostics.debug(player, "client predicted crawl toggle: " + pose.isCrawlKeyDown());
+        }
+        MovementDiagnostics.debug(player, "crawl toggle request sent");
+        NetworkHandler.channel.sendToServer(new PacketCrawlKeyState(true));
     }
 }

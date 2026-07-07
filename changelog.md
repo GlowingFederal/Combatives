@@ -1,5 +1,12 @@
 # Changelog
 
+## Port Aqua render, collision, and server pose parity
+
+- Ported the Aqua renderer/model pose hooks for swim animation, player body transforms, first-person arm reset, and camera eye-height interpolation.
+- Ported Aqua actual-sneak movement hooks, swimming water-probe adjustment, explicit EntityPlayerMP server eye-height/size enforcement, and local exact-collision push-out helpers.
+- Restored Aqua-style crawl toggle semantics so key press toggles crawl forcing and key release does not clear the crawl state.
+- Updated the Aqua port map with exact replacements and call-site-based skip reasons for previously suspicious omissions.
+
 ## Port complete Aqua swim and crawl system
 
 - Expanded the Aqua source-level audit table to cover every inspected swim/crawl-adjacent source file and document ported versus intentionally skipped systems.

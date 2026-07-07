@@ -28,4 +28,7 @@ public interface ICombativesPlayerPose {
     boolean isVisuallySwimming();
     void setSwimming(boolean swimming);
     float getSwimAnimation(float partialTicks);
+    boolean canCrawl();
+    boolean isCrawlKeyDown();
+    void setCrawlKeyDown(boolean down);
 }

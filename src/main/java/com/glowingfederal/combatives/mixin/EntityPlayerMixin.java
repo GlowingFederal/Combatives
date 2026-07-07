@@ -26,6 +26,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(EntityPlayer.class)
 public abstract class EntityPlayerMixin extends EntityLivingBase implements ICombativesPlayerPose {
@@ -47,7 +48,6 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     @Shadow public float prevCameraYaw;
     @Shadow public float cameraYaw;
     @Shadow(remap = false) public float eyeHeight;
-
     @Shadow public abstract void addMovementStat(double x, double y, double z);
 
     private boolean eyesInWater;
@@ -60,6 +60,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     private float timeUnderwater;
     private Pose lastLoggedPose = Pose.STANDING;
     private boolean lastLoggedSwimming;
+    private boolean crawlKeyDown;
 
     public EntityPlayerMixin(World world) {
         super(world);
@@ -142,7 +143,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         } else {
             AxisAlignedBB box = this.boundingBox;
             this.boundingBox.setBB(AxisAlignedBB.getBoundingBox(box.minX, box.minY, box.minZ, box.minX + newSize.width, box.minY + newSize.height, box.minZ + newSize.width));
-            if (newSize.width > oldSize.width && !this.worldObj.isRemote && this.ticksExisted > 0) {
+            if (newSize.width > oldSize.width && !this.firstUpdate && !this.worldObj.isRemote) {
                 float distance = oldSize.width - newSize.width;
                 this.moveEntity(distance, 0.0D, distance);
             }
@@ -177,6 +178,26 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     @SideOnly(Side.CLIENT) @Override public boolean isVisuallySwimming() { return this.isActuallySwimming() && !this.isInWater(); }
     @Override public void setSwimming(boolean swimming) { this.setFlag(6, swimming); }
     @Override public float getSwimAnimation(float partialTicks) { return this.lastSwimAnimation + partialTicks * (this.swimAnimation - this.lastSwimAnimation); }
+    @Override public boolean canCrawl() { return !this.isRiding() && !this.capabilities.isFlying && !this.isOnLadder() && !this.getShouldBeDead() && !this.isPlayerSleeping(); }
+    @Override public boolean isCrawlKeyDown() { return this.canCrawl() && this.crawlKeyDown; }
+    @Override public void setCrawlKeyDown(boolean down) {
+        if (down && !this.canCrawl()) {
+            MovementDiagnostics.debug(this.getPlayer(), "crawl rejected: player state disallows crawling");
+            this.crawlKeyDown = false;
+            return;
+        }
+        if (this.crawlKeyDown != down) {
+            MovementDiagnostics.debug(this.getPlayer(), "crawl request " + (down ? "accepted" : "released"));
+        }
+        this.crawlKeyDown = down;
+    }
+
+    @Inject(method = "getEyeHeight", at = @At("HEAD"), cancellable = true)
+    private void combatives$getEyeHeight(CallbackInfoReturnable<Float> cir) {
+        if (this.combativesEyeHeight > 0.0F) {
+            cir.setReturnValue(this.combativesEyeHeight);
+        }
+    }
 
     @Inject(method = "onUpdate", at = @At(value = "INVOKE", target = "cpw/mods/fml/common/FMLCommonHandler.onPlayerPostTick(Lnet/minecraft/entity/player/EntityPlayer;)V", shift = At.Shift.BEFORE, remap = false))
     private void combatives$prePostTick(CallbackInfo ci) {
@@ -196,9 +217,12 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         if (this.getShouldBeDead()) pose = Pose.DYING;
         else if (this.isPlayerSleeping()) pose = Pose.SLEEPING;
         else if (this.isPoseClear(Pose.SWIMMING)) {
-            if (this.isSwimming()) {
+            if (this.isCrawlKeyDown() || this.isSwimming()) {
                 pose = Pose.SWIMMING;
                 if (this.worldObj.isRemote) this.yOffset = 0.28F;
+            } else if (!this.isPoseClear(Pose.STANDING)) {
+                pose = this.isPoseClear(Pose.CROUCHING) ? Pose.CROUCHING : Pose.SWIMMING;
+                MovementDiagnostics.debug(this.getPlayer(), "pose blocked by collision; keeping low pose");
             } else if (this.isActuallySneaking() && !this.capabilities.isFlying && (this.onGround || !this.isInWater()) && !this.isOnLadder()) {
                 pose = Pose.CROUCHING;
                 if (this.worldObj.isRemote) this.yOffset = 1.62F;
@@ -211,16 +235,19 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
                 if (this.worldObj.isRemote) this.yOffset = 1.62F;
             }
             if (!this.noClip && !this.isRiding() && this.isResizingAllowed() && !this.isPoseClear(pose)) {
+                MovementDiagnostics.debug(this.getPlayer(), "pose blocked by collision: " + pose);
                 pose = this.isPoseClear(Pose.CROUCHING) ? Pose.CROUCHING : Pose.SWIMMING;
             }
         }
         if (pose != this.getPose()) {
-            if (pose == Pose.SWIMMING) MovementDiagnostics.debug(this.getPlayer(), this.isSwimming() ? "entering swim pose" : "entering crawl");
+            if (pose == Pose.SWIMMING) MovementDiagnostics.debug(this.getPlayer(), this.isSwimming() ? "entering swim" : "entering crawl");
             if (this.getPose() == Pose.SWIMMING && pose != Pose.SWIMMING) MovementDiagnostics.debug(this.getPlayer(), this.lastLoggedSwimming ? "leaving swim" : "leaving crawl");
         }
+        boolean poseChanged = pose != this.getPose();
         this.lastLoggedSwimming = this.isSwimming();
-        this.lastLoggedPose = pose;
         this.setPose(pose);
+        if (poseChanged) MovementDiagnostics.debug(this.getPlayer(), "pose synced " + (this.worldObj.isRemote ? "client" : "server") + ": " + pose);
+        this.lastLoggedPose = pose;
         this.recalculateSize();
     }
 

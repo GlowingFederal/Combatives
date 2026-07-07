@@ -1,5 +1,12 @@
 # Changelog
 
+## Port Aqua swimming and crawling behavior into Combatives
+
+- Ported/refactored Aqua Acrobatics Legacy swimming and crawling pose behavior into Combatives packages.
+- Added player pose synchronization, bounding-box resizing, crawl/swim eye-height state, water movement, and scoped movement diagnostics.
+- Registered the required player mixin in `mixins.combatives.json` without introducing an Angelica hard dependency.
+- Documented that Aqua Acrobatics Legacy is public-domain/Unlicense reference material and that the runtime implementation is refactored under Combatives.
+
 ## Initial Combatives foundation
 
 - Renamed the example mod foundation to Combatives with mod ID `combatives` and root package `com.glowingfederal.combatives`.

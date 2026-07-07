@@ -34,8 +34,12 @@ public class PacketCrawlKeyState implements IMessage {
             EntityPlayerMP player = ctx.getServerHandler().playerEntity;
             if (player instanceof ICombativesPlayerPose) {
                 ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
-                MovementDiagnostics.debug(player, "crawl requested: " + (message.pressed ? "pressed" : "released"));
-                pose.setCrawlKeyDown(message.pressed);
+                MovementDiagnostics.debug(player, "crawl request received: " + (message.pressed ? "toggle" : "release ignored"));
+                if (message.pressed) {
+                    boolean next = !pose.isCrawlKeyDown();
+                    pose.setCrawlKeyDown(next);
+                    MovementDiagnostics.debug(player, next ? "server accepted pose crawl toggle on" : "server accepted pose crawl toggle off");
+                }
             }
             return null;
         }

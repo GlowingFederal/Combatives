@@ -1,6 +1,7 @@
 package com.glowingfederal.combatives;
 
 import com.glowingfederal.combatives.config.CombativesConfig;
+import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.proxy.CommonProxy;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.SidedProxy;
@@ -35,6 +36,7 @@ public class Combatives {
         logger = event.getModLog();
         CombativesConfig.load(event.getSuggestedConfigurationFile());
         CombativesConfig.logLoadedValues(logger);
+        MovementDiagnostics.logFeatureState();
         proxy.preInit(event);
     }
 

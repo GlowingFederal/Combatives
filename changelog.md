@@ -1,5 +1,12 @@
 # Changelog
 
+## Fix crawl key registration and persistent swimming
+
+- Added client proxy and crawl key registration startup logs so the Controls-menu registration path is visible during startup.
+- Added debug movement diagnostics for crawl key registration, crawl packet sends, swim-state entry/exit, and explicit swim cancellation reasons.
+- Ported the missing Aqua local-player water sprint persistence hook so vanilla sprint cancellation no longer immediately reverts the swimming state.
+- Updated the Aqua port map to document the additional client-side sprint/swim dependency.
+
 ## Complete Combatives swimming and crawling port
 
 - Added the missing crawl keybind, localization, client tick input handling, and client-to-server crawl state packet/channel registration.

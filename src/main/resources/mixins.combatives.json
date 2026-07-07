@@ -8,6 +8,8 @@
   "mixins": [
     "EntityPlayerMixin"
   ],
-  "client": [],
+  "client": [
+    "EntityPlayerSPMixin"
+  ],
   "server": []
 }

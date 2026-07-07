@@ -17,7 +17,8 @@
     "EntityOtherPlayerMPMixin",
     "ModelBipedMixin",
     "RenderPlayerMixin",
-    "EntityRendererMixin"
+    "EntityRendererMixin",
+    "PlayerControllerMPMixin"
   ],
   "server": []
 }

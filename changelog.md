@@ -1,5 +1,12 @@
 # Changelog
 
+## Verify Aqua interaction and visual overlay call sites
+
+- Ported Aqua's `PlayerControllerMP#onPlayerRightClick` actual-sneak redirect so forced crawl/crouch pose does not corrupt right-click interaction semantics.
+- Added model animation diagnostics to prove when crawl/swim animation reaches `ModelBiped`.
+- Updated the Aqua port map with exact method-level proof for `PlayerControllerMPMixin`, `FluidAccessor`, `BlockLiquidMixin`, and `ItemRendererMixin`.
+- Documented that in-game debug capture could not be performed in this non-interactive container, so the new logs identify the runtime revert point when tested in-game with `debugMovement=true`.
+
 ## Port Aqua render, collision, and server pose parity
 
 - Ported the Aqua renderer/model pose hooks for swim animation, player body transforms, first-person arm reset, and camera eye-height interpolation.

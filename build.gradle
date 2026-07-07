@@ -117,12 +117,27 @@ minecraft {
     runDir = "run"
 }
 
+gradle.projectsEvaluated {
+    tasks.withType(JavaExec) { task ->
+        if (task.name == "runClient" || task.name == "runServer") {
+            args "--tweakClass", "org.spongepowered.asm.launch.MixinTweaker"
+            jvmArgs "-Dfml.coreMods.load=io.github.legacymoddingmc.unimixins.all.AllCore"
+            jvmArgs "-Dmixin.env.disableRefMap=true"
+        }
+    }
+}
+
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
     mavenCentral()
     maven { url = "https://maven.minecraftforge.net/" }
+    flatDir { dirs "libs" }
+}
+
+dependencies {
+    compile name: "+unimixins-all-1.7.10-0.3.1"
 }
 
 // Dependencies can be added here, e.g.

@@ -47,6 +47,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     @Shadow public float prevCameraYaw;
     @Shadow public float cameraYaw;
     @Shadow(remap = false) public float eyeHeight;
+
     @Shadow public abstract void addMovementStat(double x, double y, double z);
 
     private boolean eyesInWater;
@@ -141,7 +142,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         } else {
             AxisAlignedBB box = this.boundingBox;
             this.boundingBox.setBB(AxisAlignedBB.getBoundingBox(box.minX, box.minY, box.minZ, box.minX + newSize.width, box.minY + newSize.height, box.minZ + newSize.width));
-            if (newSize.width > oldSize.width && !this.firstUpdate && !this.worldObj.isRemote) {
+            if (newSize.width > oldSize.width && !this.worldObj.isRemote && this.ticksExisted > 0) {
                 float distance = oldSize.width - newSize.width;
                 this.moveEntity(distance, 0.0D, distance);
             }

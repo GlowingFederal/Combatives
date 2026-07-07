@@ -1,0 +1,16 @@
+[{
+  "modid": "examplemod",
+  "name": "Example Mod",
+  "description": "A Forge 1.7.10 mod by GlowingFederal.",
+  "version": "1.0.0",
+  "mcversion": "1.7.10",
+  "url": "https://github.com/GlowingFederal/ExampleMod",
+  "updateUrl": "",
+  "authorList": ["GlowingFederal"],
+  "credits": "Made by GlowingFederal",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}]
+
+

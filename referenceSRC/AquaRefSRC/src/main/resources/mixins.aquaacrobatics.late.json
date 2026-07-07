@@ -1,0 +1,8 @@
+{
+  "required": true,
+  "minVersion": "0.8.5-GTNH",
+  "package": "com.fuzs.aquaacrobatics.mixins.late",
+  "refmap": "mixins.aquaacrobatics.refmap.json",
+  "target": "@env(DEFAULT)",
+  "compatibilityLevel": "JAVA_8"
+}

@@ -1,0 +1,33 @@
+package com.fuzs.aquaacrobatics.integration.hats;
+
+import net.minecraft.entity.EntityLivingBase;
+
+import com.fuzs.aquaacrobatics.entity.player.IPlayerResizeable;
+
+import hats.client.render.helper.HelperPlayer;
+import hats.common.core.ApiHandler;
+
+public class HatsIntegration {
+
+    public static void register() {
+
+        ApiHandler.registerHelper(new HelperPlayer() {
+
+            @Override
+            public float getHatScale(EntityLivingBase entityIn) {
+
+                if (entityIn instanceof IPlayerResizeable) {
+
+                    if (((IPlayerResizeable) entityIn).getSwimAnimation(1.0F) > 0.0F) {
+
+                        return 0.0F;
+                    }
+                }
+
+                return super.getHatScale(entityIn);
+            }
+
+        });
+    }
+
+}

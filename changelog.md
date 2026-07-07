@@ -1,5 +1,12 @@
 # Changelog
 
+## Port complete Aqua swim and crawl system
+
+- Expanded the Aqua source-level audit table to cover every inspected swim/crawl-adjacent source file and document ported versus intentionally skipped systems.
+- Ported the connected Aqua local-player swim/crawl input flow, including movement input storage, actual sneak separation, forced-down movement correction, water sprint persistence, water sneak sinking, and sprint stop reasons.
+- Added client/server bridge mixins for sending actual sneak state and correcting remote-player y-offset after pose synchronization.
+- Added hard debug diagnostics for pose writes, DataWatcher corrections, swim-state changes, collision selection, bounding-box recalculation, and eye-height recalculation.
+
 ## Fix crawl key registration and persistent swimming
 
 - Added client proxy and crawl key registration startup logs so the Controls-menu registration path is visible during startup.

@@ -9,7 +9,9 @@
     "EntityPlayerMixin"
   ],
   "client": [
-    "EntityPlayerSPMixin"
+    "EntityPlayerSPMixin",
+    "EntityClientPlayerMPMixin",
+    "EntityOtherPlayerMPMixin"
   ],
   "server": []
 }

@@ -1,34 +1,56 @@
 # Aqua Acrobatics Legacy swimming/crawling port map
 
-Aqua Acrobatics Legacy is included in this repository as public-domain/Unlicense reference material. Combatives ports only the swimming/crawling systems needed for player movement and rewrites them under `com.glowingfederal.combatives`; reference sources are not compiled.
+Aqua Acrobatics Legacy is included in this repository as public-domain/Unlicense reference material. Combatives ports only the connected swimming/crawling systems needed for player movement and rewrites them under `com.glowingfederal.combatives`; reference sources are not compiled.
 
-## Ported or rewritten for Combatives
+## Source-level audit table
 
-| Aqua reference class | Combatives implementation | Notes |
-| --- | --- | --- |
-| `entity/EntitySize` | `entity/EntitySize` | Ported as a small value type for pose-dependent dimensions. |
-| `entity/Pose` | `entity/Pose` | Ported pose enum values needed by swimming, crawling, sleeping, and death states. |
-| `entity/player/IPlayerResizeable` | `entity/player/ICombativesPlayerPose` | Rewritten interface for Combatives pose, swim, crawl-key, eye-height, and collision APIs. |
-| `mixins/early/minecraft/EntityPlayerMixin` | `mixin/EntityPlayerMixin` | Ported/refactored core pose DataWatcher sync, crawl/swim pose selection, collision resizing, standing-space checks, eye-height hook, swim animation, sprint swimming, and water movement. Aqua integration hooks were removed. |
-| `network/NetworkHandler` | `network/NetworkHandler` | Rewritten SimpleNetworkWrapper registration using the Combatives mod id/channel. |
-| `network/message/PacketSendKey` | `network/message/PacketCrawlKeyState` | Rewritten from toggle semantics to pressed/released state sync. Server validates player state before accepting crawl requests. |
-| `util/Keybindings` | `client/CombativesKeyBindings` | Rewritten client crawl keybind registration with Combatives localization keys. |
-| `proxy/ClientProxy` key event registration | `proxy/ClientProxy` and `client/ClientMovementInputHandler` | Rewritten as client-tick input tracking so press and release states are both sent to the server. |
-| `util/math/MathHelperNew` | Inline interpolation in `EntityPlayerMixin` | Rewritten because only linear interpolation was needed for swim animation. |
+| Aqua class/file | Purpose | Used by swimming/crawling? | Ported to Combatives? | Combatives replacement class | If skipped, exact reason |
+| --- | --- | --- | --- | --- | --- |
+| `AquaAcrobatics.java` | Mod lifecycle entry point and proxy delegation. | yes | yes | `Combatives`, `proxy/CommonProxy`, `proxy/ClientProxy` | Rewritten for Combatives mod id and lifecycle. |
+| `proxy/CommonProxy.java` | Common lifecycle, network registration, server handlers. | yes | yes | `proxy/CommonProxy`, `network/NetworkHandler` | Unrelated Aqua config/event code omitted. |
+| `proxy/ClientProxy.java` | Client lifecycle, key/event registration, crawl key packet trigger. | yes | yes | `proxy/ClientProxy`, `client/ClientMovementInputHandler` | Rewritten as hold-to-crawl tick input plus startup diagnostics. |
+| `util/Keybindings.java` | Registers Aqua crawl key/category. | yes | yes | `client/CombativesKeyBindings` | Rewritten with Combatives localization keys and logs. |
+| `network/NetworkHandler.java` | SimpleNetworkWrapper channel and packet registration. | yes | yes | `network/NetworkHandler` | Rewritten with Combatives channel. |
+| `network/message/PacketSendKey.java` | Sends crawl toggle key to server and updates server crawl state. | yes | yes | `network/message/PacketCrawlKeyState` | Rewritten from toggle to pressed/released state for hold-to-crawl. |
+| `entity/Pose.java` | Pose enum used by size, DataWatcher, rendering, movement. | yes | yes | `entity/Pose` | Directly ported values needed by swim/crawl. |
+| `entity/EntitySize.java` | Width/height metadata and fixed/flexible sizing. | yes | yes | `entity/EntitySize` | Directly ported minimal value type. |
+| `entity/player/IPlayerResizeable.java` | Shared pose/swim/crawl/size/eye-height contract. | yes | yes | `entity/player/ICombativesPlayerPose` | Rewritten and extended for Combatives crawl-key state. |
+| `client/entity/IPlayerSPSwimming.java` | Local-player swim sprint, forced-down, and actual sneak helpers. | yes | yes | `client/ICombativesClientPlayerSwimming` | Ported for local prediction and packet sneak correction. |
+| `util/MovementInputStorage.java` | Saves pre-vanilla movement/sprint input state for Aqua sprint logic. | yes | yes | `client/MovementInputStorage` | Ported minimal fields used by swim/crawl. |
+| `mixins/early/minecraft/EntityPlayerMixin.java` | Core DataWatcher pose sync, updateSwimming, updatePose, collision resize, eye height, swim movement. | yes | yes | `mixin/EntityPlayerMixin` | Rewritten with Combatives diagnostics and no optional integrations. |
+| `mixins/early/minecraft/client/EntityPlayerSPMixin.java` | Local-player prediction: actual sneak, forced crouch/crawl, water sprint persistence, swim start/stop, water sneaking. | yes | yes | `mixin/EntityPlayerSPMixin` | Ported core behavior including exact-collision push-out path used by `func_145771_j`; Aqua config branching omitted because Combatives does not expose that config. |
+| `mixins/early/minecraft/client/EntityClientPlayerMPMixin.java` | Sends actual sneak state instead of forced visual crouch state. | yes | yes | `mixin/EntityClientPlayerMPMixin` | Ported redirect for client/server state consistency. |
+| `mixins/early/minecraft/client/EntityOtherPlayerMPMixin.java` | Corrects remote player yOffset after pose sync. | yes | yes | `mixin/EntityOtherPlayerMPMixin` | Ported yOffset correction for multiplayer visual sync. |
+| `mixins/early/minecraft/EntityPlayerMPMixin.java` | Server-side death pose, server swimming eye height, and server size enforcement. | yes | yes | `mixin/EntityPlayerMPMixin` | Ported explicitly so MP-only behavior is not assumed to be covered by the common player mixin. |
+| `mixins/early/minecraft/client/ModelBipedMixin.java` | Player model swim/crawl animation and head/limb rotation from swim animation state. | yes | yes | `mixin/ModelBipedMixin`, `client/model/ICombativesModelBipedSwimming` | Ported because it consumes pose swim animation and affects third-person/local player pose correctness. |
+| `client/model/IModelBipedSwimming.java` | Interface for passing swim animation into player models. | yes | yes | `client/model/ICombativesModelBipedSwimming` | Ported for renderer/model bridge parity. |
+| `mixins/early/minecraft/client/RenderPlayerMixin.java` | Applies swim/crawl body rotation/translation and resets first-person arm swim animation. | yes | yes | `mixin/RenderPlayerMixin` | Ported because player pose correctness includes third-person and first-person model transforms. |
+| `mixins/early/minecraft/client/EntityRendererMixin.java` | Interpolates camera eye height while pose height changes. | yes | yes | `mixin/EntityRendererMixin` | Ported camera/eye-height portion; fog-only behavior remains skipped because it does not affect pose/camera height. |
+| `mixins/early/minecraft/client/ItemRendererMixin.java` | Aqua `@ModifyArg` injects into vanilla `ItemRenderer#renderWarpedTextureOverlay` at `GL11.glColor4f(..., alpha)` to lower water overlay opacity when Aqua water colors are enabled. | no | no | none | Checked exact call site: it only changes the alpha argument for the underwater texture overlay. It does not call player pose APIs, eye checks, movement, right-click, DataWatcher, `yOffset`, or model pose. Combatives port: later only if water overlay visuals are in scope. |
+| `mixins/early/minecraft/client/PlayerControllerMPMixin.java` | Aqua `@Redirect` injects into vanilla `PlayerControllerMP#onPlayerRightClick` at `EntityPlayer#isSneaking()` and substitutes actual key sneak state. | yes | yes | `mixin/PlayerControllerMPMixin` | Ported now because forced crawl/crouch pose can otherwise make right-click interactions behave as if the player is holding sneak. This affects player interaction while crawling/swimming, not pose persistence directly. |
+| `util/math/MathHelperNew.java` | Lerp/rotation math for animations. | yes | partial | inline interpolation in `EntityPlayerMixin` | Only linear swim-animation interpolation needed for state; model rotation helpers skipped with model renderer. |
+| `util/math/AxisAlignedBBSpliterator.java` | Exact block collision stream used by local-player push-out collision checks. | yes | yes | `util/math/AxisAlignedBBSpliterator` | Ported and wired into `EntityPlayerSPMixin#func_145771_j` prediction path. |
+| `util/math/CubeCoordinateIterator.java` | Coordinate iterator dependency for exact collision stream. | yes | yes | `util/math/CubeCoordinateIterator` | Ported as dependency of `AxisAlignedBBSpliterator`. |
+| `util/BlockPos.java` | Lightweight coordinate helper for exact collision/client push-out code. | yes | yes | `util/BlockPos` | Ported minimal API required by `AxisAlignedBBSpliterator`; broad unrelated helpers omitted. |
+| `mixins/early/minecraft/accessor/FluidAccessor.java` | Aqua accessor exposes Forge `Fluid#stillIcon` and `Fluid#flowingIcon` setters for water texture/resource replacement. | no | no | none | Checked exact accessor targets: only mutable icon fields on `net.minecraftforge.fluids.Fluid`. No vanilla method injection and no calls into player water checks, eye-in-water, movement, pose, camera, or collision. Combatives port: later only if water texture replacement is added. |
+| `mixins/early/minecraft/accessor/IEventBusAccessor.java` | Event bus internals for Aqua compatibility. | no | no | none | Not used by player swim/crawl state machine. |
+| `handler/CommonHandler.java` | Misc common gameplay handlers. | no | no | none | Inspected; unrelated to Combatives player swim/crawl state. |
+| `client/handler/AirMeterHandler.java` | Air meter rendering. | no | no | none | HUD-only. |
+| `client/handler/FogHandler.java` | Water fog rendering. | no | no | none | Visual-only. |
+| `client/resource/WaterResourcePack*.java` | Water texture/resource replacement. | no | no | none | Visual/resource system unrelated to pose. |
+| `biome/BiomeWaterFogColors.java` | Water fog color data. | no | no | none | Visual-only. |
+| `block/BlockBubbleColumn.java`, `entity/IBubbleColumnInteractable.java` | Bubble column block/entity interactions. | no | no | none | Aquatics block feature unrelated to crawl/swim pose persistence. |
+| `mixins/early/minecraft/BlockLiquidMixin.java` | Aqua overrides vanilla `BlockLiquid#getLightOpacity(IBlockAccess,int,int,int)` for brighter water when Aqua water visuals are enabled. | no | no | none | Checked exact override: changes returned light opacity only. It does not affect `Entity#handleWaterMovement`, `Entity#isInsideOfMaterial`, eye-in-water checks, movement vectors, pose, collision, or networking. Combatives port: later only if water lighting visuals are in scope. |
+| `mixins/early/minecraft/BlockSoulSandMixin.java`, `BlockGrassMixin.java`, `BlockMyceliumMixin.java` | Aqua block feature behavior outside player pose. | no | no | none | Checked call sites affect block behavior/underwater feature visuals, not player pose DataWatcher, crawl key sync, camera, or movement. |
+| `mixins/early/minecraft/EntityMixin.java` | Uses actual sneak in movement and adjusts water probe for swimming pose. | yes | yes | `mixin/EntityMixin` | Ported pose/sneak/water-probe portions; bubble columns and climbing config skipped as unrelated systems. |
+| `mixins/early/minecraft/EntityLivingBaseMixin.java` | Uses actual sneak during travel and contains unrelated air/climbing tweaks. | yes | partial | `mixin/EntityLivingBaseMixin` | Ported actual-sneak travel redirect; checked call sites `moveEntityWithHeading`, `onEntityUpdate`, ladder redirect. Air replenishment and climbing config are unrelated. |
+| `mixins/early/minecraft/EntityItemMixin.java`, `EntityThrowableMixin.java`, `EntityBoatMixin.java` | General Aqua item/projectile/boat water behavior. | no | no | none | Checked call sites affect non-player entities only, not player pose DataWatcher, crawl key sync, camera, or collision clearance. |
+| `mixins/early/minecraft/client/RenderBoatMixin.java` | Boat rendering. | no | no | none | Rendering-only and unrelated. |
+| `client/particle/*` | Bubble/current particles. | no | no | none | Visual-only. |
+| `integration/*`, `optifine/*`, `mixinplugin/*`, `config/ConfigHandler.java` | Optional mod integrations, mixin gates, config toggles. | no | no | none | Combatives must not add Aqua branding, optional dependencies, mixin plugin logic, or swim/crawl disable configs. |
 
-## Inspected and intentionally not ported
+## Behavior notes
 
-| Aqua reference class or system | Reason skipped |
-| --- | --- |
-| `client/handler/AirMeterHandler`, `client/handler/FogHandler`, water resource pack classes, biome water fog colors | Water visuals and HUD changes are unrelated to making crawl/swim movement function and would broaden this PR beyond gameplay movement. |
-| Bubble-column blocks, particles, boat/item/throwable mixins, underwater grass handling | These are Aqua aquatics feature systems, not required for player swimming/crawling pose/input/collision behavior. |
-| Optional integration classes for EFR, Morph, AE2, Hats, Optifine, and mixin plugin compatibility gates | Combatives must not add unrelated optional compatibility systems or hard dependencies in this PR. Equivalent safety checks were kept local to vanilla player states. |
-| `EntityRendererMixin`, `ItemRendererMixin`, `RenderPlayerMixin`, `ModelBipedMixin`, `PlayerControllerMPMixin`, `EntityClientPlayerMPMixin`, `EntityOtherPlayerMPMixin` | Rendering/camera overhauls are non-goals for this PR. Only the eye-height hook required for crawl/swim correctness was kept in the common player mixin. |
-| Aqua config classes and branding/localization messages | Combatives swimming/crawling are always-on core behavior and must not expose Aqua runtime branding or disable toggles. |
-| Aqua access transformer and build metadata | Build/metadata files are not needed and reference sources must not be compiled directly. |
-
-## Behavior rewritten instead of copied
-
-- Crawl input uses hold-to-crawl pressed/released state packets instead of Aqua's toggle packet so releasing the key exits when standing space is clear.
-- Server-side crawl acceptance is authoritative: invalid player states reject crawl requests, and low ceilings keep the player in a low pose until the standing collision box is clear.
-- Debug diagnostics are routed through `MovementDiagnostics` and gated by Combatives `debugMovement`.
+- Crawl input now follows Aqua's toggle-first behavior: key press toggles crawl forcing, key release does not change crawl state, and the server remains authoritative about accepted/rejected crawl state.
+- Local-player prediction now follows Aqua's connected sprint/crouch/swim input flow: actual sneak state is separated from forced visual crouch, water sprint can persist, and client movement is slowed while forced down.
+- Pose state is synchronized through the player DataWatcher, and debug movement logs identify pose writes, DataWatcher corrections, bounding-box recalculation, eye-height recalculation, swim/crawl selection, and explicit swim cancellation reasons.

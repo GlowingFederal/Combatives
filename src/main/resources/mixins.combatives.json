@@ -6,8 +6,18 @@
   "target": "@env(DEFAULT)",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "EntityPlayerMixin"
+    "EntityPlayerMixin",
+    "EntityMixin",
+    "EntityLivingBaseMixin",
+    "EntityPlayerMPMixin"
   ],
-  "client": [],
+  "client": [
+    "EntityPlayerSPMixin",
+    "EntityClientPlayerMPMixin",
+    "EntityOtherPlayerMPMixin",
+    "ModelBipedMixin",
+    "RenderPlayerMixin",
+    "EntityRendererMixin"
+  ],
   "server": []
 }

@@ -13,6 +13,13 @@ public final class MovementDiagnostics {
         Combatives.logger.info("Combatives crawling behavior enabled");
     }
 
+    public static void debug(String message) {
+        if (!CombativesConfig.debugMovement || Combatives.logger == null) {
+            return;
+        }
+        Combatives.logger.info("[movement] {}", message);
+    }
+
     public static void debug(EntityPlayer player, String message) {
         if (!CombativesConfig.debugMovement || Combatives.logger == null) {
             return;

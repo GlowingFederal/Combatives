@@ -1,5 +1,26 @@
 # Changelog
 
+## Port Aqua render, collision, and server pose parity
+
+- Ported the Aqua renderer/model pose hooks for swim animation, player body transforms, first-person arm reset, and camera eye-height interpolation.
+- Ported Aqua actual-sneak movement hooks, swimming water-probe adjustment, explicit EntityPlayerMP server eye-height/size enforcement, and local exact-collision push-out helpers.
+- Restored Aqua-style crawl toggle semantics so key press toggles crawl forcing and key release does not clear the crawl state.
+- Updated the Aqua port map with exact replacements and call-site-based skip reasons for previously suspicious omissions.
+
+## Port complete Aqua swim and crawl system
+
+- Expanded the Aqua source-level audit table to cover every inspected swim/crawl-adjacent source file and document ported versus intentionally skipped systems.
+- Ported the connected Aqua local-player swim/crawl input flow, including movement input storage, actual sneak separation, forced-down movement correction, water sprint persistence, water sneak sinking, and sprint stop reasons.
+- Added client/server bridge mixins for sending actual sneak state and correcting remote-player y-offset after pose synchronization.
+- Added hard debug diagnostics for pose writes, DataWatcher corrections, swim-state changes, collision selection, bounding-box recalculation, and eye-height recalculation.
+
+## Fix crawl key registration and persistent swimming
+
+- Added client proxy and crawl key registration startup logs so the Controls-menu registration path is visible during startup.
+- Added debug movement diagnostics for crawl key registration, crawl packet sends, swim-state entry/exit, and explicit swim cancellation reasons.
+- Ported the missing Aqua local-player water sprint persistence hook so vanilla sprint cancellation no longer immediately reverts the swimming state.
+- Updated the Aqua port map to document the additional client-side sprint/swim dependency.
+
 ## Complete Combatives swimming and crawling port
 
 - Added the missing crawl keybind, localization, client tick input handling, and client-to-server crawl state packet/channel registration.

@@ -101,6 +101,9 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     public void updateSwimming() {
         boolean next = !this.capabilities.isFlying && this.isSprinting() && this.isInWater() && !this.isRiding()
             && (this.isSwimming() || this.canSwim());
+        if (this.isSwimming() && !next) {
+            MovementDiagnostics.debug(this.getPlayer(), this.combatives$getSwimCancelReason());
+        }
         if (next != this.isSwimming()) {
             MovementDiagnostics.debug(this.getPlayer(), next ? "entering swim" : "leaving swim");
         }
@@ -176,7 +179,22 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     @Override public boolean isSwimming() { return !this.capabilities.isFlying && this.getFlag(6); }
     @Override public boolean isActuallySwimming() { return this.getPose() == Pose.SWIMMING || this.getPose() == Pose.FALL_FLYING; }
     @SideOnly(Side.CLIENT) @Override public boolean isVisuallySwimming() { return this.isActuallySwimming() && !this.isInWater(); }
-    @Override public void setSwimming(boolean swimming) { this.setFlag(6, swimming); }
+    @Override public void setSwimming(boolean swimming) {
+        boolean old = this.getFlag(6);
+        if (old != swimming) {
+            MovementDiagnostics.debug(this.getPlayer(), swimming ? "swim state entered" : combatives$getSwimCancelReason());
+        }
+        this.setFlag(6, swimming);
+    }
+
+    private String combatives$getSwimCancelReason() {
+        if (this.capabilities.isFlying) return "swimming cancelled: player is flying";
+        if (!this.isSprinting()) return "swimming cancelled: player is not sprinting";
+        if (!this.isInWater()) return "swimming cancelled: player is not in water";
+        if (this.isRiding()) return "swimming cancelled: player is riding";
+        if (!this.canSwim()) return "swimming cancelled: eyes are not in water";
+        return "swim state exited";
+    }
     @Override public float getSwimAnimation(float partialTicks) { return this.lastSwimAnimation + partialTicks * (this.swimAnimation - this.lastSwimAnimation); }
     @Override public boolean canCrawl() { return !this.isRiding() && !this.capabilities.isFlying && !this.isOnLadder() && !this.getShouldBeDead() && !this.isPlayerSleeping(); }
     @Override public boolean isCrawlKeyDown() { return this.canCrawl() && this.crawlKeyDown; }

@@ -27,6 +27,7 @@ public class ClientMovementInputHandler {
         if (player instanceof ICombativesPlayerPose) {
             ((ICombativesPlayerPose) player).setCrawlKeyDown(crawlDown);
         }
+        MovementDiagnostics.debug(player, "crawl request sent: " + (crawlDown ? "pressed" : "released"));
         NetworkHandler.channel.sendToServer(new PacketCrawlKeyState(crawlDown));
     }
 }

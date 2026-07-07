@@ -8,6 +8,10 @@
   "mixins": [
     "EntityPlayerMixin"
   ],
-  "client": [],
+  "client": [
+    "EntityPlayerSPMixin",
+    "EntityClientPlayerMPMixin",
+    "EntityOtherPlayerMPMixin"
+  ],
   "server": []
 }

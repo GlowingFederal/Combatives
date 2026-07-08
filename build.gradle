@@ -161,6 +161,7 @@ processResources {
 jar {
     manifest {
         attributes(
+                'ForceLoadAsMod': 'true',
                 'MixinConfigs': 'mixins.combatives.json'
         )
     }

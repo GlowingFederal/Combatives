@@ -1,7 +1,17 @@
 package com.glowingfederal.combatives.movement;
 
 public final class MovementSnapshot {
-    public static final MovementSnapshot EMPTY = new MovementSnapshot(0, 0, 0, 0, 0, 0, 0, 0, 0, false, false, false, false, false, false, false, false, 0, 0);
+    public static final MovementSnapshot EMPTY =
+            new MovementSnapshot(
+                    0.0, 0.0,
+                    0.0, 0.0,
+                    0.0, 0.0,
+                    0.0, 0.0,
+                    0.0, 0.0,   // wishX, wishZ
+                    false, false, false, false,
+                    false, false, false, false,
+                    0.0, 0.0
+            );
 
     public final double velocityX;
     public final double velocityZ;

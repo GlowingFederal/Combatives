@@ -124,8 +124,7 @@ gradle.projectsEvaluated {
             jvmArgs "-Dfml.coreMods.load=io.github.legacymoddingmc.unimixins.all.AllCore"
             jvmArgs "-Dmixin.env.disableRefMap=true"
 
-            // Dev classpath mod loading
-            jvmArgs "-Dfml.coreMods.load=io.github.legacymoddingmc.unimixins.all.AllCore"
+
         }
     }
 }
@@ -162,9 +161,7 @@ processResources {
 jar {
     manifest {
         attributes(
-            'ForceLoadAsMod': 'true',
-            'TweakClass': 'org.spongepowered.asm.launch.MixinTweaker',
-            'MixinConfigs': 'mixins.combatives.json'
+                'MixinConfigs': 'mixins.combatives.json'
         )
     }
 }

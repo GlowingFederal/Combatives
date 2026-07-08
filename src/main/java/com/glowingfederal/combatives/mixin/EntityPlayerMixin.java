@@ -198,7 +198,11 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
 
     private float getEyeHeight(Pose pose, EntitySize size) { return pose == Pose.SLEEPING || pose == Pose.DYING ? 0.2F : this.getStandingEyeHeight(pose, size); }
     @Override public boolean isActuallySneaking() { return this.isSneaking(); }
-    @Override public float getStandingEyeHeight(Pose pose, EntitySize size) { return pose == Pose.CROUCHING ? 0.35F : this.eyeHeight; }
+    @Override public float getStandingEyeHeight(Pose pose, EntitySize size) {
+        if (pose == Pose.SWIMMING || pose == Pose.FALL_FLYING || pose == Pose.SPIN_ATTACK) return 0.4F;
+        if (pose == Pose.CROUCHING) return 0.35F;
+        return this.eyeHeight;
+    }
 
     @Override public void setPose(Pose pose) {
         Pose old = this.getPose();
@@ -329,6 +333,9 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         boolean poseChanged = pose != this.getPose();
         this.lastLoggedSwimming = this.isSwimming();
         this.setPose(pose);
+        if (this.worldObj.isRemote && pose == Pose.SWIMMING) {
+            this.yOffset = 0.28F;
+        }
         if (poseChanged) {
             MovementDiagnostics.debug(this.getPlayer(), "pose synced " + (this.worldObj.isRemote ? "client" : "server") + ": " + pose);
             if (this.worldObj.isRemote && NetworkHandler.channel != null) {

@@ -26,6 +26,10 @@ public final class PoseSync {
         state.setSwimming(swimming);
         state.setPose(pose);
         state.recalculateSize();
+        if (player.worldObj.isRemote) {
+            player.func_145781_i(28);
+            MovementDiagnostics.debug(player, "authoritative pose marked render dirty from " + source + ": dataWatcherPose=" + state.getPose());
+        }
         if (oldPose != pose || oldSwimming != swimming || oldCrawlKeyDown != crawlKeyDown) {
             MovementDiagnostics.debug(player, "authoritative pose applied from " + source + ": " + pose + " swimming=" + swimming + " crawl=" + crawlKeyDown);
         }

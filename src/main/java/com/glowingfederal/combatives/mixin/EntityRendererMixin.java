@@ -1,5 +1,7 @@
 package com.glowingfederal.combatives.mixin;
 
+import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
+import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.util.math.MathHelperNew;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.EntityRenderer;
@@ -33,7 +35,11 @@ public abstract class EntityRendererMixin {
         if (!(entity instanceof EntityPlayer)) {
             return eyeHeight;
         }
-        this.combatives$entityEyeHeight = entity.height == 0.6F ? 0.0F : eyeHeight;
+        this.combatives$entityEyeHeight = ((EntityPlayer) entity).getEyeHeight();
+        if (entity instanceof ICombativesPlayerPose) {
+            ICombativesPlayerPose pose = (ICombativesPlayerPose) entity;
+            MovementDiagnostics.debug((EntityPlayer) entity, "camera eye height used=" + this.combatives$entityEyeHeight + " combativesPose=" + pose.getPose() + " swimmingFlag=" + pose.isSwimming());
+        }
         return MathHelperNew.lerp(this.combatives$partialTicks, this.combatives$previousEyeHeight, this.combatives$eyeHeight);
     }
 

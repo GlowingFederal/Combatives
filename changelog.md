@@ -1,5 +1,11 @@
 # Changelog
 
+## Fix visual crawl/swim pose application
+
+- Routed first-person camera eye-height interpolation through the Combatives pose eye height so SWIMMING/crawl renders with a low camera instead of vanilla standing height.
+- Preserved the shared SWIMMING pose for swimming and crawling while applying low third-person/remote-player y-offset, model animation diagnostics, and render-path pose diagnostics from Combatives pose state.
+- Marked client authoritative pose applications as render-dirty after DataWatcher pose updates and tuned standing/sprinting movement profiles closer to vanilla with only subtle inertia.
+
 ## Fix Combatives pose-state interface injection on the server
 
 - Added a Combatives `IFMLLoadingPlugin`/`IEarlyMixinLoader` so common player pose mixins are queued by GTNHMixins on both physical client and dedicated server.

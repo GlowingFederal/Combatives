@@ -1,5 +1,7 @@
 package com.glowingfederal.combatives.mixin;
 
+import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
+import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.util.math.MathHelperNew;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.EntityRenderer;

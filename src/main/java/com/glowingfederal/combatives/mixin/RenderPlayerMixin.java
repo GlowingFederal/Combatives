@@ -2,6 +2,7 @@ package com.glowingfederal.combatives.mixin;
 
 import com.glowingfederal.combatives.client.model.ICombativesModelBipedSwimming;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
+import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.util.math.MathHelperNew;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.model.ModelBase;
@@ -31,6 +32,7 @@ public abstract class RenderPlayerMixin extends RendererLivingEntity {
         if (player instanceof ICombativesPlayerPose) {
             ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
             float animation = pose.getSwimAnimation(partialTicks);
+            MovementDiagnostics.debug(player, "render pose state dataWatcherPose=" + pose.getPose() + " combativesPose=" + pose.getPose() + " animation=" + animation + " yOffset=" + player.yOffset);
             float targetPitch = player.isInWater() ? -90.0F - player.rotationPitch : -90.0F;
             GL11.glRotatef(MathHelperNew.lerp(animation, 0.0F, targetPitch), 1.0F, 0.0F, 0.0F);
             if (pose.isActuallySwimming()) {

@@ -32,9 +32,19 @@ public class PacketCrawlKeyState implements IMessage {
     public static class Handler implements IMessageHandler<PacketCrawlKeyState, IMessage> {
         @Override
         public IMessage onMessage(PacketCrawlKeyState message, MessageContext ctx) {
+            MovementDiagnostics.debug("server received crawl packet pressed=" + message.pressed);
             EntityPlayerMP player = ctx.getServerHandler().playerEntity;
+            if (player == null) {
+                MovementDiagnostics.debug("server could not resolve player for crawl packet");
+                return null;
+            }
+
+            MovementDiagnostics.debug(player, "server player resolved for crawl packet");
             if (player instanceof ICombativesPlayerPose) {
+                MovementDiagnostics.debug(player, "server player exposes combatives pose state");
                 ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
+                MovementDiagnostics.debug(player, "crawl before=" + pose.isCrawlKeyDown());
+                MovementDiagnostics.debug(player, "server pose before crawl packet: pose=" + pose.getPose() + " swimming=" + pose.isSwimming() + " crawl=" + pose.isCrawlKeyDown());
                 MovementDiagnostics.debug(player, "crawl request received: " + (message.pressed ? "toggle" : "release ignored"));
                 if (message.pressed) {
                     boolean next = !pose.isCrawlKeyDown();
@@ -43,6 +53,11 @@ public class PacketCrawlKeyState implements IMessage {
                     pose.recalculateSize();
                     PoseSync.broadcastAuthoritativePose(player, true);
                 }
+                MovementDiagnostics.debug(player, "crawl after=" + pose.isCrawlKeyDown());
+                MovementDiagnostics.debug(player, "pose/datawatcher updated");
+                MovementDiagnostics.debug(player, "server pose after crawl packet: pose=" + pose.getPose() + " swimming=" + pose.isSwimming() + " crawl=" + pose.isCrawlKeyDown());
+            } else {
+                MovementDiagnostics.debug(player, "server player does not expose combatives pose state");
             }
             return null;
         }

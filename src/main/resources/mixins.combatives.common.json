@@ -11,14 +11,6 @@
     "EntityLivingBaseMixin",
     "EntityPlayerMPMixin"
   ],
-  "client": [
-    "EntityPlayerSPMixin",
-    "EntityClientPlayerMPMixin",
-    "EntityOtherPlayerMPMixin",
-    "ModelBipedMixin",
-    "RenderPlayerMixin",
-    "EntityRendererMixin",
-    "PlayerControllerMPMixin"
-  ],
+  "client": [],
   "server": []
 }

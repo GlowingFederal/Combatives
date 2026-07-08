@@ -162,7 +162,9 @@ jar {
     manifest {
         attributes(
                 'ForceLoadAsMod': 'true',
-                'MixinConfigs': 'mixins.combatives.json'
+                'FMLCorePlugin': 'com.glowingfederal.combatives.loading.CombativesCorePlugin',
+                'FMLCorePluginContainsFMLMod': 'true',
+                'MixinConfigs': 'mixins.combatives.client.json'
         )
     }
 }

@@ -298,18 +298,32 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     }
 
     private void updatePose() {
-        Pose pose = this.getPose();
-        if (this.getShouldBeDead()) pose = Pose.DYING;
-        else if (this.isPlayerSleeping()) pose = Pose.SLEEPING;
-        else if (this.isPoseClear(Pose.SWIMMING)) {
-            if (this.isCrawlKeyDown() || this.isSwimming()) {
-                pose = Pose.SWIMMING;
-                if (this.worldObj.isRemote) this.yOffset = 0.28F;
-            } else if (!this.isPoseClear(Pose.STANDING)) {
+        Pose current = this.getPose();
+        Pose pose = current;
+        boolean swimActive = this.isSwimming();
+        boolean crawlActive = this.isCrawlKeyDown();
+        boolean swimmingPoseClear = this.isPoseClear(Pose.SWIMMING);
+        boolean bypassLowPose = this.noClip || this.isRiding() || this.capabilities.isFlying || this.isOnLadder();
+        boolean validLowPose = !this.getShouldBeDead() && !this.isPlayerSleeping() && !bypassLowPose && swimmingPoseClear;
+
+        if (this.getShouldBeDead()) {
+            pose = Pose.DYING;
+        } else if (this.isPlayerSleeping()) {
+            pose = Pose.SLEEPING;
+        } else if ((swimActive || crawlActive) && validLowPose) {
+            pose = Pose.SWIMMING;
+            if (this.worldObj.isRemote) this.yOffset = 0.28F;
+            if (current != Pose.SWIMMING) {
+                MovementDiagnostics.debug(this.getPlayer(), (swimActive ? "swimming" : "crawl") + " selected SWIMMING pose; crawl=" + crawlActive + " swimming=" + swimActive + " clear=" + swimmingPoseClear);
+            }
+        } else {
+            if (current == Pose.SWIMMING && (swimActive || crawlActive)) {
+                MovementDiagnostics.debug(this.getPlayer(), "SWIMMING pose exit allowed: crawl=" + crawlActive + " swimming=" + swimActive + " clear=" + swimmingPoseClear + " bypass=" + bypassLowPose + " dead=" + this.getShouldBeDead() + " sleeping=" + this.isPlayerSleeping() + " caller=" + this.combatives$getPoseCaller());
+            }
+            if (!swimmingPoseClear) {
                 pose = this.isPoseClear(Pose.CROUCHING) ? Pose.CROUCHING : Pose.SWIMMING;
                 MovementDiagnostics.debug(this.getPlayer(), "pose blocked by collision; keeping low pose");
             } else if (this.isActuallySneaking() && !this.capabilities.isFlying && (this.onGround || !this.isInWater()) && !this.isOnLadder()) {
-                MovementDiagnostics.debug(this.getPlayer(), "crouching selected");
                 pose = Pose.CROUCHING;
                 if (this.worldObj.isRemote) this.yOffset = 1.62F;
             } else if (this.isPoseClear(Pose.STANDING)) {
@@ -317,7 +331,6 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
                     this.removePotionEffect(Potion.moveSlowdown.id);
                     this.removePotionEffect(Potion.digSlowdown.id);
                 }
-                MovementDiagnostics.debug(this.getPlayer(), "standing selected");
                 pose = Pose.STANDING;
                 if (this.worldObj.isRemote) this.yOffset = 1.62F;
             }
@@ -326,12 +339,12 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
                 pose = this.isPoseClear(Pose.CROUCHING) ? Pose.CROUCHING : Pose.SWIMMING;
             }
         }
-        if (pose != this.getPose()) {
-            if (pose == Pose.SWIMMING) MovementDiagnostics.debug(this.getPlayer(), this.isSwimming() ? "swimming selected" : "crawl selected");
-            if (this.getPose() == Pose.SWIMMING && pose != Pose.SWIMMING) MovementDiagnostics.debug(this.getPlayer(), this.lastLoggedSwimming ? "leaving swim" : "leaving crawl");
+
+        if (current == Pose.SWIMMING && pose != Pose.SWIMMING) {
+            MovementDiagnostics.debug(this.getPlayer(), "SWIMMING replaced with " + pose + "; crawl=" + crawlActive + " swimming=" + swimActive + " validExit=" + (!(swimActive || crawlActive) || !validLowPose) + " caller=" + this.combatives$getPoseCaller());
         }
-        boolean poseChanged = pose != this.getPose();
-        this.lastLoggedSwimming = this.isSwimming();
+        boolean poseChanged = pose != current;
+        this.lastLoggedSwimming = swimActive;
         this.setPose(pose);
         if (this.worldObj.isRemote && pose == Pose.SWIMMING) {
             this.yOffset = 0.28F;
@@ -339,7 +352,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         if (poseChanged) {
             MovementDiagnostics.debug(this.getPlayer(), "pose synced " + (this.worldObj.isRemote ? "client" : "server") + ": " + pose);
             if (this.worldObj.isRemote && NetworkHandler.channel != null) {
-                NetworkHandler.channel.sendToServer(new PacketPlayerPoseC2S(pose, this.isSwimming(), this.isCrawlKeyDown()));
+                NetworkHandler.channel.sendToServer(new PacketPlayerPoseC2S(pose, swimActive, crawlActive));
             } else if (!this.worldObj.isRemote && this.getPlayer() instanceof EntityPlayerMP) {
                 PoseSync.broadcastAuthoritativePose((EntityPlayerMP) this.getPlayer(), true);
             }

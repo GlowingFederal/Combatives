@@ -2,7 +2,6 @@ package com.glowingfederal.combatives.mixin;
 
 import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
-import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import net.minecraft.client.entity.EntityOtherPlayerMP;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -16,7 +15,6 @@ public abstract class EntityOtherPlayerMPMixin {
         EntityOtherPlayerMP player = (EntityOtherPlayerMP) (Object) this;
         if (player instanceof ICombativesPlayerPose && ((ICombativesPlayerPose) player).getPose() == Pose.SWIMMING) {
             player.yOffset = 0.28F;
-            MovementDiagnostics.debug(player, "remote render state uses SWIMMING yOffset=" + player.yOffset);
         } else {
             player.yOffset = 0.0F;
         }

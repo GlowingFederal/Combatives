@@ -22,7 +22,15 @@ public final class PoseSync {
         Pose oldPose = state.getPose();
         boolean oldSwimming = state.isSwimming();
         boolean oldCrawlKeyDown = state.isCrawlKeyDown();
-        state.setCrawlKeyDown(crawlKeyDown);
+        boolean clientPrediction = "client".equals(source) && !player.worldObj.isRemote;
+        boolean effectiveCrawlKeyDown = clientPrediction ? oldCrawlKeyDown : crawlKeyDown;
+        boolean activeLowPose = (oldSwimming || oldCrawlKeyDown) && state.isPoseClear(Pose.SWIMMING);
+        if (clientPrediction && pose != Pose.SWIMMING && activeLowPose) {
+            MovementDiagnostics.debug(player, "ignored client pose cancellation " + oldPose + " -> " + pose + "; preserving SWIMMING crawl=" + oldCrawlKeyDown + " swimming=" + oldSwimming);
+            pose = Pose.SWIMMING;
+            swimming = oldSwimming;
+        }
+        state.setCrawlKeyDown(effectiveCrawlKeyDown);
         state.setSwimming(swimming);
         state.setPose(pose);
         state.recalculateSize();
@@ -30,8 +38,8 @@ public final class PoseSync {
             player.func_145781_i(28);
             MovementDiagnostics.debug(player, "authoritative pose marked render dirty from " + source + ": dataWatcherPose=" + state.getPose());
         }
-        if (oldPose != pose || oldSwimming != swimming || oldCrawlKeyDown != crawlKeyDown) {
-            MovementDiagnostics.debug(player, "authoritative pose applied from " + source + ": " + pose + " swimming=" + swimming + " crawl=" + crawlKeyDown);
+        if (oldPose != pose || oldSwimming != swimming || oldCrawlKeyDown != effectiveCrawlKeyDown) {
+            MovementDiagnostics.debug(player, "authoritative pose applied from " + source + ": " + pose + " swimming=" + swimming + " crawl=" + effectiveCrawlKeyDown);
         }
     }
 

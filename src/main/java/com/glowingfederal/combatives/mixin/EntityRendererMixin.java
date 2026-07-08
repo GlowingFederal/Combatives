@@ -36,10 +36,6 @@ public abstract class EntityRendererMixin {
             return eyeHeight;
         }
         this.combatives$entityEyeHeight = ((EntityPlayer) entity).getEyeHeight();
-        if (entity instanceof ICombativesPlayerPose) {
-            ICombativesPlayerPose pose = (ICombativesPlayerPose) entity;
-            MovementDiagnostics.debug((EntityPlayer) entity, "camera eye height used=" + this.combatives$entityEyeHeight + " combativesPose=" + pose.getPose() + " swimmingFlag=" + pose.isSwimming());
-        }
         return MathHelperNew.lerp(this.combatives$partialTicks, this.combatives$previousEyeHeight, this.combatives$eyeHeight);
     }
 

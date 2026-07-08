@@ -58,3 +58,5 @@ Aqua Acrobatics Legacy is included in this repository as public-domain/Unlicense
 - Crawling intentionally remains represented by `Pose.SWIMMING`; `crawlKeyDown` only changes selection/rules and is not a separate rendered pose.
 
 - Pose priority follow-up: `EntityPlayerMixin#updatePose` now treats active valid swimming or crawl forcing as higher priority than sneaking and standing, so normal standing clearance cannot cancel the shared SWIMMING pose until crawl/swim exit conditions are actually met. Client pose prediction packets are not allowed to clear active server crawl/swim state.
+
+- Crawl key packet follow-up: the existing Combatives crawl key packet is now semantically a toggle request. The client sends it only on the key-down edge; key release only resets debounce state locally. The server flips crawl once per request, selects shared `Pose.SWIMMING` when toggled on, and lets `updatePose` choose standing/crouching/swimming after toggle-off.

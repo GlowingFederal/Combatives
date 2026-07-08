@@ -25,7 +25,7 @@ public class ClientMovementInputHandler {
         EntityPlayer player = Minecraft.getMinecraft().thePlayer;
         MovementDiagnostics.debug(player, "crawl key " + (crawlDown ? "pressed" : "released"));
         if (!crawlDown) {
-            MovementDiagnostics.debug(player, "crawl toggle key released; Aqua toggle state unchanged");
+            MovementDiagnostics.debug(player, "crawl key released: debounce reset only");
             return;
         }
         if (player instanceof ICombativesPlayerPose) {
@@ -33,11 +33,11 @@ public class ClientMovementInputHandler {
             pose.setCrawlKeyDown(!pose.isCrawlKeyDown());
             MovementDiagnostics.debug(player, "client predicted crawl toggle: " + pose.isCrawlKeyDown());
         }
-        MovementDiagnostics.debug(player, "client sending crawl packet");
+        MovementDiagnostics.debug(player, "client sends crawl toggle request");
         if (NetworkHandler.channel == null) {
             MovementDiagnostics.debug(player, "client crawl packet send skipped because network channel is not initialized");
             return;
         }
-        NetworkHandler.channel.sendToServer(new PacketCrawlKeyState(true));
+        NetworkHandler.channel.sendToServer(new PacketCrawlKeyState());
     }
 }

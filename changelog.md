@@ -1,5 +1,11 @@
 # Changelog
 
+## Fix Aqua-style crawl toggle request handling
+
+- Changed the crawl key packet semantics from a pressed/released state to a toggle request while keeping the existing packet registration path intact.
+- Kept release handling client-only for debounce reset, with no release packet and no crawl=false prediction on key release.
+- Simplified server handling so each received crawl toggle flips server crawl state once, immediately selects SWIMMING only when toggled on, and otherwise lets `updatePose` resolve the exit pose.
+
 ## Restore sticky crawl/swim pose priority
 
 - Reworked player pose priority so active valid swim or crawl state selects and holds the shared SWIMMING pose before sneak, standing, or clearance fallback logic can run.

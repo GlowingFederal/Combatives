@@ -1,5 +1,13 @@
 # Changelog
 
+## Combatives movement polish pass
+
+- Smoothed pose eye-height transitions while keeping collision boxes immediate so camera changes no longer snap when entering or leaving crawl, crouch, and swim poses, and aligned dedicated-server eye heights with the shared pose table.
+- Added short pose cooldown and standing-clearance hysteresis so crawl/low-pose state does not flicker near one-block gaps, slabs, water edges, and other boundary collisions.
+- Tuned crawl movement to use stable acceleration/drag, cancel sprint outside real swimming, and keep crawl deliberate without repeatedly scaling input state.
+- Cleaned swim/crawl movement handoff and sneak-to-descend water movement while preserving authoritative server collision and existing pose networking.
+- Removed normal debug spam from model animation and reduced size diagnostics to actual pose-size changes.
+
 ## Fix multiplayer authoritative pose sync
 
 - Added explicit client-to-server and server-to-client pose packets carrying pose, swimming, and crawl/forced-down state so tracking clients receive authoritative crawl/swim updates without waiting for collision correction.

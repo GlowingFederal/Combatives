@@ -62,10 +62,11 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     private float swimAnimation;
     private float lastSwimAnimation;
     private float timeUnderwater;
-    private Pose lastLoggedPose = Pose.STANDING;
-    private boolean lastLoggedSwimming;
     private boolean crawlKeyDown;
     private Pose combativesPose = Pose.STANDING;
+    private int combativesStandingClearTicks;
+    private int combativesPoseCooldownTicks;
+    private float combativesVisualEyeHeight;
     private boolean combativesPoseWatcherReady;
 
     public EntityPlayerMixin(World world) {
@@ -76,6 +77,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     private void combatives$constructed(CallbackInfo ci) {
         this.combativesSize = STANDING_SIZE;
         this.combativesEyeHeight = this.getEyeHeight(Pose.STANDING, this.combativesSize);
+        this.combativesVisualEyeHeight = this.combativesEyeHeight;
         this.combativesPose = Pose.STANDING;
         this.getDataWatcher().addObject(POSE_WATCHER_ID, Pose.STANDING.ordinal());
         this.combativesPoseWatcherReady = true;
@@ -85,6 +87,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     public void func_145781_i(int key) {
         if (key == POSE_WATCHER_ID && this.worldObj.isRemote && !this.isRiding()) {
             MovementDiagnostics.debug(this.getPlayer(), "DataWatcher pose changed on client: " + this.getPose());
+            this.combativesPoseCooldownTicks = 2;
             this.recalculateEyeHeight();
             this.recalculateSize();
         }
@@ -145,7 +148,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
             this.width = newSize.width;
             this.height = newSize.height;
             if (changed) {
-                MovementDiagnostics.debug(this.getPlayer(), "bounding box recalculated for " + this.getPose() + " size=" + newSize.width + "x" + newSize.height);
+                MovementDiagnostics.debug(this.getPlayer(), "pose size changed for " + this.getPose() + " size=" + newSize.width + "x" + newSize.height);
             }
         }
         this.combativesSize = newSize;
@@ -169,7 +172,6 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         Pose pose = this.getPose();
         this.combativesEyeHeight = this.getEyeHeight(pose, this.getSize(pose));
         this.previousEyeHeight = this.eyeHeight;
-        MovementDiagnostics.debug(this.getPlayer(), "eye height recalculated for " + pose + ": " + this.combativesEyeHeight);
     }
 
     @Override
@@ -183,12 +185,15 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
 
     private float getEyeHeight(Pose pose, EntitySize size) { return pose == Pose.SLEEPING || pose == Pose.DYING ? 0.2F : this.getStandingEyeHeight(pose, size); }
     @Override public boolean isActuallySneaking() { return this.isSneaking(); }
-    @Override public float getStandingEyeHeight(Pose pose, EntitySize size) { return pose == Pose.CROUCHING ? 0.35F : this.eyeHeight; }
+    @Override public float getStandingEyeHeight(Pose pose, EntitySize size) { return pose == Pose.SWIMMING ? 0.35F : pose == Pose.CROUCHING ? 1.27F : 1.62F; }
 
     @Override public void setPose(Pose pose) {
         Pose old = this.getPose();
         if (old != pose) {
             MovementDiagnostics.debug(this.getPlayer(), "setPose " + old + " -> " + pose + " via " + this.combatives$getPoseCaller());
+        }
+        if (old == pose) {
+            return;
         }
         this.combativesPose = pose;
         if (this.combativesPoseWatcherReady) {
@@ -244,7 +249,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         return "swim state exited";
     }
     @Override public float getSwimAnimation(float partialTicks) { return this.lastSwimAnimation + partialTicks * (this.swimAnimation - this.lastSwimAnimation); }
-    @Override public boolean canCrawl() { return !this.isRiding() && !this.capabilities.isFlying && !this.isOnLadder() && !this.getShouldBeDead() && !this.isPlayerSleeping(); }
+    @Override public boolean canCrawl() { return !this.noClip && !this.isRiding() && !this.capabilities.isFlying && !this.isOnLadder() && !this.getShouldBeDead() && !this.isPlayerSleeping(); }
     @Override public boolean isCrawlKeyDown() { return this.canCrawl() && this.crawlKeyDown; }
     @Override public void setCrawlKeyDown(boolean down) {
         if (down && !this.canCrawl()) {
@@ -260,8 +265,8 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
 
     @Inject(method = "getEyeHeight", at = @At("HEAD"), cancellable = true)
     private void combatives$getEyeHeight(CallbackInfoReturnable<Float> cir) {
-        if (this.combativesEyeHeight > 0.0F) {
-            cir.setReturnValue(this.combativesEyeHeight);
+        if (this.combativesVisualEyeHeight > 0.0F) {
+            cir.setReturnValue(this.combativesVisualEyeHeight);
         }
     }
 
@@ -269,6 +274,8 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     private void combatives$prePostTick(CallbackInfo ci) {
         this.lastSwimAnimation = this.swimAnimation;
         this.swimAnimation = this.isActuallySwimming() ? Math.min(1.0F, this.swimAnimation + 0.09F) : Math.max(0.0F, this.swimAnimation - 0.09F);
+        this.combativesVisualEyeHeight += (this.combativesEyeHeight - this.combativesVisualEyeHeight) * 0.45F;
+        if (Math.abs(this.combativesVisualEyeHeight - this.combativesEyeHeight) < 0.005F) this.combativesVisualEyeHeight = this.combativesEyeHeight;
         this.eyesInWaterPlayer = this.isInsideOfMaterial(Material.water);
     }
 
@@ -279,50 +286,62 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     }
 
     private void updatePose() {
-        Pose pose = this.getPose();
-        if (this.getShouldBeDead()) pose = Pose.DYING;
-        else if (this.isPlayerSleeping()) pose = Pose.SLEEPING;
-        else if (this.isPoseClear(Pose.SWIMMING)) {
-            if (this.isCrawlKeyDown() || this.isSwimming()) {
+        Pose current = this.getPose();
+        Pose pose = current;
+        boolean canChangeMovementPose = !this.noClip && !this.isRiding() && !this.capabilities.isFlying && !this.isOnLadder();
+
+        if (this.getShouldBeDead()) {
+            pose = Pose.DYING;
+        } else if (this.isPlayerSleeping()) {
+            pose = Pose.SLEEPING;
+        } else if (canChangeMovementPose && this.isPoseClear(Pose.SWIMMING)) {
+            boolean standingClear = this.isPoseClear(Pose.STANDING);
+            this.combativesStandingClearTicks = standingClear ? Math.min(this.combativesStandingClearTicks + 1, 20) : 0;
+            if (this.combativesPoseCooldownTicks > 0) this.combativesPoseCooldownTicks--;
+
+            boolean forcedLow = this.isCrawlKeyDown() || !standingClear || (current == Pose.SWIMMING && this.combativesStandingClearTicks < 4);
+            if (this.isSwimming()) {
                 pose = Pose.SWIMMING;
                 if (this.worldObj.isRemote) this.yOffset = 0.28F;
-            } else if (!this.isPoseClear(Pose.STANDING)) {
-                pose = this.isPoseClear(Pose.CROUCHING) ? Pose.CROUCHING : Pose.SWIMMING;
-                MovementDiagnostics.debug(this.getPlayer(), "pose blocked by collision; keeping low pose");
-            } else if (this.isActuallySneaking() && !this.capabilities.isFlying && (this.onGround || !this.isInWater()) && !this.isOnLadder()) {
-                MovementDiagnostics.debug(this.getPlayer(), "crouching selected");
+            } else if (forcedLow) {
+                pose = Pose.SWIMMING;
+                if (this.worldObj.isRemote) this.yOffset = 0.28F;
+            } else if (this.isActuallySneaking() && (this.onGround || !this.isInWater())) {
                 pose = Pose.CROUCHING;
                 if (this.worldObj.isRemote) this.yOffset = 1.62F;
-            } else if (this.isPoseClear(Pose.STANDING)) {
+            } else if (this.combativesPoseCooldownTicks == 0 && this.combativesStandingClearTicks >= 3) {
                 if (!this.worldObj.isRemote) {
                     this.removePotionEffect(Potion.moveSlowdown.id);
                     this.removePotionEffect(Potion.digSlowdown.id);
                 }
-                MovementDiagnostics.debug(this.getPlayer(), "standing selected");
                 pose = Pose.STANDING;
                 if (this.worldObj.isRemote) this.yOffset = 1.62F;
             }
-            if (!this.noClip && !this.isRiding() && this.isResizingAllowed() && !this.isPoseClear(pose)) {
-                MovementDiagnostics.debug(this.getPlayer(), "pose blocked by collision: " + pose);
+
+            if (!this.isSwimming() && pose == Pose.SWIMMING && this.isSprinting()) {
+                this.setSprinting(false);
+            }
+            if (this.isResizingAllowed() && !this.isPoseClear(pose)) {
                 pose = this.isPoseClear(Pose.CROUCHING) ? Pose.CROUCHING : Pose.SWIMMING;
             }
+        } else if (current == Pose.SWIMMING || current == Pose.CROUCHING) {
+            this.combativesStandingClearTicks = 0;
         }
-        if (pose != this.getPose()) {
-            if (pose == Pose.SWIMMING) MovementDiagnostics.debug(this.getPlayer(), this.isSwimming() ? "swimming selected" : "crawl selected");
-            if (this.getPose() == Pose.SWIMMING && pose != Pose.SWIMMING) MovementDiagnostics.debug(this.getPlayer(), this.lastLoggedSwimming ? "leaving swim" : "leaving crawl");
+
+        boolean poseChanged = pose != current;
+        if (poseChanged) {
+            this.combativesPoseCooldownTicks = 2;
+            MovementDiagnostics.debug(this.getPlayer(), "pose changed " + (this.worldObj.isRemote ? "client" : "server") + ": " + current + " -> " + pose);
         }
-        boolean poseChanged = pose != this.getPose();
-        this.lastLoggedSwimming = this.isSwimming();
         this.setPose(pose);
         if (poseChanged) {
-            MovementDiagnostics.debug(this.getPlayer(), "pose synced " + (this.worldObj.isRemote ? "client" : "server") + ": " + pose);
+            this.recalculateEyeHeight();
             if (this.worldObj.isRemote && NetworkHandler.channel != null) {
                 NetworkHandler.channel.sendToServer(new PacketPlayerPoseC2S(pose, this.isSwimming(), this.isCrawlKeyDown()));
             } else if (!this.worldObj.isRemote && this.getPlayer() instanceof EntityPlayerMP) {
                 PoseSync.broadcastAuthoritativePose((EntityPlayerMP) this.getPlayer(), true);
             }
         }
-        this.lastLoggedPose = pose;
         this.recalculateSize();
     }
 
@@ -346,6 +365,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         if (this.capabilities.isFlying && !this.isRiding()) this.jumpMovementFactor = this.capabilities.getFlySpeed() * (this.isSprinting() ? 2.0F : 1.0F);
         if (!this.capabilities.isFlying && this.isInWater()) {
             float drag = this.isSprinting() ? 0.9F : 0.8F;
+            if (this.isActuallySneaking() && !this.isSwimming()) this.motionY -= 0.04D;
             this.moveFlying(strafe, forward, 0.02F);
             this.moveEntity(this.motionX, this.motionY, this.motionZ);
             if (this.isCollidedHorizontally && this.isOnLadder()) this.motionY = 0.2D;
@@ -353,6 +373,12 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
             this.motionY *= 0.8D;
             this.motionZ *= drag;
             if (!this.isSprinting()) this.motionY -= 0.005D;
+            this.updateCombativesLimbSwing();
+        } else if (this.getPose() == Pose.SWIMMING && !this.isSwimming() && !this.capabilities.isFlying) {
+            this.moveFlying(strafe, forward, this.onGround ? 0.018F : 0.01F);
+            super.moveEntity(this.motionX, this.motionY, this.motionZ);
+            this.motionX *= this.onGround ? 0.62D : 0.82D;
+            this.motionZ *= this.onGround ? 0.62D : 0.82D;
             this.updateCombativesLimbSwing();
         } else {
             super.moveEntityWithHeading(strafe, forward);

@@ -3,10 +3,11 @@ package com.glowingfederal.combatives.network;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.PlayerEvent;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraftforge.event.entity.player.PlayerEvent.StartTracking;
 
 public class PoseSyncEvents {
     @SubscribeEvent
-    public void onStartTracking(PlayerEvent.StartTracking event) {
+    public void onStartTracking(StartTracking event) {
         if (event.entityPlayer instanceof EntityPlayerMP) {
             PoseSync.sendAuthoritativePose((EntityPlayerMP) event.entityPlayer, event.target);
         }

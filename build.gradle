@@ -69,12 +69,11 @@ ext.writeBuildNumberPreservingFormat = { int nextBuildNumber ->
 readVersionState()
 
 def productionTaskNames = [
-    'build',
-    'jar',
-    'assemble',
-    'reobf',
-    'reobfJar',
-    'uploadArchives'
+        'build',
+        'assemble',
+        'reobf',
+        'reobfJar',
+        'uploadArchives'
 ] as Set
 
 def shouldIncrementBuildNumber = { graph ->
@@ -117,12 +116,16 @@ minecraft {
     runDir = "run"
 }
 
+
 gradle.projectsEvaluated {
     tasks.withType(JavaExec) { task ->
         if (task.name == "runClient" || task.name == "runServer") {
             args "--tweakClass", "org.spongepowered.asm.launch.MixinTweaker"
             jvmArgs "-Dfml.coreMods.load=io.github.legacymoddingmc.unimixins.all.AllCore"
             jvmArgs "-Dmixin.env.disableRefMap=true"
+
+            // Dev classpath mod loading
+            jvmArgs "-Dfml.coreMods.load=io.github.legacymoddingmc.unimixins.all.AllCore"
         }
     }
 }
@@ -146,14 +149,14 @@ dependencies {
 // }
 
 processResources {
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+        expand version: project.version
+    }
+
     from(sourceSets.main.resources.srcDirs) {
         exclude 'mcmod.info'
     }
-    from(sourceSets.main.resources.srcDirs) {
-        include 'mcmod.info'
-    }
-    rename '(.+)_at.cfg', 'META-INF/$1_at.cfg'
 }
 
 jar {

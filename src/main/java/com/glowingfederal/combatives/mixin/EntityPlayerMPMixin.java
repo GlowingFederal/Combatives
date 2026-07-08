@@ -4,6 +4,7 @@ import com.glowingfederal.combatives.entity.EntitySize;
 import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
+import com.glowingfederal.combatives.network.PoseSync;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -24,6 +25,7 @@ public abstract class EntityPlayerMPMixin extends EntityPlayer {
     private void combatives$setDyingPose(DamageSource cause, CallbackInfo ci) {
         ((ICombativesPlayerPose) this).setPose(Pose.DYING);
         MovementDiagnostics.debug(this, "server accepted pose DYING after death");
+        PoseSync.broadcastAuthoritativePose((EntityPlayerMP) (Object) this, true);
     }
 
     @Override
@@ -40,7 +42,9 @@ public abstract class EntityPlayerMPMixin extends EntityPlayer {
     private void combatives$syncServerSize(CallbackInfo ci) {
         ICombativesPlayerPose pose = (ICombativesPlayerPose) this;
         EntitySize size = pose.getSize(pose.getPose());
-        this.setSize(size.width, size.height);
-        MovementDiagnostics.debug(this, "server enforced size for " + pose.getPose() + " size=" + size.width + "x" + size.height);
+        if (this.width != size.width || this.height != size.height) {
+            this.setSize(size.width, size.height);
+            MovementDiagnostics.debug(this, "server enforced size for " + pose.getPose() + " size=" + size.width + "x" + size.height);
+        }
     }
 }

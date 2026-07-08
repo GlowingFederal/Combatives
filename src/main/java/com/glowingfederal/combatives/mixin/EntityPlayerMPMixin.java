@@ -30,12 +30,14 @@ public abstract class EntityPlayerMPMixin extends EntityPlayer {
 
     @Override
     public float getDefaultEyeHeight() {
-        return ((ICombativesPlayerPose) this).getPose() == Pose.SWIMMING ? 0.4F : 1.62F;
+        ICombativesPlayerPose pose = (ICombativesPlayerPose) this;
+        Pose currentPose = pose.getPose();
+        return pose.getStandingEyeHeight(currentPose, pose.getSize(currentPose));
     }
 
     @Override
     public float getEyeHeight() {
-        return ((ICombativesPlayerPose) this).getPose() == Pose.SWIMMING ? 0.4F : super.getEyeHeight();
+        return this.getDefaultEyeHeight();
     }
 
     @Inject(method = "onUpdate", at = @At("TAIL"))

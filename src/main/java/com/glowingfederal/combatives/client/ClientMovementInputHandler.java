@@ -33,7 +33,11 @@ public class ClientMovementInputHandler {
             pose.setCrawlKeyDown(!pose.isCrawlKeyDown());
             MovementDiagnostics.debug(player, "client predicted crawl toggle: " + pose.isCrawlKeyDown());
         }
-        MovementDiagnostics.debug(player, "crawl toggle request sent");
+        MovementDiagnostics.debug(player, "client sending crawl packet");
+        if (NetworkHandler.channel == null) {
+            MovementDiagnostics.debug(player, "client crawl packet send skipped because network channel is not initialized");
+            return;
+        }
         NetworkHandler.channel.sendToServer(new PacketCrawlKeyState(true));
     }
 }

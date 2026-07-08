@@ -1,5 +1,11 @@
 # Changelog
 
+## Fix Combatives crawl/swimming networking
+
+- Moved Combatives SimpleNetworkWrapper creation and packet registration into common preInit so both dedicated/integrated servers initialize the channel before client-only setup.
+- Replaced incremental packet discriminator assignment with explicit stable discriminator constants, keeping the crawl key packet registered uniquely on SERVER.
+- Added crawl packet debug diagnostics for channel setup, client sends, server receipt, player resolution, and server pose state before/after handling.
+
 ## Fix momentum hook crawl and water ownership
 
 - Restricted the generic `moveFlying` momentum hook to normal walking, sprinting, sneaking, and airborne movement so custom crawl, swim, water, noClip, riding, sleeping, death, ladder, and creative-flying paths bypass it.

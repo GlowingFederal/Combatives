@@ -1,5 +1,11 @@
 # Changelog
 
+## Fix momentum hook crawl and water ownership
+
+- Restricted the generic `moveFlying` momentum hook to normal walking, sprinting, sneaking, and airborne movement so custom crawl, swim, water, noClip, riding, sleeping, death, ladder, and creative-flying paths bypass it.
+- Moved crawl shaping into a dedicated crawl movement branch and kept swim/water shaping inside the existing custom swim/water branch to prevent double-processing.
+- Preserved dedicated crawl/swim `MovementSnapshot` emission without changing existing vertical swim behavior, water drag, collision, limb swing, or pose ownership.
+
 ## Add lightweight momentum controller
 
 - Added a horizontal `MovementController` that shapes player `motionX`/`motionZ` toward vanilla movement intent while leaving collision, gravity, jumping, step handling, and `moveEntity` authority intact.

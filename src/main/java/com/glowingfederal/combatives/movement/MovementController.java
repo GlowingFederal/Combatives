@@ -10,8 +10,20 @@ public final class MovementController {
     }
 
     public static boolean shouldBypass(EntityPlayer player) {
+        return shouldBypassUnsafe(player) || player.isInWater() || isCustomCrawlOrSwim(player);
+    }
+
+    public static boolean shouldBypassUnsafe(EntityPlayer player) {
         return player == null || player.noClip || player.isRiding() || player.isPlayerSleeping() || player.getHealth() <= 0.0F
             || player.isOnLadder() || player.capabilities.isFlying;
+    }
+
+    public static boolean isCustomCrawlOrSwim(EntityPlayer player) {
+        if (!(player instanceof ICombativesPlayerPose)) {
+            return false;
+        }
+        ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
+        return pose.isSwimming() || pose.getPose() == Pose.SWIMMING;
     }
 
     public static MovementResult shape(EntityPlayer player, float strafe, float forward, float yaw, double currentX, double currentZ, double vanillaTargetX, double vanillaTargetZ) {

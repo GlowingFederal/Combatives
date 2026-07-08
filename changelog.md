@@ -1,5 +1,11 @@
 # Changelog
 
+## Fix Combatives pose-state interface injection on the server
+
+- Added a Combatives `IFMLLoadingPlugin`/`IEarlyMixinLoader` so common player pose mixins are queued by GTNHMixins on both physical client and dedicated server.
+- Split common pose/player state mixins from client-only rendering, camera, and input mixins so server `EntityPlayerMP` receives the Combatives pose-state interface without loading client mixins.
+- Added startup and login/runtime diagnostics for common mixin config loading and player pose-state interface availability.
+
 ## Fix Combatives crawl/swimming networking
 
 - Moved Combatives SimpleNetworkWrapper creation and packet registration into common preInit so both dedicated/integrated servers initialize the channel before client-only setup.

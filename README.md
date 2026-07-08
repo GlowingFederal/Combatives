@@ -14,8 +14,8 @@ The port is intentionally scoped to player pose, collision bounds, eye-height st
 - Mod ID: `combatives`
 - Root package: `com.glowingfederal.combatives`
 - Forge target: `1.7.10-10.13.4.1614`
-- UniMixins-compatible mixin config: `mixins.combatives.json`
-- Common/client proxy structure
+- UniMixins-compatible common/client mixin configs: `mixins.combatives.common.json` and `mixins.combatives.client.json`
+- Common/client proxy structure plus a Combatives early mixin loader for common player pose-state injection
 - Always-on modern swimming and crawling behavior, refactored from the Aqua Acrobatics Legacy reference source
 - Dedicated crawl keybind (`C` by default) with common-preInit Combatives networking for authoritative server-side crawl state
 - Explicit multiplayer pose synchronization from the owning client to the server and from the server to tracking clients, including join/respawn/dimension/tracking lifecycle resends
@@ -34,4 +34,4 @@ Angelica compatibility must remain optional. Angelica is not a hard runtime depe
 
 ## Development notes
 
-See `docs/aqua-port-map.md` for the inspected Aqua source map and port/skipped-class rationale. Do not compile anything inside the reference folder. Do not compile or add generated binary files to commits or pull requests. Do not port unrelated Aqua Acrobatics systems unless they are required for Combatives swimming/crawling behavior to function.
+See `docs/aqua-port-map.md` for the inspected Aqua source map and port/skipped-class rationale. Do not compile anything inside the reference folder. Do not compile or add generated binary files to commits or pull requests. Common player pose mixins are loaded through `com.glowingfederal.combatives.loading.CombativesCorePlugin`; client rendering/camera/input mixins remain isolated in `mixins.combatives.client.json`. Do not port unrelated Aqua Acrobatics systems unless they are required for Combatives swimming/crawling behavior to function.

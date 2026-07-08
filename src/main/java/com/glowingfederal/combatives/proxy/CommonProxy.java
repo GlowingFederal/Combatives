@@ -8,10 +8,10 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 
 public class CommonProxy {
     public void preInit(FMLPreInitializationEvent event) {
+        NetworkHandler.register();
     }
 
     public void init(FMLInitializationEvent event) {
-        NetworkHandler.register();
         FMLCommonHandler.instance().bus().register(new PoseSyncEvents());
     }
 }

@@ -17,7 +17,7 @@ The port is intentionally scoped to player pose, collision bounds, eye-height st
 - UniMixins-compatible mixin config: `mixins.combatives.json`
 - Common/client proxy structure
 - Always-on modern swimming and crawling behavior, refactored from the Aqua Acrobatics Legacy reference source
-- Dedicated crawl keybind (`C` by default) with Combatives networking for authoritative server-side crawl state
+- Dedicated crawl keybind (`C` by default) with common-preInit Combatives networking for authoritative server-side crawl state
 - Explicit multiplayer pose synchronization from the owning client to the server and from the server to tracking clients, including join/respawn/dimension/tracking lifecycle resends
 - Lightweight horizontal momentum controller that shapes `motionX`/`motionZ` from input intent toward vanilla velocity targets while keeping collision, gravity, jumping, step handling, and `moveEntity` authoritative; normal movement is shaped through the vanilla `moveFlying` hook, while crawl and swim/water movement are shaped only in their dedicated Combatives branches
 - Client/server movement snapshots for future camera work, exposing velocity, acceleration, normalized speed, wish direction, grounded/sprint/sneak/crawl/swim/underwater/airborne flags, landing impact, and turn values

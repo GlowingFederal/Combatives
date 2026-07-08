@@ -6,7 +6,10 @@ import java.util.Map;
 import com.glowingfederal.combatives.entity.EntitySize;
 import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
+import com.glowingfederal.combatives.movement.ICombativesMovementState;
+import com.glowingfederal.combatives.movement.MovementController;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
+import com.glowingfederal.combatives.movement.MovementSnapshot;
 import com.glowingfederal.combatives.network.NetworkHandler;
 import com.glowingfederal.combatives.network.PoseSync;
 import com.glowingfederal.combatives.network.message.PacketPlayerPoseC2S;
@@ -33,7 +36,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(EntityPlayer.class)
-public abstract class EntityPlayerMixin extends EntityLivingBase implements ICombativesPlayerPose {
+public abstract class EntityPlayerMixin extends EntityLivingBase implements ICombativesPlayerPose, ICombativesMovementState {
     private static final int POSE_WATCHER_ID = 28;
     private static final EntitySize STANDING_SIZE = EntitySize.flexible(0.6F, 1.8F);
     private static final Map<Pose, EntitySize> SIZE_BY_POSE = new EnumMap<Pose, EntitySize>(Pose.class);
@@ -67,6 +70,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     private boolean crawlKeyDown;
     private Pose combativesPose = Pose.STANDING;
     private boolean combativesPoseWatcherReady;
+    private MovementSnapshot combativesMovementSnapshot = MovementSnapshot.EMPTY;
 
     public EntityPlayerMixin(World world) {
         super(world);
@@ -79,6 +83,17 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         this.combativesPose = Pose.STANDING;
         this.getDataWatcher().addObject(POSE_WATCHER_ID, Pose.STANDING.ordinal());
         this.combativesPoseWatcherReady = true;
+    }
+
+
+    @Override
+    public MovementSnapshot getCombativesMovementSnapshot() {
+        return this.combativesMovementSnapshot == null ? MovementSnapshot.EMPTY : this.combativesMovementSnapshot;
+    }
+
+    @Override
+    public void setCombativesMovementSnapshot(MovementSnapshot snapshot) {
+        this.combativesMovementSnapshot = snapshot == null ? MovementSnapshot.EMPTY : snapshot;
     }
 
     @Override
@@ -335,7 +350,9 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     @Inject(method = "moveEntityWithHeading", at = @At("HEAD"), cancellable = true)
     private void combatives$moveEntityWithHeading(float strafe, float forward, CallbackInfo ci) {
         double startX = this.posX, startY = this.posY, startZ = this.posZ;
-        if (this.isSwimming() && !this.isRiding()) {
+        boolean customSwimming = this.isSwimming() && !this.isRiding();
+        boolean customCrawling = this.getPose() == Pose.SWIMMING && !this.isSwimming() && !this.isInWater();
+        if (customSwimming) {
             double lookY = this.getLookVec().yCoord;
             double factor = lookY < -0.2D ? 0.085D : 0.06D;
             Block block = this.worldObj.getBlock((int)this.posX, (int)(this.posY + 0.9D), (int)this.posZ);
@@ -344,9 +361,19 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         double savedMotionY = this.motionY;
         float savedJumpMovement = this.jumpMovementFactor;
         if (this.capabilities.isFlying && !this.isRiding()) this.jumpMovementFactor = this.capabilities.getFlySpeed() * (this.isSprinting() ? 2.0F : 1.0F);
-        if (!this.capabilities.isFlying && this.isInWater()) {
+        if (customCrawling && !MovementController.shouldBypassUnsafe(this.getPlayer())) {
+            this.combatives$moveCrawlingWithHeading(strafe, forward);
+        } else if (!this.capabilities.isFlying && this.isInWater()) {
             float drag = this.isSprinting() ? 0.9F : 0.8F;
+            double currentX = this.motionX;
+            double currentZ = this.motionZ;
             this.moveFlying(strafe, forward, 0.02F);
+            if (!MovementController.shouldBypassUnsafe(this.getPlayer())) {
+                MovementController.MovementResult result = MovementController.shape(this.getPlayer(), strafe, forward, this.rotationYaw, currentX, currentZ, this.motionX, this.motionZ);
+                this.motionX = result.motionX;
+                this.motionZ = result.motionZ;
+                this.setCombativesMovementSnapshot(result.snapshot);
+            }
             this.moveEntity(this.motionX, this.motionY, this.motionZ);
             if (this.isCollidedHorizontally && this.isOnLadder()) this.motionY = 0.2D;
             this.motionX *= drag;
@@ -364,6 +391,34 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         }
         this.addMovementStat(this.posX - startX, this.posY - startY, this.posZ - startZ);
         ci.cancel();
+    }
+
+
+    private void combatives$moveCrawlingWithHeading(float strafe, float forward) {
+        float friction = 0.91F;
+        if (this.onGround) {
+            friction = this.worldObj.getBlock(MathHelper.floor_double(this.posX), MathHelper.floor_double(this.boundingBox.minY) - 1, MathHelper.floor_double(this.posZ)).slipperiness * 0.91F;
+        }
+        float groundAcceleration = 0.16277136F / (friction * friction * friction);
+        float moveFactor = this.onGround ? this.getAIMoveSpeed() * groundAcceleration : this.jumpMovementFactor;
+        double currentX = this.motionX;
+        double currentZ = this.motionZ;
+        this.moveFlying(strafe, forward, moveFactor);
+        MovementController.MovementResult result = MovementController.shape(this.getPlayer(), strafe, forward, this.rotationYaw, currentX, currentZ, this.motionX, this.motionZ);
+        this.motionX = result.motionX;
+        this.motionZ = result.motionZ;
+        this.setCombativesMovementSnapshot(result.snapshot);
+
+        friction = 0.91F;
+        if (this.onGround) {
+            friction = this.worldObj.getBlock(MathHelper.floor_double(this.posX), MathHelper.floor_double(this.boundingBox.minY) - 1, MathHelper.floor_double(this.posZ)).slipperiness * 0.91F;
+        }
+        this.moveEntity(this.motionX, this.motionY, this.motionZ);
+        this.motionY -= 0.08D;
+        this.motionY *= 0.9800000190734863D;
+        this.motionX *= friction;
+        this.motionZ *= friction;
+        this.updateCombativesLimbSwing();
     }
 
     private void updateCombativesLimbSwing() {

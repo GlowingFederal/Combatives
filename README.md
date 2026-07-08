@@ -19,6 +19,8 @@ The port is intentionally scoped to player pose, collision bounds, eye-height st
 - Always-on modern swimming and crawling behavior, refactored from the Aqua Acrobatics Legacy reference source
 - Dedicated crawl keybind (`C` by default) with Combatives networking for authoritative server-side crawl state
 - Explicit multiplayer pose synchronization from the owning client to the server and from the server to tracking clients, including join/respawn/dimension/tracking lifecycle resends
+- Lightweight horizontal momentum controller that shapes `motionX`/`motionZ` from input intent toward vanilla velocity targets while keeping collision, gravity, jumping, step handling, and `moveEntity` authoritative; normal movement is shaped through the vanilla `moveFlying` hook, while crawl and swim/water movement are shaped only in their dedicated Combatives branches
+- Client/server movement snapshots for future camera work, exposing velocity, acceleration, normalized speed, wish direction, grounded/sprint/sneak/crawl/swim/underwater/airborne flags, landing impact, and turn values
 - Initial config options:
   - `enableAngelicaCompat = true`
   - `debugMovement = false`
@@ -26,7 +28,7 @@ The port is intentionally scoped to player pose, collision bounds, eye-height st
 
 ## Future work
 
-Future work will include Battlefield-inspired movement inertia, procedural camera motion, recoil, landing effects, and optional Angelica compatibility.
+Future work will include procedural camera motion consuming the movement snapshot data, recoil, landing effects, and optional Angelica compatibility.
 
 Angelica compatibility must remain optional. Angelica is not a hard runtime dependency.
 

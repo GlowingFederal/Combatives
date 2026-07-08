@@ -1,8 +1,8 @@
 package com.glowingfederal.combatives.movement;
 
 public enum MovementProfile {
-    STANDING(1.0D, 0.045D, 0.060D, 0.070D, 0.985D, 1.0D),
-    SPRINTING(1.0D, 0.036D, 0.055D, 0.065D, 0.990D, 1.0D),
+    STANDING(1.0D, 0.090D, 0.120D, 0.140D, 0.955D, 1.0D),
+    SPRINTING(1.0D, 0.075D, 0.105D, 0.125D, 0.965D, 1.0D),
     SNEAKING(1.0D, 0.060D, 0.075D, 0.080D, 0.975D, 1.0D),
     CRAWLING(0.95D, 0.024D, 0.038D, 0.050D, 0.965D, 1.0D),
     SWIMMING(1.0D, 0.026D, 0.032D, 0.045D, 0.940D, 1.0D),

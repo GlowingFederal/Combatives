@@ -85,7 +85,7 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
         if (entity instanceof ICombativesPlayerPose) {
             this.combatives$swimAnimation = ((ICombativesPlayerPose) entity).getSwimAnimation(partialTicks);
             if (entity instanceof EntityPlayer && this.combatives$swimAnimation > 0.0F) {
-                MovementDiagnostics.debug((EntityPlayer) entity, "model swim/crawl animation applied: " + this.combatives$swimAnimation);
+                MovementDiagnostics.debug((EntityPlayer) entity, "model animation pose used=" + ((ICombativesPlayerPose) entity).getPose() + " swimAmount=" + this.combatives$swimAnimation);
             }
         }
         super.setLivingAnimations(entity, limbSwing, limbSwingAmount, partialTicks);

@@ -1,5 +1,6 @@
 package com.glowingfederal.combatives.network.message;
 
+import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.network.PoseSync;
@@ -10,52 +11,47 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayerMP;
 
 public class PacketCrawlKeyState implements IMessage {
-    private boolean pressed;
-
     public PacketCrawlKeyState() {
     }
 
-    public PacketCrawlKeyState(boolean pressed) {
-        this.pressed = pressed;
+    /**
+     * Compatibility constructor for older call sites; packet semantics are always "toggle requested".
+     */
+    public PacketCrawlKeyState(boolean ignored) {
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        this.pressed = buf.readBoolean();
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
-        buf.writeBoolean(this.pressed);
     }
 
     public static class Handler implements IMessageHandler<PacketCrawlKeyState, IMessage> {
         @Override
         public IMessage onMessage(PacketCrawlKeyState message, MessageContext ctx) {
-            MovementDiagnostics.debug("server received crawl packet pressed=" + message.pressed);
+            MovementDiagnostics.debug("server received crawl toggle request");
             EntityPlayerMP player = ctx.getServerHandler().playerEntity;
             if (player == null) {
-                MovementDiagnostics.debug("server could not resolve player for crawl packet");
+                MovementDiagnostics.debug("server could not resolve player for crawl toggle request");
                 return null;
             }
 
-            MovementDiagnostics.debug(player, "server player resolved for crawl packet");
+            MovementDiagnostics.debug(player, "server player resolved for crawl toggle request");
             if (player instanceof ICombativesPlayerPose) {
-                MovementDiagnostics.debug(player, "server player exposes combatives pose state");
                 ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
-                MovementDiagnostics.debug(player, "crawl before=" + pose.isCrawlKeyDown());
-                MovementDiagnostics.debug(player, "server pose before crawl packet: pose=" + pose.getPose() + " swimming=" + pose.isSwimming() + " crawl=" + pose.isCrawlKeyDown());
-                MovementDiagnostics.debug(player, "crawl request received: " + (message.pressed ? "toggle" : "release ignored"));
-                if (message.pressed) {
-                    boolean next = !pose.isCrawlKeyDown();
-                    pose.setCrawlKeyDown(next);
-                    MovementDiagnostics.debug(player, next ? "server accepted pose crawl toggle on" : "server accepted pose crawl toggle off");
-                    pose.recalculateSize();
-                    PoseSync.broadcastAuthoritativePose(player, true);
+                boolean before = pose.isCrawlKeyDown();
+                boolean next = !before;
+                MovementDiagnostics.debug(player, "server crawl " + before + " -> " + next);
+                pose.setCrawlKeyDown(next);
+                if (next && pose.isPoseClear(Pose.SWIMMING)) {
+                    pose.setPose(Pose.SWIMMING);
+                    MovementDiagnostics.debug(player, "crawl toggle selected SWIMMING pose immediately");
                 }
-                MovementDiagnostics.debug(player, "crawl after=" + pose.isCrawlKeyDown());
-                MovementDiagnostics.debug(player, "pose/datawatcher updated");
-                MovementDiagnostics.debug(player, "server pose after crawl packet: pose=" + pose.getPose() + " swimming=" + pose.isSwimming() + " crawl=" + pose.isCrawlKeyDown());
+                pose.recalculateSize();
+                PoseSync.broadcastAuthoritativePose(player, true);
+                MovementDiagnostics.debug(player, "server pose after crawl toggle: pose=" + pose.getPose() + " swimming=" + pose.isSwimming() + " crawl=" + pose.isCrawlKeyDown());
             } else {
                 MovementDiagnostics.debug(player, "server player does not expose combatives pose state");
             }

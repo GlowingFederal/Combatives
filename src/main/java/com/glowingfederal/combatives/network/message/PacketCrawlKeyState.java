@@ -2,6 +2,7 @@ package com.glowingfederal.combatives.network.message;
 
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
+import com.glowingfederal.combatives.network.PoseSync;
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
 import cpw.mods.fml.common.network.simpleimpl.MessageContext;
@@ -39,6 +40,8 @@ public class PacketCrawlKeyState implements IMessage {
                     boolean next = !pose.isCrawlKeyDown();
                     pose.setCrawlKeyDown(next);
                     MovementDiagnostics.debug(player, next ? "server accepted pose crawl toggle on" : "server accepted pose crawl toggle off");
+                    pose.recalculateSize();
+                    PoseSync.broadcastAuthoritativePose(player, true);
                 }
             }
             return null;

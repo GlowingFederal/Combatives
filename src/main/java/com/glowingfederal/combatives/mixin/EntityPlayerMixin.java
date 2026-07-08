@@ -7,6 +7,10 @@ import com.glowingfederal.combatives.entity.EntitySize;
 import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
+import com.glowingfederal.combatives.network.NetworkHandler;
+import com.glowingfederal.combatives.network.PoseSync;
+import com.glowingfederal.combatives.network.message.PacketPlayerPoseC2S;
+import net.minecraft.entity.player.EntityPlayerMP;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
@@ -136,10 +140,13 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         EntitySize oldSize = this.combativesSize == null ? STANDING_SIZE : this.combativesSize;
         EntitySize newSize = this.getSize(this.getPose());
         if (this.isResizingAllowed()) {
+            boolean changed = oldSize.width != newSize.width || oldSize.height != newSize.height || this.width != newSize.width || this.height != newSize.height;
             this.recalculateSize(oldSize, newSize);
             this.width = newSize.width;
             this.height = newSize.height;
-            MovementDiagnostics.debug(this.getPlayer(), "bounding box recalculated for " + this.getPose() + " size=" + newSize.width + "x" + newSize.height);
+            if (changed) {
+                MovementDiagnostics.debug(this.getPlayer(), "bounding box recalculated for " + this.getPose() + " size=" + newSize.width + "x" + newSize.height);
+            }
         }
         this.combativesSize = newSize;
     }
@@ -307,7 +314,14 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         boolean poseChanged = pose != this.getPose();
         this.lastLoggedSwimming = this.isSwimming();
         this.setPose(pose);
-        if (poseChanged) MovementDiagnostics.debug(this.getPlayer(), "pose synced " + (this.worldObj.isRemote ? "client" : "server") + ": " + pose);
+        if (poseChanged) {
+            MovementDiagnostics.debug(this.getPlayer(), "pose synced " + (this.worldObj.isRemote ? "client" : "server") + ": " + pose);
+            if (this.worldObj.isRemote && NetworkHandler.channel != null) {
+                NetworkHandler.channel.sendToServer(new PacketPlayerPoseC2S(pose, this.isSwimming(), this.isCrawlKeyDown()));
+            } else if (!this.worldObj.isRemote && this.getPlayer() instanceof EntityPlayerMP) {
+                PoseSync.broadcastAuthoritativePose((EntityPlayerMP) this.getPlayer(), true);
+            }
+        }
         this.lastLoggedPose = pose;
         this.recalculateSize();
     }

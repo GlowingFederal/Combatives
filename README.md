@@ -18,6 +18,7 @@ The port is intentionally scoped to player pose, collision bounds, eye-height st
 - Common/client proxy structure
 - Always-on modern swimming and crawling behavior, refactored from the Aqua Acrobatics Legacy reference source
 - Dedicated crawl keybind (`C` by default) with Combatives networking for authoritative server-side crawl state
+- Explicit multiplayer pose synchronization from the owning client to the server and from the server to tracking clients, including join/respawn/dimension/tracking lifecycle resends
 - Initial config options:
   - `enableAngelicaCompat = true`
   - `debugMovement = false`

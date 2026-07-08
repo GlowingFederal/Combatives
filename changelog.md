@@ -1,5 +1,11 @@
 # Changelog
 
+## Fix multiplayer authoritative pose sync
+
+- Added explicit client-to-server and server-to-client pose packets carrying pose, swimming, and crawl/forced-down state so tracking clients receive authoritative crawl/swim updates without waiting for collision correction.
+- Added server lifecycle sync for join, respawn, dimension change, and start-tracking events, plus immediate rebroadcasts when crawl or pose state changes.
+- Gated repeated size enforcement and bounding-box diagnostics so unchanged pose sizes do not spam movement logs every tick.
+
 ## Fix mixin shadows and construction-safe pose state
 
 - Removed invalid inherited-method shadows from `EntityPlayerSPMixin` and call sprint/water/item/riding methods through the concrete client player instance instead.

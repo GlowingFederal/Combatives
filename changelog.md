@@ -1,5 +1,18 @@
 # Changelog
 
+## Restore sticky crawl/swim pose priority
+
+- Reworked player pose priority so active valid swim or crawl state selects and holds the shared SWIMMING pose before sneak, standing, or clearance fallback logic can run.
+- Prevented client pose prediction packets from applying STANDING/CROUCHING over an active server-side crawl/swim state, and made accepted crawl toggles select SWIMMING immediately before authoritative broadcast.
+- Reduced noisy render diagnostics and kept targeted logs for SWIMMING selection or cancellation, including crawl/swim flags and exit validity.
+- Increased standing and sprinting movement responsiveness again so normal walking feels closer to vanilla while leaving crawl/swim profiles unchanged.
+
+## Fix visual crawl/swim pose application
+
+- Routed first-person camera eye-height interpolation through the Combatives pose eye height so SWIMMING/crawl renders with a low camera instead of vanilla standing height.
+- Preserved the shared SWIMMING pose for swimming and crawling while applying low third-person/remote-player y-offset and keeping model/render pose hooks on Combatives pose state.
+- Marked client authoritative pose applications as render-dirty after DataWatcher pose updates and tuned standing/sprinting movement profiles closer to vanilla with only subtle inertia.
+
 ## Fix Combatives pose-state interface injection on the server
 
 - Added a Combatives `IFMLLoadingPlugin`/`IEarlyMixinLoader` so common player pose mixins are queued by GTNHMixins on both physical client and dedicated server.

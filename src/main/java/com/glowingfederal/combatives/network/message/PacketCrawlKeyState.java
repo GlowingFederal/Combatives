@@ -1,5 +1,6 @@
 package com.glowingfederal.combatives.network.message;
 
+import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.network.PoseSync;
@@ -50,6 +51,10 @@ public class PacketCrawlKeyState implements IMessage {
                     boolean next = !pose.isCrawlKeyDown();
                     pose.setCrawlKeyDown(next);
                     MovementDiagnostics.debug(player, next ? "server accepted pose crawl toggle on" : "server accepted pose crawl toggle off");
+                    if (next && pose.isPoseClear(Pose.SWIMMING)) {
+                        pose.setPose(Pose.SWIMMING);
+                        MovementDiagnostics.debug(player, "crawl packet selected SWIMMING pose immediately");
+                    }
                     pose.recalculateSize();
                     PoseSync.broadcastAuthoritativePose(player, true);
                 }

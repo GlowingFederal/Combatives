@@ -10,9 +10,7 @@ import com.glowingfederal.combatives.movement.ICombativesMovementState;
 import com.glowingfederal.combatives.movement.MovementController;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.movement.MovementSnapshot;
-import com.glowingfederal.combatives.network.NetworkHandler;
 import com.glowingfederal.combatives.network.PoseSync;
-import com.glowingfederal.combatives.network.message.PacketPlayerPoseC2S;
 import net.minecraft.entity.player.EntityPlayerMP;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -298,62 +296,88 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     }
 
     private void updatePose() {
-        Pose current = this.getPose();
-        Pose pose = current;
+        if (this.getShouldBeDead()) {
+            this.combatives$selectPose(Pose.DYING);
+            return;
+        }
+
+        if (this.isPlayerSleeping()) {
+            this.combatives$selectPose(Pose.SLEEPING);
+            return;
+        }
+
+        if (this.isRiding() || this.capabilities.isFlying || this.isOnLadder()) {
+            if (this.isCrawlKeyDown()) {
+                this.setCrawlKeyDown(false);
+            }
+            this.combatives$selectPose(this.isPoseClear(Pose.STANDING) ? Pose.STANDING : this.getPose());
+            return;
+        }
+
+        if (!this.isPoseClear(Pose.SWIMMING)) {
+            return;
+        }
+
+        Pose pose = this.getPose();
         boolean swimActive = this.isSwimming();
         boolean crawlActive = this.isCrawlKeyDown();
-        boolean swimmingPoseClear = this.isPoseClear(Pose.SWIMMING);
-        boolean bypassLowPose = this.noClip || this.isRiding() || this.capabilities.isFlying || this.isOnLadder();
-        boolean validLowPose = !this.getShouldBeDead() && !this.isPlayerSleeping() && !bypassLowPose && swimmingPoseClear;
 
-        if (this.getShouldBeDead()) {
-            pose = Pose.DYING;
-        } else if (this.isPlayerSleeping()) {
-            pose = Pose.SLEEPING;
-        } else if ((swimActive || crawlActive) && validLowPose) {
+        if (swimActive || crawlActive) {
             pose = Pose.SWIMMING;
-            if (this.worldObj.isRemote) this.yOffset = 0.28F;
-            if (current != Pose.SWIMMING) {
-                MovementDiagnostics.debug(this.getPlayer(), (swimActive ? "swimming" : "crawl") + " selected SWIMMING pose; crawl=" + crawlActive + " swimming=" + swimActive + " clear=" + swimmingPoseClear);
+            if (this.worldObj.isRemote) {
+                this.yOffset = 0.28F;
+            }
+        } else if (this.isActuallySneaking() && !this.capabilities.isFlying && (this.onGround || !this.isInWater()) && !this.isOnLadder()) {
+            pose = Pose.CROUCHING;
+            if (this.worldObj.isRemote) {
+                this.yOffset = 1.62F;
+            }
+        } else if (this.isPoseClear(Pose.STANDING)) {
+            if (!this.worldObj.isRemote) {
+                this.removePotionEffect(Potion.moveSlowdown.id);
+                this.removePotionEffect(Potion.digSlowdown.id);
+            }
+            pose = Pose.STANDING;
+            if (this.worldObj.isRemote) {
+                this.yOffset = 1.62F;
+            }
+        }
+
+        Pose finalPose;
+        if (!this.noClip && !this.isRiding() && this.isResizingAllowed() && !this.isPoseClear(pose)) {
+            if (this.isPoseClear(Pose.CROUCHING)) {
+                finalPose = Pose.CROUCHING;
+            } else {
+                finalPose = Pose.SWIMMING;
             }
         } else {
-            if (current == Pose.SWIMMING && (swimActive || crawlActive)) {
-                MovementDiagnostics.debug(this.getPlayer(), "SWIMMING pose exit allowed: crawl=" + crawlActive + " swimming=" + swimActive + " clear=" + swimmingPoseClear + " bypass=" + bypassLowPose + " dead=" + this.getShouldBeDead() + " sleeping=" + this.isPlayerSleeping() + " caller=" + this.combatives$getPoseCaller());
-            }
-            if (!swimmingPoseClear) {
-                pose = this.isPoseClear(Pose.CROUCHING) ? Pose.CROUCHING : Pose.SWIMMING;
-                MovementDiagnostics.debug(this.getPlayer(), "pose blocked by collision; keeping low pose");
-            } else if (this.isActuallySneaking() && !this.capabilities.isFlying && (this.onGround || !this.isInWater()) && !this.isOnLadder()) {
-                pose = Pose.CROUCHING;
-                if (this.worldObj.isRemote) this.yOffset = 1.62F;
-            } else if (this.isPoseClear(Pose.STANDING)) {
-                if (!this.worldObj.isRemote) {
-                    this.removePotionEffect(Potion.moveSlowdown.id);
-                    this.removePotionEffect(Potion.digSlowdown.id);
-                }
-                pose = Pose.STANDING;
-                if (this.worldObj.isRemote) this.yOffset = 1.62F;
-            }
-            if (!this.noClip && !this.isRiding() && this.isResizingAllowed() && !this.isPoseClear(pose)) {
-                MovementDiagnostics.debug(this.getPlayer(), "pose blocked by collision: " + pose);
-                pose = this.isPoseClear(Pose.CROUCHING) ? Pose.CROUCHING : Pose.SWIMMING;
-            }
+            finalPose = pose;
         }
 
-        if (current == Pose.SWIMMING && pose != Pose.SWIMMING) {
-            MovementDiagnostics.debug(this.getPlayer(), "SWIMMING replaced with " + pose + "; crawl=" + crawlActive + " swimming=" + swimActive + " validExit=" + (!(swimActive || crawlActive) || !validLowPose) + " caller=" + this.combatives$getPoseCaller());
+        if ((swimActive || crawlActive) && finalPose != Pose.SWIMMING && this.isPoseClear(Pose.SWIMMING)) {
+            finalPose = Pose.SWIMMING;
         }
+
+        this.combatives$selectPose(finalPose);
+    }
+
+    private void combatives$selectPose(Pose pose) {
+        Pose current = this.getPose();
         boolean poseChanged = pose != current;
+        boolean swimActive = this.isSwimming();
+        if (current == Pose.SWIMMING && pose != Pose.SWIMMING && (swimActive || this.isCrawlKeyDown())) {
+            MovementDiagnostics.debug(this.getPlayer(), "blocked active low-pose downgrade to " + pose + "; crawl=" + this.isCrawlKeyDown() + " swimming=" + swimActive);
+            pose = Pose.SWIMMING;
+            poseChanged = pose != current;
+        }
         this.lastLoggedSwimming = swimActive;
         this.setPose(pose);
-        if (this.worldObj.isRemote && pose == Pose.SWIMMING) {
-            this.yOffset = 0.28F;
+        if (this.worldObj.isRemote) {
+            this.yOffset = pose == Pose.SWIMMING ? 0.28F : 1.62F;
         }
         if (poseChanged) {
-            MovementDiagnostics.debug(this.getPlayer(), "pose synced " + (this.worldObj.isRemote ? "client" : "server") + ": " + pose);
-            if (this.worldObj.isRemote && NetworkHandler.channel != null) {
-                NetworkHandler.channel.sendToServer(new PacketPlayerPoseC2S(pose, swimActive, crawlActive));
-            } else if (!this.worldObj.isRemote && this.getPlayer() instanceof EntityPlayerMP) {
+            MovementDiagnostics.debug(this.getPlayer(), "pose selected " + (this.worldObj.isRemote ? "client" : "server") + ": " + pose);
+            if (!this.worldObj.isRemote && this.getPlayer() instanceof EntityPlayerMP) {
                 PoseSync.broadcastAuthoritativePose((EntityPlayerMP) this.getPlayer(), true);
             }
         }

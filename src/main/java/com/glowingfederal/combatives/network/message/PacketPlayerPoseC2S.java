@@ -42,7 +42,6 @@ public class PacketPlayerPoseC2S implements IMessage {
         public IMessage onMessage(PacketPlayerPoseC2S message, MessageContext ctx) {
             EntityPlayerMP player = ctx.getServerHandler().playerEntity;
             PoseSync.applyAuthoritativePose(player, message.pose, message.swimming, message.crawlKeyDown, "client");
-            PoseSync.broadcastAuthoritativePose(player, true);
             return null;
         }
     }

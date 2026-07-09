@@ -25,10 +25,15 @@ public final class PoseSync {
         boolean clientPrediction = "client".equals(source) && !player.worldObj.isRemote;
         boolean effectiveCrawlKeyDown = clientPrediction ? oldCrawlKeyDown : crawlKeyDown;
         boolean activeLowPose = (oldSwimming || oldCrawlKeyDown) && state.isPoseClear(Pose.SWIMMING);
-        if (clientPrediction && pose != Pose.SWIMMING && activeLowPose) {
-            MovementDiagnostics.debug(player, "ignored client pose cancellation " + oldPose + " -> " + pose + "; preserving SWIMMING crawl=" + oldCrawlKeyDown + " swimming=" + oldSwimming);
-            pose = Pose.SWIMMING;
+        if (clientPrediction) {
+            if (pose != Pose.SWIMMING && activeLowPose) {
+                MovementDiagnostics.debug(player, "ignored client pose cancellation " + oldPose + " -> " + pose + "; preserving SWIMMING crawl=" + oldCrawlKeyDown + " swimming=" + oldSwimming);
+            } else {
+                MovementDiagnostics.debug(player, "ignored client pose prediction " + pose + "; server remains authoritative pose=" + oldPose + " crawl=" + oldCrawlKeyDown + " swimming=" + oldSwimming);
+            }
+            pose = activeLowPose ? Pose.SWIMMING : oldPose;
             swimming = oldSwimming;
+            effectiveCrawlKeyDown = oldCrawlKeyDown;
         }
         state.setCrawlKeyDown(effectiveCrawlKeyDown);
         state.setSwimming(swimming);

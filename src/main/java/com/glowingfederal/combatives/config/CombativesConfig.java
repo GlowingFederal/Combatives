@@ -14,6 +14,7 @@ public final class CombativesConfig {
     public static boolean enableProceduralBob = true;
     public static boolean enableMovementLean = true;
     public static boolean enableMovementFov = true;
+    public static boolean enableCameraRotations = true;
     public static boolean enableCameraShake = true;
     public static boolean enableAngelicaCameraCompat = true;
     public static boolean disableAngelicaViewBobbingCompat = true;
@@ -52,6 +53,7 @@ public final class CombativesConfig {
         enableProceduralBob = config.getBoolean("enableProceduralBob", CATEGORY_CAMERA, enableProceduralBob, "Enable subtle procedural Combatives movement bobbing.");
         enableMovementLean = config.getBoolean("enableMovementLean", CATEGORY_CAMERA, enableMovementLean, "Enable subtle movement-driven camera lean.");
         enableMovementFov = config.getBoolean("enableMovementFov", CATEGORY_CAMERA, enableMovementFov, "Enable subtle movement-driven FOV changes.");
+        enableCameraRotations = config.getBoolean("enableCameraRotations", CATEGORY_CAMERA, enableCameraRotations, "Emergency diagnostic toggle: when false, Combatives applies only camera translations and FOV, never pitch or roll rotations.");
         enableCameraShake = config.getBoolean("enableCameraShake", CATEGORY_CAMERA, enableCameraShake, "Enable the Combatives camera shake framework for movement impulses.");
         debugMovement = config.getBoolean(
             "debugMovement",
@@ -88,6 +90,7 @@ public final class CombativesConfig {
         logger.info("Combatives config: enableProceduralBob={}", enableProceduralBob);
         logger.info("Combatives config: enableMovementLean={}", enableMovementLean);
         logger.info("Combatives config: enableMovementFov={}", enableMovementFov);
+        logger.info("Combatives config: enableCameraRotations={}", enableCameraRotations);
         logger.info("Combatives config: enableCameraShake={}", enableCameraShake);
         logger.info("Combatives config: enableAngelicaCameraCompat={}", enableAngelicaCameraCompat);
         logger.info("Combatives config: disableAngelicaViewBobbingCompat={}", disableAngelicaViewBobbingCompat);

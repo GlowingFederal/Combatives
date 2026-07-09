@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.glowingfederal.combatives.config.CombativesConfig;
 import com.gtnewhorizon.gtnhmixins.IEarlyMixinLoader;
 import cpw.mods.fml.relauncher.FMLLaunchHandler;
 import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
@@ -34,7 +35,9 @@ public class CombativesCorePlugin implements IFMLLoadingPlugin, IEarlyMixinLoade
 
     @Override
     public void injectData(Map<String, Object> data) {
-        LOGGER.info("Combatives core plugin discovered; Aqua crawl/swim mixins will be offered to GTNHMixins");
+        if (CombativesConfig.debugMovement || CombativesConfig.verboseMovementDebug) {
+            LOGGER.info("Combatives core plugin discovered; Combatives movement mixins will be offered to GTNHMixins");
+        }
     }
 
     @Override
@@ -44,7 +47,9 @@ public class CombativesCorePlugin implements IFMLLoadingPlugin, IEarlyMixinLoade
 
     @Override
     public String getMixinConfig() {
-        LOGGER.info("Combatives Aqua crawl/swim mixin config requested: {}", COMMON_MIXIN_CONFIG);
+        if (CombativesConfig.debugMovement || CombativesConfig.verboseMovementDebug) {
+            LOGGER.info("Combatives movement mixin config requested: {}", COMMON_MIXIN_CONFIG);
+        }
         return COMMON_MIXIN_CONFIG;
     }
 
@@ -71,7 +76,9 @@ public class CombativesCorePlugin implements IFMLLoadingPlugin, IEarlyMixinLoade
             ));
         }
 
-        LOGGER.info("Combatives Aqua crawl/swim mixins loaded from {}: {}", COMMON_MIXIN_CONFIG, mixins);
+        if (CombativesConfig.debugMovement || CombativesConfig.verboseMovementDebug) {
+            LOGGER.info("Combatives movement mixins loaded from {}: {}", COMMON_MIXIN_CONFIG, mixins);
+        }
         return mixins;
     }
 }

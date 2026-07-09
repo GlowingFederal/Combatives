@@ -36,12 +36,12 @@ public abstract class RenderPlayerMixin extends RendererLivingEntity {
     }
 
     @Inject(method = "rotateCorpse(Lnet/minecraft/client/entity/AbstractClientPlayer;FFF)V", at = @At("TAIL"))
-    private void combatives$applyAquaSwimRotations(AbstractClientPlayer player, float p_77043_2_, float rotationYaw, float partialTicks, CallbackInfo ci) {
+    private void combatives$applyCombativesSwimRotations(AbstractClientPlayer player, float p_77043_2_, float rotationYaw, float partialTicks, CallbackInfo ci) {
         if (player instanceof ICombativesPlayerPose) {
             ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
             float animation = pose.getSwimAnimation(partialTicks);
             if (animation > 0.0F || pose.isActuallySwimming()) {
-                MovementDiagnostics.debug(player, "RenderPlayer Aqua hook fired: crawl=" + pose.isCrawlKeyDown() + " swim=" + pose.isSwimming() + " pose=" + pose.getPose() + " animation=" + animation);
+                MovementDiagnostics.verbose(player, "Combatives crawl/swim render hook fired: crawl=" + pose.isCrawlKeyDown() + " swim=" + pose.isSwimming() + " pose=" + pose.getPose() + " animation=" + animation);
             }
             float targetPitch = player.isInWater() ? -90.0F - player.rotationPitch : -90.0F;
             float rotation = MathHelperNew.lerp(animation, 0.0F, targetPitch);
@@ -58,7 +58,7 @@ public abstract class RenderPlayerMixin extends RendererLivingEntity {
                 boolean localPlayer = Minecraft.getMinecraft().thePlayer == player;
                 if ((localPlayer && !this.combatives$loggedLocalCrawlGrounding) || (!localPlayer && !this.combatives$loggedRemoteCrawlGrounding)) {
                     double interpolatedY = player.prevPosY + (player.posY - player.prevPosY) * partialTicks;
-                    MovementDiagnostics.debug(player, "crawl render grounding: isLocalPlayer=" + localPlayer
+                    MovementDiagnostics.verbose(player, "crawl render grounding: isLocalPlayer=" + localPlayer
                         + " posY=" + player.posY + " prevPosY=" + player.prevPosY + " lastTickPosY=" + player.lastTickPosY
                         + " interpolatedRenderY=" + interpolatedY + " partialTicks=" + partialTicks
                         + " yOffset=" + player.yOffset + " ySize=" + player.ySize + " width=" + player.width + " height=" + player.height
@@ -96,7 +96,7 @@ public abstract class RenderPlayerMixin extends RendererLivingEntity {
         boolean crawl = player instanceof ICombativesPlayerPose && ((ICombativesPlayerPose) player).isCrawlKeyDown();
         boolean swim = player instanceof ICombativesPlayerPose && ((ICombativesPlayerPose) player).isSwimming();
         String pose = player instanceof ICombativesPlayerPose ? String.valueOf(((ICombativesPlayerPose) player).getPose()) : "unknown";
-        MovementDiagnostics.debug(player, hook + " nameplate hook entity=" + player.getClass().getName() + " crawl=" + crawl + " swim=" + swim + " pose=" + pose + " distance=" + distance + " cancelAttempt=" + crawl);
+        MovementDiagnostics.verbose(player, hook + " nameplate hook entity=" + player.getClass().getName() + " crawl=" + crawl + " swim=" + swim + " pose=" + pose + " distance=" + distance + " cancelAttempt=" + crawl);
         if (crawl) {
             ci.cancel();
         }

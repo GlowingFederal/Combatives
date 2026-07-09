@@ -1,5 +1,19 @@
 # Changelog
 
+## Combatives first-person camera overhaul foundation
+
+- Added the client-only Combatives camera controller stack for movement state sampling, subtle inertial lean, continuous procedural bob, movement FOV, and damped camera shake impulses.
+- Routed EntityRenderer camera update, final transform application, vanilla bob ownership cancellation, and movement FOV composition through UniMixins without ASM or renderer replacement.
+- Added camera config toggles and safe Angelica camera ownership compatibility checks with quiet default logging.
+- Kept the camera foundation read-only with respect to movement, crawl/swim sync, hitboxes, weapons, recoil, and ADS behavior.
+
+## Final movement diagnostics cleanup
+
+- Added separate `debugMovement` and `verboseMovementDebug` movement diagnostic levels so normal crawling/swimming remains quiet by default while general lifecycle events and verbose per-frame traces can be enabled independently.
+- Moved render/model hook traces, grounding dumps, DataWatcher pose messages, nameplate hook traces, and repeated size/eye recalculations behind verbose movement diagnostics.
+- Renamed runtime movement mixin and render/model diagnostics to Combatives wording so logs do not imply Aqua code, classes, or dependencies are bundled at runtime.
+- Documented the off/general/verbose movement diagnostic behavior and the fact that verbose movement diagnostics imply general movement diagnostics.
+
 ## Fix remote crawl nameplate hiding hook path
 
 - Added player-specific `RenderPlayer#func_96449_a` cancellation with the 1.7.10 player label signature so remote crawling players cancel before the visible player nameplate is drawn.
@@ -149,5 +163,5 @@
 ## Restore Aqua client render mixin loading
 
 - Removed the non-reference visual helper path and restored RenderPlayer/ModelBiped to the direct Aqua swim-animation transform flow.
-- Fixed the early mixin loader so Aqua client render/model/input mixins are actually returned on the physical client side instead of sitting in an unqueued client config.
-- Updated documentation to clarify that the core plugin side-gates both common and client Aqua crawl/swim mixins.
+- Fixed the early mixin loader so Combatives client render/model/input mixins are actually returned on the physical client side instead of sitting in an unqueued client config.
+- Updated documentation to clarify that the core plugin side-gates both common and client Combatives crawl/swim mixins.

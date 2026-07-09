@@ -1,5 +1,10 @@
 # Changelog
 
+## Add shared land-crawl grounding correction
+
+- Kept Aqua's single local/remote prone transform path and added a small internal land-crawl-only downward render correction after the Aqua rotation/translation calculation.
+- Left water swimming translation unchanged and expanded crawl render diagnostics to include base, correction, and final Y translation values once per local/remote crawl render session.
+
 ## Restore Aqua crawl grounding diagnostics and nameplate cancel path
 
 - Reverted the experimental local/remote crawl render offset split and restored Aqua's single `RenderPlayer` prone translation for crawl/swim models.

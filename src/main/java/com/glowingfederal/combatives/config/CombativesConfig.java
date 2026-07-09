@@ -11,6 +11,7 @@ public final class CombativesConfig {
 
     public static boolean enableAngelicaCompat = true;
     public static boolean debugMovement = false;
+    public static boolean verboseMovementDebug = false;
     public static boolean debugCamera = false;
 
     private CombativesConfig() {
@@ -30,7 +31,13 @@ public final class CombativesConfig {
             "debugMovement",
             CATEGORY_DEBUG,
             debugMovement,
-            "Enable verbose logging for future movement systems."
+            "Enable general Combatives movement diagnostics for lifecycle events and rejected actions. Per-frame diagnostics remain disabled unless verboseMovementDebug is also enabled."
+        );
+        verboseMovementDebug = config.getBoolean(
+            "verboseMovementDebug",
+            CATEGORY_DEBUG,
+            verboseMovementDebug,
+            "Enable per-frame/per-tick Combatives movement diagnostics. This implies debugMovement output for movement diagnostics."
         );
         debugCamera = config.getBoolean(
             "debugCamera",
@@ -47,6 +54,7 @@ public final class CombativesConfig {
     public static void logLoadedValues(Logger logger) {
         logger.info("Combatives config: enableAngelicaCompat={}", enableAngelicaCompat);
         logger.info("Combatives config: debugMovement={}", debugMovement);
+        logger.info("Combatives config: verboseMovementDebug={}", verboseMovementDebug);
         logger.info("Combatives config: debugCamera={}", debugCamera);
     }
 }

@@ -15,7 +15,7 @@ public abstract class RenderMixin {
     @Inject(method = "func_147906_a", at = @At("HEAD"), cancellable = true)
     private void combatives$hideCrawlBaseLabel(Entity entity, String name, double x, double y, double z, int maxDistance, CallbackInfo ci) {
         if (!(entity instanceof EntityPlayer)) {
-            MovementDiagnostics.debug("Render#func_147906_a nameplate hook entity=" + entity.getClass().getName() + " player=false distance=" + maxDistance + " cancelAttempt=false");
+            MovementDiagnostics.verbose("Render#func_147906_a nameplate hook entity=" + entity.getClass().getName() + " player=false distance=" + maxDistance + " cancelAttempt=false");
             return;
         }
 
@@ -23,7 +23,7 @@ public abstract class RenderMixin {
         boolean crawl = entity instanceof ICombativesPlayerPose && ((ICombativesPlayerPose) entity).isCrawlKeyDown();
         boolean swim = entity instanceof ICombativesPlayerPose && ((ICombativesPlayerPose) entity).isSwimming();
         String pose = entity instanceof ICombativesPlayerPose ? String.valueOf(((ICombativesPlayerPose) entity).getPose()) : "unknown";
-        MovementDiagnostics.debug(player, "Render#func_147906_a nameplate hook entity=" + entity.getClass().getName() + " crawl=" + crawl + " swim=" + swim + " pose=" + pose + " distance=" + maxDistance + " cancelAttempt=" + crawl);
+        MovementDiagnostics.verbose(player, "Render#func_147906_a nameplate hook entity=" + entity.getClass().getName() + " crawl=" + crawl + " swim=" + swim + " pose=" + pose + " distance=" + maxDistance + " cancelAttempt=" + crawl);
         if (crawl) {
             ci.cancel();
         }

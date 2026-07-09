@@ -41,7 +41,7 @@ public final class PoseSync {
         state.recalculateSize();
         if (player.worldObj.isRemote) {
             player.func_145781_i(28);
-            MovementDiagnostics.debug(player, "authoritative pose marked render dirty from " + source + ": dataWatcherPose=" + state.getPose());
+            MovementDiagnostics.verbose(player, "authoritative pose marked render dirty from " + source + ": dataWatcherPose=" + state.getPose());
         }
         if (oldPose != pose || oldSwimming != swimming || oldCrawlKeyDown != effectiveCrawlKeyDown) {
             MovementDiagnostics.debug(player, "authoritative pose applied from " + source + ": " + pose + " swimming=" + swimming + " crawl=" + effectiveCrawlKeyDown);
@@ -59,7 +59,7 @@ public final class PoseSync {
         if (includeSelf) {
             NetworkHandler.channel.sendTo(packet, player);
         }
-        MovementDiagnostics.debug(player, "broadcast authoritative pose " + state.getPose() + " size=" + size.width + "x" + size.height);
+        MovementDiagnostics.verbose(player, "broadcast authoritative pose " + state.getPose() + " size=" + size.width + "x" + size.height);
     }
 
     public static void sendAuthoritativePose(EntityPlayerMP target, Entity source) {
@@ -69,6 +69,6 @@ public final class PoseSync {
         EntityPlayer player = (EntityPlayer) source;
         ICombativesPlayerPose state = (ICombativesPlayerPose) source;
         NetworkHandler.channel.sendTo(new PacketPlayerPoseS2C(player.getEntityId(), state.getPose(), state.isSwimming(), state.isCrawlKeyDown()), target);
-        MovementDiagnostics.debug(player, "sent authoritative pose to tracker " + target.getCommandSenderName());
+        MovementDiagnostics.verbose(player, "sent authoritative pose to tracker " + target.getCommandSenderName());
     }
 }

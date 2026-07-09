@@ -104,7 +104,7 @@ public abstract class EntityPlayerSPMixin implements ICombativesClientPlayerSwim
             if (bestX != 0 || bestZ != 0) {
                 self.motionX = 0.1D * bestX;
                 self.motionZ = 0.1D * bestZ;
-                MovementDiagnostics.debug(self, "client exact collision push-out applied for crawl/swim clearance");
+                MovementDiagnostics.verbose(self, "client exact collision push-out applied for crawl/swim clearance");
             }
         }
     }
@@ -159,7 +159,7 @@ public abstract class EntityPlayerSPMixin implements ICombativesClientPlayerSwim
         pose.setCrawlKeyDown(false);
         MovementDiagnostics.debug(self, "crawl jump requested crawl exit");
         if (NetworkHandler.channel == null) {
-            MovementDiagnostics.debug(self, "crawl jump exit packet skipped because network channel is not initialized");
+            MovementDiagnostics.warn(self, "crawl jump exit packet skipped because network channel is not initialized");
             return;
         }
         NetworkHandler.channel.sendToServer(new PacketCrawlKeyState());
@@ -190,7 +190,7 @@ public abstract class EntityPlayerSPMixin implements ICombativesClientPlayerSwim
         this.combatives$isCrouching = this.combatives$isCrouching(!pose.isPoseClear(Pose.STANDING));
 
         if (((EntityPlayerSP) (Object) this).isSprinting() != this.combatives$movementStorage.isSprinting && (((EntityPlayerSP) (Object) this).isInWater() || pose.isSwimming())) {
-            MovementDiagnostics.debug(self, "client restored Aqua water sprint state");
+            MovementDiagnostics.debug(self, "client restored Combatives water sprint state");
             ((EntityPlayerSP) (Object) this).setSprinting(this.combatives$movementStorage.isSprinting);
         }
 
@@ -204,7 +204,7 @@ public abstract class EntityPlayerSPMixin implements ICombativesClientPlayerSwim
         if (!this.movementInput.sneak && this.isForcedDown()) {
             this.movementInput.moveStrafe *= 0.3F;
             this.movementInput.moveForward *= 0.3F;
-            MovementDiagnostics.debug((EntityPlayerSP) (Object) this, "client movement slowed for forced crawl/swim pose");
+            MovementDiagnostics.verbose((EntityPlayerSP) (Object) this, "client movement slowed for forced crawl/swim pose");
         }
         if (this.movementInput.sneak && !this.isForcedDown()) {
             this.movementInput.moveStrafe /= 0.3F;
@@ -233,13 +233,13 @@ public abstract class EntityPlayerSPMixin implements ICombativesClientPlayerSwim
             if (this.combatives$movementStorage.sprintToggleTimer <= 0 && !sprintKeyDown) {
                 this.sprintToggleTimer = 7;
             } else {
-                MovementDiagnostics.debug((EntityPlayerSP) (Object) this, "client started Aqua swim sprint");
+                MovementDiagnostics.debug((EntityPlayerSP) (Object) this, "client started Combatives swim sprint");
                 ((EntityPlayerSP) (Object) this).setSprinting(true);
             }
         }
         if (!((EntityPlayerSP) (Object) this).isSprinting() && (!((EntityPlayerSP) (Object) this).isInWater() || this.canSwimClient()) && this.isUsingSwimmingAnimation()
             && isSaturated && !((EntityPlayerSP) (Object) this).isPotionActive(Potion.blindness) && sprintKeyDown) {
-            MovementDiagnostics.debug((EntityPlayerSP) (Object) this, "client started Aqua swim sprint from sprint key");
+            MovementDiagnostics.debug((EntityPlayerSP) (Object) this, "client started Combatives swim sprint from sprint key");
             ((EntityPlayerSP) (Object) this).setSprinting(true);
         }
     }

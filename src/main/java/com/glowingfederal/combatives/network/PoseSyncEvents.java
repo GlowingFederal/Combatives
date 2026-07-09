@@ -50,9 +50,9 @@ public class PoseSyncEvents {
 
     private void logPoseStateCheck(EntityPlayer player, String source) {
         if (player == null) {
-            MovementDiagnostics.debug(source + " pose-state check skipped because player is null");
+            MovementDiagnostics.verbose(source + " pose-state check skipped because player is null");
             return;
         }
-        MovementDiagnostics.debug(player, source + " pose-state check: instanceof ICombativesPlayerPose=" + (player instanceof ICombativesPlayerPose));
+        MovementDiagnostics.verbose(player, source + " pose-state check: instanceof ICombativesPlayerPose=" + (player instanceof ICombativesPlayerPose));
     }
 }

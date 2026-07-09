@@ -34,7 +34,7 @@ public class PacketCrawlKeyState implements IMessage {
             MovementDiagnostics.debug("server received crawl toggle request");
             EntityPlayerMP player = ctx.getServerHandler().playerEntity;
             if (player == null) {
-                MovementDiagnostics.debug("server could not resolve player for crawl toggle request");
+                MovementDiagnostics.warn("server could not resolve player for crawl toggle request");
                 return null;
             }
 
@@ -58,7 +58,7 @@ public class PacketCrawlKeyState implements IMessage {
                 PoseSync.broadcastAuthoritativePose(player, true);
                 MovementDiagnostics.debug(player, "server pose after crawl toggle: pose=" + pose.getPose() + " swimming=" + pose.isSwimming() + " crawl=" + pose.isCrawlKeyDown());
             } else {
-                MovementDiagnostics.debug(player, "server player does not expose combatives pose state");
+                MovementDiagnostics.warn(player, "server player does not expose combatives pose state");
             }
             return null;
         }

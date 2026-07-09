@@ -97,7 +97,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     @Override
     public void func_145781_i(int key) {
         if (key == POSE_WATCHER_ID && this.worldObj.isRemote && !this.isRiding()) {
-            MovementDiagnostics.debug(this.getPlayer(), "DataWatcher pose changed on client: " + this.getPose());
+            MovementDiagnostics.verbose(this.getPlayer(), "DataWatcher pose changed on client: " + this.getPose());
             this.recalculateEyeHeight();
             this.recalculateSize();
         }
@@ -158,7 +158,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
             this.width = newSize.width;
             this.height = newSize.height;
             if (changed) {
-                MovementDiagnostics.debug(this.getPlayer(), "bounding box recalculated for " + this.getPose() + " size=" + newSize.width + "x" + newSize.height);
+                MovementDiagnostics.verbose(this.getPlayer(), "bounding box recalculated for " + this.getPose() + " size=" + newSize.width + "x" + newSize.height);
             }
         }
         this.combativesSize = newSize;
@@ -182,7 +182,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         Pose pose = this.getPose();
         this.combativesEyeHeight = this.getEyeHeight(pose, this.getSize(pose));
         this.previousEyeHeight = this.eyeHeight;
-        MovementDiagnostics.debug(this.getPlayer(), "eye height recalculated for " + pose + ": " + this.combativesEyeHeight);
+        MovementDiagnostics.verbose(this.getPlayer(), "eye height recalculated for " + pose + ": " + this.combativesEyeHeight);
     }
 
     @Override
@@ -205,7 +205,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     @Override public void setPose(Pose pose) {
         Pose old = this.getPose();
         if (old != pose) {
-            MovementDiagnostics.debug(this.getPlayer(), "setPose " + old + " -> " + pose + " via " + this.combatives$getPoseCaller());
+            MovementDiagnostics.verbose(this.getPlayer(), "setPose " + old + " -> " + pose + " via " + this.combatives$getPoseCaller());
         }
         this.combativesPose = pose;
         if (this.combativesPoseWatcherReady) {
@@ -265,7 +265,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     @Override public boolean isCrawlKeyDown() { return this.canCrawl() && this.crawlKeyDown; }
     @Override public void setCrawlKeyDown(boolean down) {
         if (down && !this.canCrawl()) {
-            MovementDiagnostics.debug(this.getPlayer(), "crawl rejected: player state disallows crawling");
+            MovementDiagnostics.warn(this.getPlayer(), "crawl rejected: player state disallows crawling");
             this.crawlKeyDown = false;
             return;
         }
@@ -376,7 +376,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
             this.yOffset = pose == Pose.SWIMMING ? 0.28F : 1.62F;
         }
         if (poseChanged) {
-            MovementDiagnostics.debug(this.getPlayer(), "pose selected " + (this.worldObj.isRemote ? "client" : "server") + ": " + pose);
+            MovementDiagnostics.verbose(this.getPlayer(), "pose selected " + (this.worldObj.isRemote ? "client" : "server") + ": " + pose);
             if (!this.worldObj.isRemote && this.getPlayer() instanceof EntityPlayerMP) {
                 PoseSync.broadcastAuthoritativePose((EntityPlayerMP) this.getPlayer(), true);
             }

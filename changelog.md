@@ -1,5 +1,11 @@
 # Changelog
 
+## Add low-level look rotation diagnostics
+
+- Added a client-only `Entity#setAngles` diagnostic mixin for the local player that logs raw setAngles deltas, before/after yaw and pitch, per-call deltas, per-tick deltas, and a partial caller stack when yaw exceeds 90 degrees or pitch exceeds 45 degrees in one tick.
+- Removed the once-per-second camera yaw/pitch diagnostic so look-rotation spikes are captured at the actual mutation point instead of being hidden by accumulated camera sampling.
+- Audited the Combatives source for direct mouse delta reads, `mouseHelper.mouseXYChange()`, and manual `setAngles(...)` calls; none are present in the active Combatives source.
+
 ## Audit Combatives mouse input ownership
 
 - Moved Combatives camera state sampling to the tail of `EntityRenderer#updateCameraAndRender` so vanilla mouse handling has already completed before diagnostics read player yaw/pitch.

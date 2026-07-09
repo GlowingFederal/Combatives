@@ -72,34 +72,6 @@ public final class CameraController {
         GL11.glRotatef(clamp(bobRoll, -MAX_CAMERA_ROLL_DEGREES, MAX_CAMERA_ROLL_DEGREES), 0.0F, 0.0F, 1.0F);
     }
 
-    private void logRotationDiagnostics(EntityPlayerSP player) {
-        if (!CombativesConfig.debugCamera && !CombativesConfig.verboseCameraDebug) return;
-        long now = System.currentTimeMillis();
-        if (now - lastDebugLogMs < 1000L) return;
-        float yawDelta = haveLastPlayerRotation ? player.rotationYaw - lastPlayerYaw : 0.0F;
-        float pitchDelta = haveLastPlayerRotation ? player.rotationPitch - lastPlayerPitch : 0.0F;
-        lastPlayerYaw = player.rotationYaw;
-        lastPlayerPitch = player.rotationPitch;
-        haveLastPlayerRotation = true;
-        lastDebugLogMs = now;
-        float transformPitch = clamp(bobPitch + shakePitch + leanPitch, -MAX_CAMERA_PITCH_DEGREES, MAX_CAMERA_PITCH_DEGREES);
-        float transformRoll = clamp(bobRoll + shakeRoll + leanRoll, -MAX_CAMERA_ROLL_DEGREES, MAX_CAMERA_ROLL_DEGREES);
-        float transformYaw = clampYawToZero(0.0F);
-        if (Combatives.logger != null) {
-            Combatives.logger.info(
-                "Combatives camera debug: playerYawDelta={}, playerPitchDelta={}, transformPitch={}, transformRoll={}, transformYaw={}, yawNonZero={}",
-                yawDelta, pitchDelta, transformPitch, transformRoll, transformYaw, transformYaw != 0.0F
-            );
-        }
-    }
-
-    private static float clampYawToZero(float yaw) {
-        if (yaw != 0.0F && Combatives.logger != null) {
-            Combatives.logger.warn("Combatives camera yaw transform was nonzero ({}); forcing to 0.0", yaw);
-        }
-        return 0.0F;
-    }
-
     private static float clamp(float value, float min, float max) {
         return value < min ? min : value > max ? max : value;
     }

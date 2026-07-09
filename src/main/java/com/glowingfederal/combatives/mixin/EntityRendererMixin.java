@@ -1,13 +1,16 @@
 package com.glowingfederal.combatives.mixin;
 
+import com.glowingfederal.combatives.Combatives;
 import com.glowingfederal.combatives.client.camera.CameraCompatibilityManager;
 import com.glowingfederal.combatives.client.camera.CameraController;
+import com.glowingfederal.combatives.config.CombativesConfig;
 import com.glowingfederal.combatives.util.math.MathHelperNew;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.renderer.EntityRenderer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
+import org.lwjgl.opengl.Display;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -25,6 +28,51 @@ public abstract class EntityRendererMixin {
     private float combatives$previousEyeHeight;
     private float combatives$entityEyeHeight;
     private float combatives$partialTicks;
+    private int combatives$lastRenderCallTick = Integer.MIN_VALUE;
+    private int combatives$renderCallCountThisTick;
+
+    @Inject(method = "updateCameraAndRender", at = @At("HEAD"))
+    private void combatives$logCameraRenderEntry(float partialTicks, CallbackInfo ci) {
+        int currentTick = this.mc.thePlayer == null ? -1 : this.mc.thePlayer.ticksExisted;
+        if (this.combatives$lastRenderCallTick != currentTick) {
+            this.combatives$lastRenderCallTick = currentTick;
+            this.combatives$renderCallCountThisTick = 0;
+        }
+        this.combatives$renderCallCountThisTick++;
+
+        if (Combatives.logger == null || !CombativesConfig.debugCamera) {
+            return;
+        }
+
+        long nanoTime = System.nanoTime();
+        long currentTime = System.currentTimeMillis();
+        boolean displayActive = Display.isActive();
+
+        Combatives.logger.info(
+            "Combatives updateCameraAndRender: tick={}, partialTicks={}, nanoTime={}, currentTime={}, renderCallCountThisTick={}, inGameHasFocus={}, displayActive={}",
+            currentTick,
+            partialTicks,
+            nanoTime,
+            currentTime,
+            this.combatives$renderCallCountThisTick,
+            this.mc.inGameHasFocus,
+            displayActive
+        );
+
+        if (this.combatives$renderCallCountThisTick > 1) {
+            Combatives.logger.warn(
+                "Combatives repeated updateCameraAndRender in one client tick: tick={}, partialTicks={}, nanoTime={}, currentTime={}, renderCallCountThisTick={}, inGameHasFocus={}, displayActive={}, stack={}",
+                currentTick,
+                partialTicks,
+                nanoTime,
+                currentTime,
+                this.combatives$renderCallCountThisTick,
+                this.mc.inGameHasFocus,
+                displayActive,
+                combatives$partialStack()
+            );
+        }
+    }
 
     @Inject(method = "updateCameraAndRender", at = @At("TAIL"))
     private void combatives$sampleCameraAfterVanillaInput(float partialTicks, CallbackInfo ci) {
@@ -99,5 +147,19 @@ public abstract class EntityRendererMixin {
     private void combatives$interpolateEyeHeight(CallbackInfo ci) {
         this.combatives$previousEyeHeight = this.combatives$eyeHeight;
         this.combatives$eyeHeight += (this.combatives$entityEyeHeight - this.combatives$eyeHeight) * 0.5F;
+    }
+
+    private static String combatives$partialStack() {
+        StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+        StringBuilder builder = new StringBuilder();
+        int appended = 0;
+        for (int i = 3; i < stack.length && appended < 10; i++) {
+            if (builder.length() > 0) {
+                builder.append(" <- ");
+            }
+            builder.append(stack[i].getClassName()).append('#').append(stack[i].getMethodName()).append(':').append(stack[i].getLineNumber());
+            appended++;
+        }
+        return builder.toString();
     }
 }

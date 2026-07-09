@@ -1,5 +1,17 @@
 # Changelog
 
+## Temporarily unregister EntityRenderer camera mixin
+
+- Temporarily removed `EntityRendererMixin` from both the GTNHMixins early-loader client mixin list and the standalone client mixin JSON so `EntityRenderer#updateCameraAndRender` is completely absent from Combatives runtime mixin application for the first mouse-sensitivity test case.
+- Left the `EntityRendererMixin` source file in place for controlled follow-up variants, but it is no longer offered by either active registration path.
+- Kept `Entity#setAngles` unchanged; the existing setAngles diagnostics remain available through `EntitySetAnglesDiagnosticsMixin`.
+
+## Audit repeated camera render look consumption
+
+- Added `EntityRenderer#updateCameraAndRender` HEAD diagnostics that record the current player tick, partial ticks, `System.nanoTime()`, `System.currentTimeMillis()`, render-call count for that tick, focus state, display active state, and a caller stack when the renderer is entered more than once during the same player tick.
+- Kept `Entity#setAngles` behavior unchanged while preserving the existing look mutation diagnostics for validating that repeated vanilla look application is caused upstream of `setAngles`.
+- Re-audited active Combatives source for mixins into `Minecraft#runGameLoop`, `Minecraft#runTick`, render tick handlers, manual `entityRenderer.updateCameraAndRender(...)` calls, and `mouseHelper.mouseXYChange()` calls; only the existing `EntityRenderer#updateCameraAndRender` mixin is present in active Combatives source.
+
 ## Add low-level look rotation diagnostics
 
 - Added a client-only `Entity#setAngles` diagnostic mixin for the local player that logs raw setAngles deltas, before/after yaw and pitch, per-call deltas, per-tick deltas, and a partial caller stack when yaw exceeds 90 degrees or pitch exceeds 45 degrees in one tick.

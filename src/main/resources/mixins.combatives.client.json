@@ -14,7 +14,6 @@
     "RenderPlayerMixin",
     "RenderMixin",
     "RendererLivingEntityMixin",
-    "EntitySetAnglesDiagnosticsMixin",
     "PlayerControllerMPMixin"
   ],
   "server": []

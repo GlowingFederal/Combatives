@@ -163,8 +163,7 @@ jar {
         attributes(
                 'ForceLoadAsMod': 'true',
                 'FMLCorePlugin': 'com.glowingfederal.combatives.loading.CombativesCorePlugin',
-                'FMLCorePluginContainsFMLMod': 'true',
-                'MixinConfigs': 'mixins.combatives.client.json'
+                'FMLCorePluginContainsFMLMod': 'true'
         )
     }
 }

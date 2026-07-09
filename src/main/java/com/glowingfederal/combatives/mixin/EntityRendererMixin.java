@@ -1,7 +1,5 @@
 package com.glowingfederal.combatives.mixin;
 
-import com.glowingfederal.combatives.Combatives;
-import com.glowingfederal.combatives.client.camera.CameraCompatibilityManager;
 import com.glowingfederal.combatives.client.camera.CameraController;
 import com.glowingfederal.combatives.config.CombativesConfig;
 import com.glowingfederal.combatives.util.math.MathHelperNew;
@@ -10,7 +8,6 @@ import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.renderer.EntityRenderer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
-import org.lwjgl.opengl.Display;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -24,52 +21,6 @@ public abstract class EntityRendererMixin {
     private float combatives$previousEyeHeight;
     private float combatives$entityEyeHeight;
     private float combatives$partialTicks;
-    private int combatives$lastRenderCallTick = Integer.MIN_VALUE;
-    private int combatives$renderCallCountThisTick;
-
-    @Inject(method = "updateCameraAndRender", at = @At("HEAD"))
-    private void combatives$logCameraRenderEntry(float partialTicks, CallbackInfo ci) {
-        Minecraft mc = Minecraft.getMinecraft();
-        int currentTick = mc.thePlayer == null ? -1 : mc.thePlayer.ticksExisted;
-        if (this.combatives$lastRenderCallTick != currentTick) {
-            this.combatives$lastRenderCallTick = currentTick;
-            this.combatives$renderCallCountThisTick = 0;
-        }
-        this.combatives$renderCallCountThisTick++;
-
-        if (Combatives.logger == null || !CombativesConfig.debugCamera) {
-            return;
-        }
-
-        long nanoTime = System.nanoTime();
-        long currentTime = System.currentTimeMillis();
-        boolean displayActive = Display.isActive();
-
-        Combatives.logger.info(
-            "Combatives updateCameraAndRender: tick={}, partialTicks={}, nanoTime={}, currentTime={}, renderCallCountThisTick={}, inGameHasFocus={}, displayActive={}",
-            currentTick,
-            partialTicks,
-            nanoTime,
-            currentTime,
-            this.combatives$renderCallCountThisTick,
-            mc.inGameHasFocus,
-            displayActive
-        );
-
-        if (this.combatives$renderCallCountThisTick > 1) {
-            Combatives.logger.warn(
-                "Combatives repeated updateCameraAndRender in one client tick: tick={}, partialTicks={}, nanoTime={}, currentTime={}, renderCallCountThisTick={}, inGameHasFocus={}, displayActive={}, stack={}",
-                currentTick,
-                partialTicks,
-                nanoTime,
-                currentTime,
-                this.combatives$renderCallCountThisTick,
-                mc.inGameHasFocus,
-                displayActive,
-                combatives$partialStack()
-            );
-        }
-    }
 
     @Inject(method = "orientCamera", at = @At("HEAD"))
     private void combatives$capturePartialTicks(float partialTicks, CallbackInfo ci) {
@@ -100,14 +51,14 @@ public abstract class EntityRendererMixin {
 
     @Inject(method = "setupViewBobbing", at = @At("HEAD"), cancellable = true)
     private void combatives$cancelVanillaViewBobbing(float partialTicks, CallbackInfo ci) {
-        if (CameraCompatibilityManager.shouldCancelVanillaViewBobbing()) {
+        if (CombativesConfig.enableCombativesCamera && CombativesConfig.enableProceduralBob) {
             ci.cancel();
         }
     }
 
     @Inject(method = "getFOVModifier", at = @At("RETURN"), cancellable = true)
     private void combatives$applyMovementFov(float partialTicks, boolean useFOVSetting, CallbackInfoReturnable<Float> cir) {
-        if (CameraCompatibilityManager.ownsDynamicFov()) {
+        if (CombativesConfig.enableCombativesCamera && CombativesConfig.enableMovementFov) {
             cir.setReturnValue(cir.getReturnValue() * (1.0F + CameraController.INSTANCE.getFovModifier()));
         }
     }
@@ -141,19 +92,5 @@ public abstract class EntityRendererMixin {
     private void combatives$interpolateEyeHeight(CallbackInfo ci) {
         this.combatives$previousEyeHeight = this.combatives$eyeHeight;
         this.combatives$eyeHeight += (this.combatives$entityEyeHeight - this.combatives$eyeHeight) * 0.5F;
-    }
-
-    private static String combatives$partialStack() {
-        StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-        StringBuilder builder = new StringBuilder();
-        int appended = 0;
-        for (int i = 3; i < stack.length && appended < 10; i++) {
-            if (builder.length() > 0) {
-                builder.append(" <- ");
-            }
-            builder.append(stack[i].getClassName()).append('#').append(stack[i].getMethodName()).append(':').append(stack[i].getLineNumber());
-            appended++;
-        }
-        return builder.toString();
     }
 }

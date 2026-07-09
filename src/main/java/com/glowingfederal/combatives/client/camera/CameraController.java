@@ -22,20 +22,23 @@ public final class CameraController {
     private static final float MAX_CAMERA_Z_OFFSET = 0.04F;
 
     private float leanRoll, leanPitch, bobVertical, bobSway, bobPitch, bobRoll, shakeVertical, shakeForward, shakePitch, shakeRoll, fovModifier;
-    private boolean haveLastPlayerRotation;
 
     private CameraController() {}
 
     public void update(Minecraft mc, EntityPlayerSP player, float partialTicks) {
         if (!CombativesConfig.enableCombativesCamera || mc == null || player == null) { reset(); return; }
         movement.update(player, partialTicks);
-        if (CombativesConfig.enableLandingCameraFeedback && movement.hasLanded()) shake.addLandingImpulse(movement.getLandingStrength());
+        if (CombativesConfig.enableCameraShake && CombativesConfig.enableLandingCameraFeedback && movement.hasLanded()) shake.addLandingImpulse(movement.getLandingStrength());
         if (CombativesConfig.enableMovementLean) lean.update(movement); else lean.reset();
         if (CombativesConfig.enableProceduralBob) bob.update(movement); else bob.reset();
         if (CombativesConfig.enableMovementFov) fov.update(movement); else fov.reset();
         if (CombativesConfig.enableCameraShake) shake.update(movement, partialTicks); else shake.reset();
         leanRoll = lean.getRoll(); leanPitch = lean.getPitch(); bobVertical = bob.getVertical(); bobSway = bob.getSway(); bobPitch = bob.getPitch(); bobRoll = bob.getRoll();
         shakeVertical = shake.getVertical(); shakeForward = shake.getForward(); shakePitch = shake.getPitch(); shakeRoll = shake.getRoll(); fovModifier = fov.getModifier();
+
+        if (Combatives.logger != null && CombativesConfig.debugCamera && hasNonzeroFeedback()) {
+            Combatives.logger.info("Combatives camera transform sampled nonzero impulse: partialTicks={}, shakeVertical={}, shakeForward={}, shakePitch={}, shakeRoll={}", partialTicks, shakeVertical, shakeForward, shakePitch, shakeRoll);
+        }
     }
 
     public void applyTransforms(float partialTicks) {
@@ -55,8 +58,8 @@ public final class CameraController {
             GL11.glRotatef(roll, 0.0F, 0.0F, 1.0F);
         }
 
-        if (Combatives.logger != null && CombativesConfig.debugCamera && (Math.abs(shakeVertical) > 0.0001F || Math.abs(shakeForward) > 0.0001F || Math.abs(shakePitch) > 0.0001F || Math.abs(shakeRoll) > 0.0001F)) {
-            Combatives.logger.info("Combatives camera feedback render transform: partialTicks={}, x={}, y={}, z={}, pitch={}, roll={}, shakeVertical={}, shakeForward={}, shakePitch={}, shakeRoll={}", partialTicks, xOffset, yOffset, zOffset, pitch, roll, shakeVertical, shakeForward, shakePitch, shakeRoll);
+        if (Combatives.logger != null && CombativesConfig.debugCamera && hasNonzeroFeedback()) {
+            Combatives.logger.info("Combatives actual GL transform applied: partialTicks={}, translateX={}, translateY={}, translateZ={}, rotatePitch={}, rotateRoll={}, rotationsEnabled={}", partialTicks, xOffset, yOffset, zOffset, pitch, roll, CombativesConfig.enableCameraRotations);
         }
     }
 
@@ -75,11 +78,15 @@ public final class CameraController {
         GL11.glRotatef(clamp(bobRoll, -MAX_CAMERA_ROLL_DEGREES, MAX_CAMERA_ROLL_DEGREES), 0.0F, 0.0F, 1.0F);
     }
 
+    private boolean hasNonzeroFeedback() {
+        return Math.abs(shakeVertical) > 0.0001F || Math.abs(shakeForward) > 0.0001F || Math.abs(shakePitch) > 0.0001F || Math.abs(shakeRoll) > 0.0001F;
+    }
+
     private static float clamp(float value, float min, float max) {
         return value < min ? min : value > max ? max : value;
     }
 
-    public void reset() { lean.reset(); bob.reset(); fov.reset(); shake.reset(); leanRoll = leanPitch = bobVertical = bobSway = bobPitch = bobRoll = shakeVertical = shakeForward = shakePitch = shakeRoll = fovModifier = 0.0F; haveLastPlayerRotation = false; }
+    public void reset() { lean.reset(); bob.reset(); fov.reset(); shake.reset(); leanRoll = leanPitch = bobVertical = bobSway = bobPitch = bobRoll = shakeVertical = shakeForward = shakePitch = shakeRoll = fovModifier = 0.0F; }
 
     public void addExplosionFeedback(EntityPlayerSP player, double x, double y, double z, float strength) {
         if (!CombativesConfig.enableCombativesCamera || !CombativesConfig.enableCameraShake || !CombativesConfig.enableExplosionCameraFeedback || player == null) {

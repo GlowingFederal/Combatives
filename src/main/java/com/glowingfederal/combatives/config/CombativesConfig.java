@@ -6,7 +6,6 @@ import net.minecraftforge.common.config.Configuration;
 import org.apache.logging.log4j.Logger;
 
 public final class CombativesConfig {
-    private static final String CATEGORY_COMPAT = "compat";
     private static final String CATEGORY_DEBUG = "debug";
     private static final String CATEGORY_CAMERA = "camera";
 
@@ -22,9 +21,6 @@ public final class CombativesConfig {
     public static double landingFeedbackStrength = 1.0D;
     public static boolean enableExplosionCameraFeedback = true;
     public static double explosionFeedbackStrength = 1.0D;
-    public static boolean enableAngelicaCameraCompat = true;
-    public static boolean disableAngelicaViewBobbingCompat = true;
-    public static boolean disableAngelicaDynamicFovCompat = true;
     public static boolean debugMovement = false;
     public static boolean verboseMovementDebug = false;
     public static boolean debugCamera = false;
@@ -37,24 +33,6 @@ public final class CombativesConfig {
         Configuration config = new Configuration(configFile);
         config.load();
 
-        enableAngelicaCameraCompat = config.getBoolean(
-            "enableAngelicaCameraCompat",
-            CATEGORY_COMPAT,
-            enableAngelicaCameraCompat,
-            "Enable optional Angelica camera compatibility when Angelica is present. This does not make Angelica a dependency."
-        );
-        disableAngelicaViewBobbingCompat = config.getBoolean(
-            "disableAngelicaViewBobbingCompat",
-            CATEGORY_COMPAT,
-            disableAngelicaViewBobbingCompat,
-            "When camera compatibility is enabled, let Combatives be the single owner of Angelica view bobbing."
-        );
-        disableAngelicaDynamicFovCompat = config.getBoolean(
-            "disableAngelicaDynamicFovCompat",
-            CATEGORY_COMPAT,
-            disableAngelicaDynamicFovCompat,
-            "When camera compatibility is enabled, let Combatives be the single owner of Angelica dynamic FOV."
-        );
         enableCombativesCamera = config.getBoolean("enableCombativesCamera", CATEGORY_CAMERA, enableCombativesCamera, "Enable the client-only Combatives first-person camera controller.");
         enableProceduralBob = config.getBoolean("enableProceduralBob", CATEGORY_CAMERA, enableProceduralBob, "Enable subtle procedural Combatives movement bobbing.");
         enableMovementLean = config.getBoolean("enableMovementLean", CATEGORY_CAMERA, enableMovementLean, "Enable subtle movement-driven camera lean.");
@@ -110,9 +88,6 @@ public final class CombativesConfig {
         logger.info("Combatives config: landingFeedbackStrength={}", landingFeedbackStrength);
         logger.info("Combatives config: enableExplosionCameraFeedback={}", enableExplosionCameraFeedback);
         logger.info("Combatives config: explosionFeedbackStrength={}", explosionFeedbackStrength);
-        logger.info("Combatives config: enableAngelicaCameraCompat={}", enableAngelicaCameraCompat);
-        logger.info("Combatives config: disableAngelicaViewBobbingCompat={}", disableAngelicaViewBobbingCompat);
-        logger.info("Combatives config: disableAngelicaDynamicFovCompat={}", disableAngelicaDynamicFovCompat);
         logger.info("Combatives config: debugMovement={}", debugMovement);
         logger.info("Combatives config: verboseMovementDebug={}", verboseMovementDebug);
         logger.info("Combatives config: debugCamera={}", debugCamera);

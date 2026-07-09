@@ -1,5 +1,12 @@
 # Changelog
 
+## Clean up camera feedback diagnostics and Angelica scaffolding
+
+- Removed stale `updateCameraAndRender` repeated-call diagnostics so normal camera debugging no longer emits old render-spam investigation logs.
+- Removed unused Angelica camera compatibility scaffolding and config options, while keeping the live vanilla bob/FOV ownership behavior directly in the renderer mixin.
+- Kept landing/explosion camera feedback tracing narrow behind `debugCamera`: packet receipt, landing/explosion impulse addition, nonzero sampled camera feedback, and actual GL transform application.
+- Updated player-facing camera config documentation so fake Angelica compatibility toggles are no longer listed.
+
 ## Fix landing and explosion camera feedback
 
 - Routed explosion feedback through the vanilla `NetHandlerPlayClient#func_147283_a(S27PacketExplosion)` packet handler tail injection, with debug-camera logs for receipt, distance/falloff, and accepted or rejected impulses.

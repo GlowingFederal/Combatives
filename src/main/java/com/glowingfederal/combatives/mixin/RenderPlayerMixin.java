@@ -4,6 +4,7 @@ import com.glowingfederal.combatives.client.model.ICombativesModelBipedSwimming;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.util.math.MathHelperNew;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.model.ModelBiped;
@@ -52,7 +53,13 @@ public abstract class RenderPlayerMixin extends RendererLivingEntity {
             }
 
             if (pose.isActuallySwimming()) {
-                GL11.glTranslatef(0.0F, -1.0F, 0.3F);
+                boolean landCrawl = pose.isCrawlKeyDown() && !player.isInWater();
+                if (landCrawl) {
+                    boolean localPlayer = Minecraft.getMinecraft().thePlayer == player;
+                    GL11.glTranslatef(0.0F, localPlayer ? -1.08F : -0.85F, 0.3F);
+                } else {
+                    GL11.glTranslatef(0.0F, -1.0F, 0.3F);
+                }
             }
         }
     }

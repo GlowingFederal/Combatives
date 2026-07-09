@@ -1,5 +1,12 @@
 # Changelog
 
+## Fix landing and explosion camera feedback
+
+- Routed explosion feedback through the vanilla `NetHandlerPlayClient#func_147283_a(S27PacketExplosion)` packet handler tail injection, with debug-camera logs for receipt, distance/falloff, and accepted or rejected impulses.
+- Moved camera feedback sampling into the active render camera path so landing and explosion impulses are updated before `orientCamera` applies the hard-clamped visual transform.
+- Reworked client-side landing detection to use previous airborne tick state (`wasOnGround`, `previousMotionY`, and `previousFallDistance`) so feedback still triggers after vanilla resets current fall distance.
+- Preserved visual-only camera behavior by feeding landing and explosion impulses into the shared shake accumulator, honoring camera toggles, keeping translations when rotations are disabled, and never mutating player look, motion, camera bob fields, or movement input.
+
 ## Fix production mixin refmap remapping
 
 - Added production Mixin annotation processor options so `mixins.combatives.refmap.json` is generated during Java compilation, packaged at the jar root, and paired with the extra SRG emitted by the processor for reobfuscation.

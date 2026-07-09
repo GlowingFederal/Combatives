@@ -43,6 +43,11 @@ public class PacketCrawlKeyState implements IMessage {
                 ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
                 boolean before = pose.isCrawlKeyDown();
                 boolean next = !before;
+                if (before && !next && !pose.isPoseClear(Pose.STANDING)) {
+                    MovementDiagnostics.debug(player, "server crawl exit blocked: standing clearance unavailable");
+                    PoseSync.broadcastAuthoritativePose(player, true);
+                    return null;
+                }
                 MovementDiagnostics.debug(player, "server crawl " + before + " -> " + next);
                 pose.setCrawlKeyDown(next);
                 if (next && pose.isPoseClear(Pose.SWIMMING)) {

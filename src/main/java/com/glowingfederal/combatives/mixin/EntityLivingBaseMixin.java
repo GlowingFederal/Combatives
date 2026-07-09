@@ -1,5 +1,6 @@
 package com.glowingfederal.combatives.mixin;
 
+import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.movement.ICombativesMovementState;
 import com.glowingfederal.combatives.movement.MovementController;
@@ -8,9 +9,27 @@ import net.minecraft.entity.player.EntityPlayer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(EntityLivingBase.class)
 public abstract class EntityLivingBaseMixin {
+    @Inject(method = "jump", at = @At("HEAD"), cancellable = true)
+    private void combatives$cancelCrawlJump(CallbackInfo ci) {
+        EntityLivingBase self = (EntityLivingBase) (Object) this;
+        if (!(self instanceof ICombativesPlayerPose)) {
+            return;
+        }
+        ICombativesPlayerPose pose = (ICombativesPlayerPose) self;
+        if (!pose.isCrawlKeyDown()) {
+            return;
+        }
+        if (pose.isPoseClear(Pose.STANDING)) {
+            pose.setCrawlKeyDown(false);
+        }
+        ci.cancel();
+    }
+
     @Redirect(method = "moveEntityWithHeading", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/EntityLivingBase;isSneaking()Z"))
     private boolean combatives$useActualSneakForTravel(EntityLivingBase entity) {
         if (entity instanceof ICombativesPlayerPose) {

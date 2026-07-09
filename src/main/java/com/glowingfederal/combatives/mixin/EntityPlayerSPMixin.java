@@ -5,6 +5,8 @@ import com.glowingfederal.combatives.client.MovementInputStorage;
 import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
+import com.glowingfederal.combatives.network.NetworkHandler;
+import com.glowingfederal.combatives.network.message.PacketCrawlKeyState;
 import com.glowingfederal.combatives.util.math.AxisAlignedBBSpliterator;
 import java.util.stream.StreamSupport;
 import net.minecraft.entity.Entity;
@@ -28,6 +30,7 @@ public abstract class EntityPlayerSPMixin implements ICombativesClientPlayerSwim
 
     private final MovementInputStorage combatives$movementStorage = new MovementInputStorage();
     private boolean combatives$isCrouching;
+    private boolean combatives$lastCrawlJumpExitDown;
 
     @Inject(method = "isSneaking", at = @At("HEAD"), cancellable = true)
     private void combatives$isSneaking(CallbackInfoReturnable<Boolean> cir) {
@@ -125,6 +128,41 @@ public abstract class EntityPlayerSPMixin implements ICombativesClientPlayerSwim
         this.combatives$movementStorage.copyFrom(this.movementInput);
         this.combatives$movementStorage.isSprinting = ((EntityPlayerSP) (Object) this).isSprinting();
         this.combatives$movementStorage.isFlying = ((EntityPlayerSP) (Object) this).capabilities.isFlying;
+        this.combatives$handleCrawlJumpExit();
+    }
+
+
+    private void combatives$handleCrawlJumpExit() {
+        EntityPlayerSP self = (EntityPlayerSP) (Object) this;
+        ICombativesPlayerPose pose = (ICombativesPlayerPose) self;
+        if (!pose.isCrawlKeyDown()) {
+            this.combatives$lastCrawlJumpExitDown = false;
+            return;
+        }
+
+        boolean jumpDown = this.movementInput.jump;
+        this.movementInput.jump = false;
+        if (!jumpDown) {
+            this.combatives$lastCrawlJumpExitDown = false;
+            return;
+        }
+        if (this.combatives$lastCrawlJumpExitDown) {
+            return;
+        }
+        this.combatives$lastCrawlJumpExitDown = true;
+
+        if (!pose.isPoseClear(Pose.STANDING)) {
+            MovementDiagnostics.debug(self, "crawl jump exit blocked: standing clearance unavailable");
+            return;
+        }
+
+        pose.setCrawlKeyDown(false);
+        MovementDiagnostics.debug(self, "crawl jump requested crawl exit");
+        if (NetworkHandler.channel == null) {
+            MovementDiagnostics.debug(self, "crawl jump exit packet skipped because network channel is not initialized");
+            return;
+        }
+        NetworkHandler.channel.sendToServer(new PacketCrawlKeyState());
     }
 
     private void combatives$updateSprintToggleTimer() {

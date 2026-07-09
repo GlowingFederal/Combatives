@@ -1,5 +1,11 @@
 # Changelog
 
+## Polish crawl render height, jump exit, and nametags
+
+- Split land-crawl `RenderPlayer` translation for local and remote players so the local model is nudged down while remote crawlers are lifted out of the ground without touching water swimming translation.
+- Changed crawl jump handling so local jump input cancels vanilla jumping, requests crawl exit only when standing clearance is available, and the server rejects blocked crawl exits authoritatively.
+- Hid RenderPlayer nameplates while the synced crawl flag is active, matching sneak-style visibility without changing vanilla sneaking state.
+
 ## Fix Aqua-style crawl toggle request handling
 
 - Changed the crawl key packet semantics from a pressed/released state to a toggle request while keeping the existing packet registration path intact.

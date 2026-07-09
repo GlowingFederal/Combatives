@@ -1,6 +1,7 @@
 package com.glowingfederal.combatives.mixin;
 
 import com.glowingfederal.combatives.client.model.ICombativesModelBipedSwimming;
+import com.glowingfederal.combatives.client.render.CombativesVisualPoseHelper;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.util.math.MathHelperNew;
@@ -29,10 +30,10 @@ public abstract class RenderPlayerMixin extends RendererLivingEntity {
 
     @Inject(method = "rotateCorpse(Lnet/minecraft/client/entity/AbstractClientPlayer;FFF)V", at = @At("TAIL"))
     private void combatives$applySwimRotations(AbstractClientPlayer player, float p_77043_2_, float rotationYaw, float partialTicks, CallbackInfo ci) {
-        if (player instanceof ICombativesPlayerPose) {
+        if (CombativesVisualPoseHelper.isVisuallySwimmingOrCrawling(player) && player instanceof ICombativesPlayerPose) {
             ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
-            float animation = pose.getSwimAnimation(partialTicks);
-            MovementDiagnostics.debug(player, "render pose state dataWatcherPose=" + pose.getPose() + " combativesPose=" + pose.getPose() + " animation=" + animation + " yOffset=" + player.yOffset);
+            float animation = CombativesVisualPoseHelper.getVisualSwimAnimation(player, partialTicks);
+            MovementDiagnostics.debug(player, "RenderPlayer hook fired: " + CombativesVisualPoseHelper.describe(player) + " animation=" + animation);
             float targetPitch = player.isInWater() ? -90.0F - player.rotationPitch : -90.0F;
             GL11.glRotatef(MathHelperNew.lerp(animation, 0.0F, targetPitch), 1.0F, 0.0F, 0.0F);
             if (pose.isActuallySwimming()) {

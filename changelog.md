@@ -115,3 +115,9 @@
 - Replaced the local pose-selection rewrite with Aqua-style priority ordering so active swimming or crawl forcing selects the shared low SWIMMING pose before sneaking or standing clearance can run.
 - Removed client pose rebroadcast authority from the player tick path and made server-side handling of client pose packets preserve active server crawl/swim state instead of accepting STANDING or CROUCHING downgrades.
 - Restored Aqua low-pose render offsets and swim/crawl eye-height sizing behavior while keeping crawl toggle packet semantics server-authoritative.
+
+## Restore Aqua visual crawl and swim model transforms
+
+- Added a client visual-pose helper so local, remote, and armor-model rendering can identify crawl/swim from the synced crawl flag, swim flag, or shared SWIMMING pose.
+- Routed RenderPlayer and ModelBiped through the helper, applying Aqua's prone/swim model rotation, translation, limb rotations, and temporary render/model debug logs whenever an active low pose is rendered.
+- Reverted the previous eye-height adjustment and kept this change focused on player model transforms rather than camera behavior.

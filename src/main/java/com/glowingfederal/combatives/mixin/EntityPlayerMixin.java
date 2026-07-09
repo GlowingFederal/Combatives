@@ -51,7 +51,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
 
     @Shadow public PlayerCapabilities capabilities;
     @Shadow(remap = false) public float eyeHeight;
-    @Shadow public abstract void addMovementStat(double x, double y, double z);
+    @Shadow(aliases = "func_71000_j") public abstract void addMovementStat(double x, double y, double z);
 
     private boolean eyesInWater;
     private boolean eyesInWaterPlayer;

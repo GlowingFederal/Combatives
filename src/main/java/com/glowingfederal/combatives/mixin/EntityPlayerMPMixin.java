@@ -23,24 +23,39 @@ public abstract class EntityPlayerMPMixin extends EntityPlayer {
 
     @Inject(method = "onDeath", at = @At("TAIL"))
     private void combatives$setDyingPose(DamageSource cause, CallbackInfo ci) {
-        ((ICombativesPlayerPose) this).setPose(Pose.DYING);
+        ICombativesPlayerPose pose = this.combatives$getPoseState();
+        if (pose == null) {
+            MovementDiagnostics.warn(this, "server skipped dying pose because Combatives player pose interface is unavailable");
+            return;
+        }
+        pose.setPose(Pose.DYING);
         MovementDiagnostics.debug(this, "server accepted pose DYING after death");
         PoseSync.broadcastAuthoritativePose((EntityPlayerMP) (Object) this, true);
     }
 
     @Override
     public float getDefaultEyeHeight() {
-        return ((ICombativesPlayerPose) this).getPose() == Pose.SWIMMING ? 0.4F : 1.62F;
+        ICombativesPlayerPose pose = this.combatives$getPoseState();
+        return pose != null && pose.getPose() == Pose.SWIMMING ? 0.4F : 1.62F;
     }
 
     @Override
     public float getEyeHeight() {
-        return ((ICombativesPlayerPose) this).getPose() == Pose.SWIMMING ? 0.4F : super.getEyeHeight();
+        ICombativesPlayerPose pose = this.combatives$getPoseState();
+        return pose != null && pose.getPose() == Pose.SWIMMING ? 0.4F : super.getEyeHeight();
+    }
+
+    private ICombativesPlayerPose combatives$getPoseState() {
+        return this instanceof ICombativesPlayerPose ? (ICombativesPlayerPose) this : null;
     }
 
     @Inject(method = "onUpdate", at = @At("TAIL"))
     private void combatives$syncServerSize(CallbackInfo ci) {
-        ICombativesPlayerPose pose = (ICombativesPlayerPose) this;
+        ICombativesPlayerPose pose = this.combatives$getPoseState();
+        if (pose == null) {
+            MovementDiagnostics.warn(this, "server skipped size sync because Combatives player pose interface is unavailable");
+            return;
+        }
         EntitySize size = pose.getSize(pose.getPose());
         if (this.width != size.width || this.height != size.height) {
             this.setSize(size.width, size.height);

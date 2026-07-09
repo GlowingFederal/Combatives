@@ -51,6 +51,11 @@ Future work will build on the camera foundation with weapon-specific first-perso
 
 Angelica compatibility must remain optional. Angelica is not a hard runtime dependency.
 
+
+## Production mixin smoke test
+
+For production validation, build a reobfuscated jar and run it in a real Forge 1.7.10 client without `-Dmixin.env.disableRefMap=true`. The packaged jar must include `mixins.combatives.refmap.json` at the jar root, both Combatives mixin configs must reference that exact refmap name, and the client log must not contain `No refMap loaded` or `InvalidMixinException` for Combatives mixins. This smoke test specifically protects the `EntityPlayerMixin` pose interface from failing before `EntityPlayerMPMixin` or client pose hooks use it.
+
 ## Development notes
 
 See `docs/aqua-port-map.md` for the inspected Aqua source map and port/skipped-class rationale. Do not compile anything inside the reference folder. Do not compile or add generated binary files to commits or pull requests. Common and client Combatives movement mixins are loaded through `com.glowingfederal.combatives.loading.CombativesCorePlugin`, with the client render/input/model mixins added only on the physical client side. Do not port unrelated Aqua Acrobatics systems unless they are required for Combatives swimming/crawling behavior to function.

@@ -1,5 +1,12 @@
 # Changelog
 
+## Fix production mixin refmap remapping
+
+- Added production Mixin annotation processor options so `mixins.combatives.refmap.json` is generated during Java compilation, packaged at the jar root, and paired with the extra SRG emitted by the processor for reobfuscation.
+- Removed the dev runtime `-Dmixin.env.disableRefMap=true` flag so local launches exercise the same refmap path expected in production.
+- Kept both common and client mixin configs pointed at `mixins.combatives.refmap.json` and documented the production smoke test: run a reobfuscated jar outside dev without `-Dmixin.env.disableRefMap=true`, then confirm logs contain no `No refMap loaded` warning and no `InvalidMixinException` for Combatives mixins.
+- Removed the invalid `Entity#isSneaking` shadow from `EntityMixin`, added SRG aliases for known fragile player shadows, and guarded server/local-player pose-interface casts so a failed player mixin cannot cascade into construction/update crashes while the refmap issue is being diagnosed.
+
 ## Disable duplicate client mixin manifest path
 
 - Removed the standalone jar manifest `MixinConfigs` declaration for `mixins.combatives.client.json` so Combatives client mixins are offered only through the GTNHMixins `IEarlyMixinLoader` path.

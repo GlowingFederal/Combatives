@@ -122,7 +122,6 @@ gradle.projectsEvaluated {
         if (task.name == "runClient" || task.name == "runServer") {
             args "--tweakClass", "org.spongepowered.asm.launch.MixinTweaker"
             jvmArgs "-Dfml.coreMods.load=io.github.legacymoddingmc.unimixins.all.AllCore"
-            jvmArgs "-Dmixin.env.disableRefMap=true"
 
 
         }
@@ -135,17 +134,47 @@ targetCompatibility = JavaVersion.VERSION_1_8
 repositories {
     mavenCentral()
     maven { url = "https://maven.minecraftforge.net/" }
+    maven {
+        name = "sponge"
+        url = "https://repo.spongepowered.org/maven/"
+    }
     flatDir { dirs "libs" }
 }
 
 dependencies {
     compile name: "+unimixins-all-1.7.10-0.3.1"
+    compile("org.spongepowered:mixin:0.7.11-SNAPSHOT") {
+        transitive = false
+    }
 }
 
 // Dependencies can be added here, e.g.
 // dependencies {
 //     compile "some.group:artifact:version"
 // }
+
+// Generate the production refmap consumed by both Combatives mixin configs.
+ext.combativesRefmapName = 'mixins.combatives.refmap.json'
+ext.combativesRefmapFile = file("${tasks.compileJava.temporaryDir}/${combativesRefmapName}")
+ext.combativesOutSrgFile = file("${tasks.compileJava.temporaryDir}/combatives-mixin-out.srg")
+
+afterEvaluate {
+    tasks.compileJava.options.compilerArgs += [
+            "-AreobfSrgFile=${tasks.reobf.srg}",
+            "-AoutSrgFile=${combativesOutSrgFile}",
+            "-AoutRefMapFile=${combativesRefmapFile}"
+    ]
+}
+
+jar {
+    from(combativesRefmapFile) {
+        into ''
+    }
+}
+
+reobf {
+    addExtraSrgFile combativesOutSrgFile
+}
 
 processResources {
     from(sourceSets.main.resources.srcDirs) {

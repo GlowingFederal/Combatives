@@ -1,7 +1,6 @@
 package com.glowingfederal.combatives.mixin;
 
 import com.glowingfederal.combatives.client.model.ICombativesModelBipedSwimming;
-import com.glowingfederal.combatives.client.render.CombativesVisualPoseHelper;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.util.math.MathHelperNew;
@@ -41,9 +40,21 @@ public abstract class RenderPlayerMixin extends RendererLivingEntity {
             float rotation = MathHelperNew.lerp(animation, 0.0F, targetPitch);
             GL11.glRotatef(rotation, 1.0F, 0.0F, 0.0F);
 
+            if (pose.isCrawlKeyDown()) {
+                double interpolatedY = player.prevPosY + (player.posY - player.prevPosY) * partialTicks;
+                MovementDiagnostics.debug(player, "crawl render grounding: isLocalPlayer=" + player.isUser()
+                    + " posY=" + player.posY + " prevPosY=" + player.prevPosY + " lastTickPosY=" + player.lastTickPosY
+                    + " interpolatedRenderY=" + interpolatedY + " partialTicks=" + partialTicks
+                    + " yOffset=" + player.yOffset + " ySize=" + player.ySize + " width=" + player.width + " height=" + player.height
+                    + " pose=" + pose.getPose() + " crawl=" + pose.isCrawlKeyDown() + " swim=" + pose.isSwimming()
+                    + " actuallySwimming=" + pose.isActuallySwimming() + " translateY=" + (pose.isActuallySwimming() ? -1.0F : 0.0F)
+                    + " translateZ=" + (pose.isActuallySwimming() ? 0.3F : 0.0F));
+            }
+
             if (pose.isActuallySwimming()) {
                 GL11.glTranslatef(0.0F, -1.0F, 0.3F);
             }
         }
     }
+
 }

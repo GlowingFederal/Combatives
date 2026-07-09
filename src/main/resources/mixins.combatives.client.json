@@ -12,6 +12,7 @@
     "EntityOtherPlayerMPMixin",
     "ModelBipedMixin",
     "RenderPlayerMixin",
+    "RendererLivingEntityMixin",
     "EntityRendererMixin",
     "PlayerControllerMPMixin"
   ],

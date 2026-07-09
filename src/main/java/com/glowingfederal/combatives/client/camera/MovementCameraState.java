@@ -1,5 +1,7 @@
 package com.glowingfederal.combatives.client.camera;
 
+import com.glowingfederal.combatives.Combatives;
+import com.glowingfederal.combatives.config.CombativesConfig;
 import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -24,9 +26,10 @@ public final class MovementCameraState {
     private boolean grounded;
     private boolean landed;
     private float landingStrength;
-    private float lastFallDistance;
-    private double lastAirborneMotionY;
     private boolean wasGrounded = true;
+    private double previousMotionY;
+    private float previousFallDistance;
+    private int lastLandingSampleTick = Integer.MIN_VALUE;
 
     public void update(EntityPlayerSP player, float partialTicks) {
         MovementInput input = player.movementInput;
@@ -54,17 +57,29 @@ public final class MovementCameraState {
             this.swimming = pose.isSwimming() || pose.isActuallySwimming();
             this.crawling = !this.swimming && pose.getPose() == Pose.SWIMMING;
         }
-        boolean realLanding = !this.wasGrounded && player.onGround && (this.lastFallDistance > 1.5F || this.lastAirborneMotionY < -0.35D);
-        float fallSeverity = Math.max(this.lastFallDistance, (float) (-this.lastAirborneMotionY * 4.0D));
-        this.landed = realLanding && fallSeverity > 1.5F;
-        this.landingStrength = this.landed ? Math.min((fallSeverity - 1.5F) / 7.0F, 1.0F) : 0.0F;
-        if (!player.onGround && player.motionY < 0.0D) {
-            this.lastAirborneMotionY = player.motionY;
-        } else if (player.onGround) {
-            this.lastAirborneMotionY = 0.0D;
+        if (player.ticksExisted != this.lastLandingSampleTick) {
+            boolean wasAirborne = !this.wasGrounded;
+            boolean realLanding = wasAirborne && player.onGround && (this.previousFallDistance > 1.5F || this.previousMotionY < -0.35D);
+            float fallSeverity = Math.max(this.previousFallDistance, (float) (-this.previousMotionY * 4.0D));
+            this.landed = CombativesConfig.enableCombativesCamera && CombativesConfig.enableLandingCameraFeedback && realLanding && fallSeverity > 1.5F;
+            this.landingStrength = this.landed ? Math.min((fallSeverity - 1.5F) / 7.0F, 1.0F) : 0.0F;
+
+            if (Combatives.logger != null && CombativesConfig.debugCamera && !player.onGround) {
+                Combatives.logger.info("Combatives landing airborne tracking: tick={}, motionY={}, fallDistance={}, previousMotionY={}, previousFallDistance={}", player.ticksExisted, player.motionY, player.fallDistance, this.previousMotionY, this.previousFallDistance);
+            }
+            if (Combatives.logger != null && CombativesConfig.debugCamera && realLanding) {
+                Combatives.logger.info("Combatives landing detected: tick={}, previousMotionY={}, previousFallDistance={}, severity={}, strength={}", player.ticksExisted, this.previousMotionY, this.previousFallDistance, fallSeverity, this.landingStrength);
+                if (!this.landed) Combatives.logger.info("Combatives landing ignored due to low severity or disabled toggles: enableCombativesCamera={}, enableLandingCameraFeedback={}, severity={}", CombativesConfig.enableCombativesCamera, CombativesConfig.enableLandingCameraFeedback, fallSeverity);
+            }
+
+            this.wasGrounded = player.onGround;
+            this.previousMotionY = player.motionY;
+            this.previousFallDistance = player.fallDistance;
+            this.lastLandingSampleTick = player.ticksExisted;
+        } else {
+            this.landed = false;
+            this.landingStrength = 0.0F;
         }
-        this.wasGrounded = player.onGround;
-        this.lastFallDistance = player.fallDistance;
     }
 
     private static float applyDeadzone(float value, float deadzone) {

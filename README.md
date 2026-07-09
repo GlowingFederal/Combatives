@@ -21,7 +21,7 @@ The port is intentionally scoped to player pose, collision bounds, eye-height st
 - Explicit multiplayer pose synchronization from the owning client to the server and from the server to tracking clients, including join/respawn/dimension/tracking lifecycle resends
 - Lightweight horizontal momentum controller that shapes `motionX`/`motionZ` from input intent toward vanilla velocity targets while keeping collision, gravity, jumping, step handling, and `moveEntity` authoritative; normal movement is shaped through the vanilla `moveFlying` hook, while crawl and swim/water movement are shaped only in their dedicated Combatives branches
 - Client/server movement snapshots for future camera work, exposing velocity, acceleration, normalized speed, wish direction, grounded/sprint/sneak/crawl/swim/underwater/airborne flags, landing impact, and turn values
-- Client-only first-person camera foundation with read-only movement sampling, subtle procedural camera bob, recreated vanilla-style first-person arm/item bob, movement lean, movement FOV, a damped shake impulse framework, post-vanilla-input camera state sampling, low-level `Entity#setAngles` spike diagnostics for player look rotation, hard-clamped visual-only pitch/roll/translation transforms with no yaw transform, and optional Angelica camera ownership compatibility
+- Client-only first-person camera foundation with read-only movement sampling, subtle procedural camera bob, recreated vanilla-style first-person arm/item bob, movement lean, movement FOV, a damped shake impulse framework, render-time camera state sampling, vanilla `S27PacketExplosion` client feedback, client-side previous-tick landing feedback, low-level `Entity#setAngles` spike diagnostics for player look rotation, hard-clamped visual-only pitch/roll/translation transforms with no yaw transform
 - Initial config options:
   - `enableCombativesCamera = true`
   - `enableProceduralBob = true`
@@ -29,9 +29,8 @@ The port is intentionally scoped to player pose, collision bounds, eye-height st
   - `enableMovementFov = true`
   - `enableCameraRotations = true`
   - `enableCameraShake = true`
-  - `enableAngelicaCameraCompat = true`
-  - `disableAngelicaViewBobbingCompat = true`
-  - `disableAngelicaDynamicFovCompat = true`
+  - `enableLandingCameraFeedback = true`
+  - `enableExplosionCameraFeedback = true`
   - `debugMovement = false`
   - `verboseMovementDebug = false`
   - `debugCamera = false`
@@ -49,7 +48,6 @@ Combatives movement diagnostics are split into three levels so normal crawling a
 
 Future work will build on the camera foundation with weapon-specific first-person behavior and additional camera impulses.
 
-Angelica compatibility must remain optional. Angelica is not a hard runtime dependency.
 
 
 ## Production mixin smoke test

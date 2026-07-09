@@ -1,14 +1,16 @@
 package com.glowingfederal.combatives.client.camera;
 
+import com.glowingfederal.combatives.Combatives;
 import com.glowingfederal.combatives.config.CombativesConfig;
 
 public final class ShakeController {
     private float pitch, roll, vertical, forward, landingVelocity, explosionVelocity, explosionPhase;
 
-    public void update(MovementCameraState state) {
+    public void update(MovementCameraState state, float partialTicks) {
+        float tickScale = Math.max(0.0F, Math.min(1.0F, partialTicks));
         landingVelocity *= 0.72F;
         explosionVelocity *= 0.88F;
-        explosionPhase += 0.42F;
+        explosionPhase += 0.42F * (0.5F + tickScale * 0.5F);
 
         float wave = (float) Math.sin(explosionPhase);
         float recovery = (float) Math.cos(explosionPhase * 0.7F);
@@ -23,16 +25,24 @@ public final class ShakeController {
 
     public void addLandingImpulse(float strength) {
         if (!CombativesConfig.enableLandingCameraFeedback) return;
-        landingVelocity += clamp(strength * (float) CombativesConfig.landingFeedbackStrength, 0.0F, 1.0F);
+        float impulse = clamp(strength * (float) CombativesConfig.landingFeedbackStrength, 0.0F, 1.0F);
+        landingVelocity += impulse;
         landingVelocity = clamp(landingVelocity, 0.0F, 1.0F);
+        if (Combatives.logger != null && CombativesConfig.debugCamera) {
+            Combatives.logger.info("Combatives landing impulse added: inputStrength={}, scaledImpulse={}, landingVelocity={}", strength, impulse, landingVelocity);
+        }
     }
 
     public void addDamageImpulse(float strength) { landingVelocity += clamp(strength, 0.0F, 0.5F); }
 
     public void addExplosionImpulse(float strength) {
         if (!CombativesConfig.enableExplosionCameraFeedback) return;
-        explosionVelocity += clamp(strength * (float) CombativesConfig.explosionFeedbackStrength, 0.0F, 1.0F);
+        float impulse = clamp(strength * (float) CombativesConfig.explosionFeedbackStrength, 0.0F, 1.0F);
+        explosionVelocity += impulse;
         explosionVelocity = clamp(explosionVelocity, 0.0F, 1.0F);
+        if (Combatives.logger != null && CombativesConfig.debugCamera) {
+            Combatives.logger.info("Combatives explosion impulse added: inputStrength={}, scaledImpulse={}, explosionVelocity={}", strength, impulse, explosionVelocity);
+        }
     }
 
     private static float clamp(float v, float min, float max) { return v < min ? min : v > max ? max : v; }

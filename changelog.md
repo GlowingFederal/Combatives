@@ -1,5 +1,11 @@
 # Changelog
 
+## Rework Combatives bob to vanilla-style camera and hand motion
+
+- Replaced the custom procedural bob phase with a vanilla-style walk-distance, camera-yaw, and camera-pitch bob calculation with only subtle Combatives intensity scaling.
+- Kept vanilla `setupViewBobbing` canceled while applying a recreated first-person hand/item bob directly before item rendering.
+- Removed the failed render-hand bob passthrough so camera bob ownership no longer depends on vanilla bob rendering remaining active.
+
 ## Preserve vanilla first-person arm bob while owning camera bob
 
 - Limited Combatives vanilla view-bob cancellation to the world camera path so the first-person arm/item render can still receive vanilla hand bobbing.

@@ -14,6 +14,9 @@ public final class MovementCameraState {
     private float forward;
     private float strafe;
     private float speed;
+    private float walkPhase;
+    private float cameraYaw;
+    private float cameraPitch;
     private boolean crawling;
     private boolean swimming;
     private boolean sneaking;
@@ -23,7 +26,7 @@ public final class MovementCameraState {
     private float landingStrength;
     private float lastFallDistance;
 
-    public void update(EntityPlayerSP player) {
+    public void update(EntityPlayerSP player, float partialTicks) {
         MovementInput input = player.movementInput;
         float targetForward = input == null ? 0.0F : applyDeadzone(input.moveForward, INPUT_DEADZONE);
         float targetStrafe = input == null ? 0.0F : applyDeadzone(input.moveStrafe, INPUT_DEADZONE);
@@ -33,6 +36,11 @@ public final class MovementCameraState {
         this.forward += (targetForward - this.forward) * INPUT_SMOOTHING;
         this.strafe += (targetStrafe - this.strafe) * INPUT_SMOOTHING;
         this.speed += (horizontalSpeed - this.speed) * SPEED_SMOOTHING;
+
+        float walkedDelta = player.distanceWalkedModified - player.prevDistanceWalkedModified;
+        this.walkPhase = -(player.distanceWalkedModified + walkedDelta * partialTicks);
+        this.cameraYaw = player.prevCameraYaw + (player.cameraYaw - player.prevCameraYaw) * partialTicks;
+        this.cameraPitch = player.prevCameraPitch + (player.cameraPitch - player.prevCameraPitch) * partialTicks;
 
         this.grounded = player.onGround;
         this.sneaking = player.isSneaking();
@@ -56,6 +64,9 @@ public final class MovementCameraState {
     public float getForward() { return forward; }
     public float getStrafe() { return strafe; }
     public float getSpeed() { return speed; }
+    public float getWalkPhase() { return walkPhase; }
+    public float getCameraYaw() { return cameraYaw; }
+    public float getCameraPitch() { return cameraPitch; }
     public boolean isCrawling() { return crawling; }
     public boolean isSwimming() { return swimming; }
     public boolean isSneaking() { return sneaking; }

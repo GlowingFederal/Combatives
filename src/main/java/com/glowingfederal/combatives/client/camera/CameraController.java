@@ -20,7 +20,7 @@ public final class CameraController {
 
     public void update(Minecraft mc, EntityPlayerSP player, float partialTicks) {
         if (!CombativesConfig.enableCombativesCamera || mc == null || player == null) { reset(); return; }
-        movement.update(player);
+        movement.update(player, partialTicks);
         if (CombativesConfig.enableCameraShake && movement.hasLanded()) shake.addLandingImpulse(movement.getLandingStrength());
         if (CombativesConfig.enableMovementLean) lean.update(movement); else lean.reset();
         if (CombativesConfig.enableProceduralBob) bob.update(movement); else bob.reset();
@@ -32,9 +32,26 @@ public final class CameraController {
 
     public void applyTransforms(float partialTicks) {
         if (!CombativesConfig.enableCombativesCamera) return;
+        applyCameraBobAndShake();
+        GL11.glRotatef(leanPitch, 1.0F, 0.0F, 0.0F);
+        GL11.glRotatef(leanRoll, 0.0F, 0.0F, 1.0F);
+    }
+
+    public void applyHandTransforms(float partialTicks) {
+        if (!CombativesConfig.enableCombativesCamera || !CombativesConfig.enableProceduralBob) return;
+        applyVanillaStyleBob();
+    }
+
+    private void applyCameraBobAndShake() {
         GL11.glTranslatef(bobSway, bobVertical + shakeVertical, 0.0F);
-        GL11.glRotatef(leanPitch + bobPitch + shakePitch, 1.0F, 0.0F, 0.0F);
-        GL11.glRotatef(leanRoll + bobRoll + shakeRoll, 0.0F, 0.0F, 1.0F);
+        GL11.glRotatef(bobRoll + shakeRoll, 0.0F, 0.0F, 1.0F);
+        GL11.glRotatef(bobPitch + shakePitch, 1.0F, 0.0F, 0.0F);
+    }
+
+    private void applyVanillaStyleBob() {
+        GL11.glTranslatef(bobSway, bobVertical, 0.0F);
+        GL11.glRotatef(bobRoll, 0.0F, 0.0F, 1.0F);
+        GL11.glRotatef(bobPitch, 1.0F, 0.0F, 0.0F);
     }
 
     public void reset() { lean.reset(); bob.reset(); fov.reset(); shake.reset(); leanRoll = leanPitch = bobVertical = bobSway = bobPitch = bobRoll = shakeVertical = shakePitch = shakeRoll = fovModifier = 0.0F; }

@@ -197,7 +197,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     private float getEyeHeight(Pose pose, EntitySize size) { return pose == Pose.SLEEPING || pose == Pose.DYING ? 0.2F : this.getStandingEyeHeight(pose, size); }
     @Override public boolean isActuallySneaking() { return this.isSneaking(); }
     @Override public float getStandingEyeHeight(Pose pose, EntitySize size) {
-        if (pose == Pose.SWIMMING || pose == Pose.FALL_FLYING || pose == Pose.SPIN_ATTACK) return 0.4F;
+        if (pose == Pose.SWIMMING || pose == Pose.FALL_FLYING || pose == Pose.SPIN_ATTACK) return this.eyeHeight;
         if (pose == Pose.CROUCHING) return 0.35F;
         return this.eyeHeight;
     }

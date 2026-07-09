@@ -1,6 +1,7 @@
 package com.glowingfederal.combatives.mixin;
 
 import com.glowingfederal.combatives.client.model.ICombativesModelBipedSwimming;
+import com.glowingfederal.combatives.client.render.CombativesVisualPoseHelper;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.util.math.MathHelperNew;
@@ -32,12 +33,13 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
     @Redirect(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/model/ModelBiped;setRotationAngles(FFFFFFLnet/minecraft/entity/Entity;)V"))
     private void combatives$setRotationAngles(ModelBiped model, float limbSwing, float limbSwingAmount, float ageInTicks,
         float netHeadYaw, float headPitch, float scaleFactor, Entity entity) {
-        if (entity instanceof ICombativesPlayerPose && this.combatives$swimAnimation > 0.0F) {
+        if (entity instanceof ICombativesPlayerPose && this.combatives$getSwimAnimationFor(entity) > 0.0F) {
             ICombativesPlayerPose pose = (ICombativesPlayerPose) entity;
+            float swimAnimation = this.combatives$getSwimAnimationFor(entity);
             if (pose.isActuallySwimming()) {
-                headPitch = this.combatives$rotLerpRad(this.combatives$swimAnimation, this.bipedHead.rotateAngleX, -((float) Math.PI / 4.0F)) / 0.017453292F;
+                headPitch = this.combatives$rotLerpRad(swimAnimation, this.bipedHead.rotateAngleX, -((float) Math.PI / 4.0F)) / 0.017453292F;
             } else {
-                headPitch = this.combatives$rotLerpRad(this.combatives$swimAnimation, this.bipedHead.rotateAngleX, headPitch * ((float) Math.PI / 180.0F)) / 0.017453292F;
+                headPitch = this.combatives$rotLerpRad(swimAnimation, this.bipedHead.rotateAngleX, headPitch * ((float) Math.PI / 180.0F)) / 0.017453292F;
             }
         }
         model.setRotationAngles(limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch, scaleFactor, entity);
@@ -46,7 +48,8 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
     @Inject(method = "setRotationAngles", at = @At("TAIL"), cancellable = true)
     private void combatives$setRotationAnglesPost(float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw,
         float headPitch, float scaleFactor, Entity entity, CallbackInfo ci) {
-        if (this.combatives$swimAnimation <= 0.0F) {
+        float swimAnimation = this.combatives$getSwimAnimationFor(entity);
+        if (swimAnimation <= 0.0F) {
             return;
         }
         if (entity instanceof EntityPlayer && entity instanceof ICombativesPlayerPose) {
@@ -54,7 +57,7 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
             MovementDiagnostics.debug((EntityPlayer) entity, "ModelBiped Aqua hook fired: crawl=" + pose.isCrawlKeyDown() + " swim=" + pose.isSwimming() + " pose=" + pose.getPose() + " animation=" + this.combatives$swimAnimation);
         }
         float cycle = limbSwing % 26.0F;
-        float armBlend = this.onGround > 0.0F ? 0.0F : this.combatives$swimAnimation;
+        float armBlend = this.onGround > 0.0F ? 0.0F : swimAnimation;
         if (cycle < 14.0F) {
             this.bipedLeftArm.rotateAngleX = this.combatives$rotLerpRad(armBlend, this.bipedLeftArm.rotateAngleX, 0.0F);
             this.bipedRightArm.rotateAngleX = MathHelperNew.lerp(armBlend, this.bipedRightArm.rotateAngleX, 0.0F);
@@ -79,17 +82,24 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
             this.bipedLeftArm.rotateAngleZ = this.combatives$rotLerpRad(armBlend, this.bipedLeftArm.rotateAngleZ, (float) Math.PI);
             this.bipedRightArm.rotateAngleZ = MathHelperNew.lerp(armBlend, this.bipedRightArm.rotateAngleZ, (float) Math.PI);
         }
-        this.bipedLeftLeg.rotateAngleX = MathHelperNew.lerp(this.combatives$swimAnimation, this.bipedLeftLeg.rotateAngleX, 0.3F * MathHelper.cos(limbSwing * 0.33333334F + (float) Math.PI));
-        this.bipedRightLeg.rotateAngleX = MathHelperNew.lerp(this.combatives$swimAnimation, this.bipedRightLeg.rotateAngleX, 0.3F * MathHelper.cos(limbSwing * 0.33333334F));
+        this.bipedLeftLeg.rotateAngleX = MathHelperNew.lerp(swimAnimation, this.bipedLeftLeg.rotateAngleX, 0.3F * MathHelper.cos(limbSwing * 0.33333334F + (float) Math.PI));
+        this.bipedRightLeg.rotateAngleX = MathHelperNew.lerp(swimAnimation, this.bipedRightLeg.rotateAngleX, 0.3F * MathHelper.cos(limbSwing * 0.33333334F));
         ci.cancel();
     }
 
     @Override
     public void setLivingAnimations(EntityLivingBase entity, float limbSwing, float limbSwingAmount, float partialTicks) {
         if (entity instanceof ICombativesPlayerPose) {
-            this.combatives$swimAnimation = ((ICombativesPlayerPose) entity).getSwimAnimation(partialTicks);
+            this.combatives$swimAnimation = entity instanceof EntityPlayer ? CombativesVisualPoseHelper.getVisualSwimAnimation((EntityPlayer) entity, partialTicks) : ((ICombativesPlayerPose) entity).getSwimAnimation(partialTicks);
         }
         super.setLivingAnimations(entity, limbSwing, limbSwingAmount, partialTicks);
+    }
+
+    @Unique private float combatives$getSwimAnimationFor(Entity entity) {
+        if (entity instanceof EntityPlayer) {
+            return CombativesVisualPoseHelper.getVisualSwimAnimation((EntityPlayer) entity, 1.0F);
+        }
+        return this.combatives$swimAnimation;
     }
 
     @Unique private float combatives$getArmAngleSq(float limbSwing) {

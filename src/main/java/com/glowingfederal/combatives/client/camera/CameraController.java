@@ -1,5 +1,6 @@
 package com.glowingfederal.combatives.client.camera;
 
+import com.glowingfederal.combatives.Combatives;
 import com.glowingfederal.combatives.config.CombativesConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -14,7 +15,16 @@ public final class CameraController {
     private final FOVController fov = new FOVController();
     private final ShakeController shake = new ShakeController();
 
+    private static final float MAX_CAMERA_PITCH_DEGREES = 2.0F;
+    private static final float MAX_CAMERA_ROLL_DEGREES = 4.0F;
+    private static final float MAX_CAMERA_X_OFFSET = 0.04F;
+    private static final float MAX_CAMERA_Y_OFFSET = 0.06F;
+    private static final float MAX_CAMERA_Z_OFFSET = 0.04F;
+
     private float leanRoll, leanPitch, bobVertical, bobSway, bobPitch, bobRoll, shakeVertical, shakePitch, shakeRoll, fovModifier;
+    private float lastPlayerYaw, lastPlayerPitch;
+    private boolean haveLastPlayerRotation;
+    private long lastDebugLogMs;
 
     private CameraController() {}
 
@@ -28,13 +38,24 @@ public final class CameraController {
         if (CombativesConfig.enableCameraShake) shake.update(movement); else shake.reset();
         leanRoll = lean.getRoll(); leanPitch = lean.getPitch(); bobVertical = bob.getVertical(); bobSway = bob.getSway(); bobPitch = bob.getPitch(); bobRoll = bob.getRoll();
         shakeVertical = shake.getVertical(); shakePitch = shake.getPitch(); shakeRoll = shake.getRoll(); fovModifier = fov.getModifier();
+        logRotationDiagnostics(player);
     }
 
     public void applyTransforms(float partialTicks) {
         if (!CombativesConfig.enableCombativesCamera) return;
-        applyCameraBobAndShake();
-        GL11.glRotatef(leanPitch, 1.0F, 0.0F, 0.0F);
-        GL11.glRotatef(leanRoll, 0.0F, 0.0F, 1.0F);
+
+        float xOffset = clamp(bobSway, -MAX_CAMERA_X_OFFSET, MAX_CAMERA_X_OFFSET);
+        float yOffset = clamp(bobVertical + shakeVertical, -MAX_CAMERA_Y_OFFSET, MAX_CAMERA_Y_OFFSET);
+        float zOffset = clamp(0.0F, -MAX_CAMERA_Z_OFFSET, MAX_CAMERA_Z_OFFSET);
+        GL11.glTranslatef(xOffset, yOffset, zOffset);
+
+        if (!CombativesConfig.enableCameraRotations) return;
+
+        clampYawToZero(0.0F);
+        float pitch = clamp(bobPitch + shakePitch + leanPitch, -MAX_CAMERA_PITCH_DEGREES, MAX_CAMERA_PITCH_DEGREES);
+        float roll = clamp(bobRoll + shakeRoll + leanRoll, -MAX_CAMERA_ROLL_DEGREES, MAX_CAMERA_ROLL_DEGREES);
+        GL11.glRotatef(pitch, 1.0F, 0.0F, 0.0F);
+        GL11.glRotatef(roll, 0.0F, 0.0F, 1.0F);
     }
 
     public void applyHandTransforms(float partialTicks) {
@@ -42,18 +63,46 @@ public final class CameraController {
         applyVanillaStyleBob();
     }
 
-    private void applyCameraBobAndShake() {
-        GL11.glTranslatef(bobSway, bobVertical + shakeVertical, 0.0F);
-        GL11.glRotatef(bobRoll + shakeRoll, 0.0F, 0.0F, 1.0F);
-        GL11.glRotatef(bobPitch + shakePitch, 1.0F, 0.0F, 0.0F);
-    }
-
     private void applyVanillaStyleBob() {
-        GL11.glTranslatef(bobSway, bobVertical, 0.0F);
-        GL11.glRotatef(bobRoll, 0.0F, 0.0F, 1.0F);
-        GL11.glRotatef(bobPitch, 1.0F, 0.0F, 0.0F);
+        float xOffset = clamp(bobSway, -MAX_CAMERA_X_OFFSET, MAX_CAMERA_X_OFFSET);
+        float yOffset = clamp(bobVertical, -MAX_CAMERA_Y_OFFSET, MAX_CAMERA_Y_OFFSET);
+        float zOffset = clamp(0.0F, -MAX_CAMERA_Z_OFFSET, MAX_CAMERA_Z_OFFSET);
+        GL11.glTranslatef(xOffset, yOffset, zOffset);
+        if (!CombativesConfig.enableCameraRotations) return;
+        GL11.glRotatef(clamp(bobPitch, -MAX_CAMERA_PITCH_DEGREES, MAX_CAMERA_PITCH_DEGREES), 1.0F, 0.0F, 0.0F);
+        GL11.glRotatef(clamp(bobRoll, -MAX_CAMERA_ROLL_DEGREES, MAX_CAMERA_ROLL_DEGREES), 0.0F, 0.0F, 1.0F);
     }
 
-    public void reset() { lean.reset(); bob.reset(); fov.reset(); shake.reset(); leanRoll = leanPitch = bobVertical = bobSway = bobPitch = bobRoll = shakeVertical = shakePitch = shakeRoll = fovModifier = 0.0F; }
+    private void logRotationDiagnostics(EntityPlayerSP player) {
+        if (!CombativesConfig.debugCamera && !CombativesConfig.verboseCameraDebug) return;
+        long now = System.currentTimeMillis();
+        if (now - lastDebugLogMs < 1000L) return;
+        float yawDelta = haveLastPlayerRotation ? player.rotationYaw - lastPlayerYaw : 0.0F;
+        float pitchDelta = haveLastPlayerRotation ? player.rotationPitch - lastPlayerPitch : 0.0F;
+        lastPlayerYaw = player.rotationYaw;
+        lastPlayerPitch = player.rotationPitch;
+        haveLastPlayerRotation = true;
+        lastDebugLogMs = now;
+        float transformPitch = clamp(bobPitch + shakePitch + leanPitch, -MAX_CAMERA_PITCH_DEGREES, MAX_CAMERA_PITCH_DEGREES);
+        float transformRoll = clamp(bobRoll + shakeRoll + leanRoll, -MAX_CAMERA_ROLL_DEGREES, MAX_CAMERA_ROLL_DEGREES);
+        float transformYaw = clampYawToZero(0.0F);
+        Combatives.logger.info(
+            "Combatives camera debug: playerYawDelta={}, playerPitchDelta={}, transformPitch={}, transformRoll={}, transformYaw={}, yawNonZero={}",
+            yawDelta, pitchDelta, transformPitch, transformRoll, transformYaw, transformYaw != 0.0F
+        );
+    }
+
+    private static float clampYawToZero(float yaw) {
+        if (yaw != 0.0F && Combatives.logger != null) {
+            Combatives.logger.warn("Combatives camera yaw transform was nonzero ({}); forcing to 0.0", yaw);
+        }
+        return 0.0F;
+    }
+
+    private static float clamp(float value, float min, float max) {
+        return value < min ? min : value > max ? max : value;
+    }
+
+    public void reset() { lean.reset(); bob.reset(); fov.reset(); shake.reset(); leanRoll = leanPitch = bobVertical = bobSway = bobPitch = bobRoll = shakeVertical = shakePitch = shakeRoll = fovModifier = 0.0F; haveLastPlayerRotation = false; }
     public float getFovModifier() { return fovModifier; }
 }

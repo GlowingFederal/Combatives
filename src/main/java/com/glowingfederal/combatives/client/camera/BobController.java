@@ -11,13 +11,13 @@ public final class BobController {
     public void update(MovementCameraState state) {
         float intensity = getIntensity(state);
         float walkPhase = state.getWalkPhase() * (float) Math.PI;
-        float yaw = state.getCameraYaw() * intensity;
+        float bobAmount = state.getCameraYaw() * intensity;
         float pitchInput = state.getCameraPitch() * intensity;
 
-        sway = MathHelper.sin(walkPhase) * yaw * 0.5F;
-        vertical = -Math.abs(MathHelper.cos(walkPhase) * yaw);
-        roll = MathHelper.sin(walkPhase) * yaw * 3.0F;
-        pitch = Math.abs(MathHelper.cos(walkPhase - 0.2F) * yaw) * 5.0F + pitchInput;
+        sway = MathHelper.sin(walkPhase) * bobAmount * 0.5F;
+        vertical = -Math.abs(MathHelper.cos(walkPhase) * bobAmount);
+        roll = MathHelper.sin(walkPhase) * bobAmount * 3.0F;
+        pitch = Math.abs(MathHelper.cos(walkPhase - 0.2F) * bobAmount) * 5.0F + pitchInput;
     }
 
     private static float getIntensity(MovementCameraState state) {

@@ -1,5 +1,12 @@
 # Changelog
 
+## Fix Combatives camera sensitivity safety clamps
+
+- Removed the Combatives player cameraYaw/cameraPitch rewrite so vanilla remains the only owner of player camera bob state.
+- Kept camera transforms at the orientCamera tail while hard-clamping visual-only X pitch, Z roll, and XYZ translation values; no Y-axis/yaw camera rotation is applied.
+- Added the `enableCameraRotations` emergency config toggle so camera rotations can be disabled while keeping camera translations and FOV active for sensitivity diagnosis.
+- Added throttled camera diagnostics for vanilla player yaw/pitch deltas and the total Combatives pitch/roll/yaw transform, with any nonzero yaw value forced back to zero.
+
 ## Rework Combatives bob to vanilla-style camera and hand motion
 
 - Replaced the custom procedural bob phase with a vanilla-style walk-distance, camera-yaw, and camera-pitch bob calculation with only subtle Combatives intensity scaling.

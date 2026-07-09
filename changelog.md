@@ -1,5 +1,11 @@
 # Changelog
 
+## Fix remote crawl nameplate hiding hook path
+
+- Added player-specific `RenderPlayer#func_96449_a` cancellation with the 1.7.10 player label signature so remote crawling players cancel before the visible player nameplate is drawn.
+- Kept shared `RendererLivingEntity` label cancellation as a fallback and moved the base `Render#func_147906_a` fallback to a `Render` mixin because that method is inherited from the base renderer.
+- Added crawl nameplate debug logs for hook name, entity class, player name, crawl/swim/pose flags, distance, and cancellation attempts.
+
 ## Add shared land-crawl grounding correction
 
 - Kept Aqua's single local/remote prone transform path and added a small internal land-crawl-only downward render correction after the Aqua rotation/translation calculation.

@@ -10,6 +10,7 @@ import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.renderer.entity.RenderPlayer;
 import net.minecraft.client.renderer.entity.RendererLivingEntity;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import org.lwjgl.opengl.GL11;
 import org.spongepowered.asm.mixin.Mixin;
@@ -54,7 +55,7 @@ public abstract class RenderPlayerMixin extends RendererLivingEntity {
             }
 
             if (pose.isCrawlKeyDown()) {
-                boolean localPlayer = Minecraft.getMinecraft().thePlayer == player;
+                boolean localPlayer = player.isUser();
                 if ((localPlayer && !this.combatives$loggedLocalCrawlGrounding) || (!localPlayer && !this.combatives$loggedRemoteCrawlGrounding)) {
                     double interpolatedY = player.prevPosY + (player.posY - player.prevPosY) * partialTicks;
                     MovementDiagnostics.debug(player, "crawl render grounding: isLocalPlayer=" + localPlayer
@@ -76,6 +77,28 @@ public abstract class RenderPlayerMixin extends RendererLivingEntity {
             if (pose.isActuallySwimming()) {
                 GL11.glTranslatef(0.0F, translateY, translateZ);
             }
+        }
+    }
+
+    @Inject(method = "func_96449_a(Lnet/minecraft/client/entity/AbstractClientPlayer;DDDLjava/lang/String;FD)V", at = @At("HEAD"), cancellable = true)
+    private void combatives$hideCrawlPlayerLabel(AbstractClientPlayer player, double x, double y, double z, String name, float scale, double distance, CallbackInfo ci) {
+        this.combatives$debugAndCancelCrawlPlayerNameplate("RenderPlayer#func_96449_a(AbstractClientPlayer)", player, distance, ci);
+    }
+
+    @Inject(method = "func_96449_a(Lnet/minecraft/entity/EntityLivingBase;DDDLjava/lang/String;FD)V", at = @At("HEAD"), cancellable = true)
+    private void combatives$hideCrawlPlayerLabelBridge(EntityLivingBase entity, double x, double y, double z, String name, float scale, double distance, CallbackInfo ci) {
+        if (entity instanceof EntityPlayer) {
+            this.combatives$debugAndCancelCrawlPlayerNameplate("RenderPlayer#func_96449_a(EntityLivingBase)", (EntityPlayer) entity, distance, ci);
+        }
+    }
+
+    private void combatives$debugAndCancelCrawlPlayerNameplate(String hook, EntityPlayer player, double distance, CallbackInfo ci) {
+        boolean crawl = player instanceof ICombativesPlayerPose && ((ICombativesPlayerPose) player).isCrawlKeyDown();
+        boolean swim = player instanceof ICombativesPlayerPose && ((ICombativesPlayerPose) player).isSwimming();
+        String pose = player instanceof ICombativesPlayerPose ? String.valueOf(((ICombativesPlayerPose) player).getPose()) : "unknown";
+        MovementDiagnostics.debug(player, hook + " nameplate hook entity=" + player.getClass().getName() + " crawl=" + crawl + " swim=" + swim + " pose=" + pose + " distance=" + distance + " cancelAttempt=" + crawl);
+        if (crawl) {
+            ci.cancel();
         }
     }
 

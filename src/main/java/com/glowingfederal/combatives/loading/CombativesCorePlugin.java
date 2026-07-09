@@ -64,6 +64,7 @@ public class CombativesCorePlugin implements IFMLLoadingPlugin, IEarlyMixinLoade
                 "EntityRendererMixin",
                 "ModelBipedMixin",
                 "RenderPlayerMixin",
+                "RenderMixin",
                 "RendererLivingEntityMixin",
                 "EntityOtherPlayerMPMixin",
                 "PlayerControllerMPMixin"

@@ -1,5 +1,12 @@
 # Changelog
 
+## Combatives first-person camera overhaul foundation
+
+- Added the client-only Combatives camera controller stack for movement state sampling, subtle inertial lean, continuous procedural bob, movement FOV, and damped camera shake impulses.
+- Routed EntityRenderer camera update, final transform application, vanilla bob ownership cancellation, and movement FOV composition through UniMixins without ASM or renderer replacement.
+- Added camera config toggles and safe Angelica camera ownership compatibility checks with quiet default logging.
+- Kept the camera foundation read-only with respect to movement, crawl/swim sync, hitboxes, weapons, recoil, and ADS behavior.
+
 ## Final movement diagnostics cleanup
 
 - Added separate `debugMovement` and `verboseMovementDebug` movement diagnostic levels so normal crawling/swimming remains quiet by default while general lifecycle events and verbose per-frame traces can be enabled independently.

@@ -14,7 +14,7 @@ The port is intentionally scoped to player pose, collision bounds, eye-height st
 - Mod ID: `combatives`
 - Root package: `com.glowingfederal.combatives`
 - Forge target: `1.7.10-10.13.4.1614`
-- UniMixins-compatible common/client mixin configs: `mixins.combatives.common.json` and `mixins.combatives.client.json`
+- UniMixins-compatible Aqua swim/crawl mixins are queued from `mixins.combatives.common.json` by the core plugin, with client-only render/input/model mixins side-gated in `CombativesCorePlugin`
 - Common/client proxy structure plus a Combatives early mixin loader for common player pose-state injection
 - Always-on modern swimming and crawling behavior, refactored from the Aqua Acrobatics Legacy reference source
 - Dedicated crawl keybind (`C` by default) with common-preInit Combatives networking for authoritative server-side crawl state
@@ -34,4 +34,4 @@ Angelica compatibility must remain optional. Angelica is not a hard runtime depe
 
 ## Development notes
 
-See `docs/aqua-port-map.md` for the inspected Aqua source map and port/skipped-class rationale. Do not compile anything inside the reference folder. Do not compile or add generated binary files to commits or pull requests. Common player pose mixins are loaded through `com.glowingfederal.combatives.loading.CombativesCorePlugin`; client rendering/camera/input mixins remain isolated in `mixins.combatives.client.json`. Do not port unrelated Aqua Acrobatics systems unless they are required for Combatives swimming/crawling behavior to function.
+See `docs/aqua-port-map.md` for the inspected Aqua source map and port/skipped-class rationale. Do not compile anything inside the reference folder. Do not compile or add generated binary files to commits or pull requests. Common and client Aqua swim/crawl mixins are loaded through `com.glowingfederal.combatives.loading.CombativesCorePlugin`, with the client render/input/model mixins added only on the physical client side. Do not port unrelated Aqua Acrobatics systems unless they are required for Combatives swimming/crawling behavior to function.

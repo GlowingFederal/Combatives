@@ -1,11 +1,13 @@
 package com.glowingfederal.combatives.loading;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import com.gtnewhorizon.gtnhmixins.IEarlyMixinLoader;
+import cpw.mods.fml.relauncher.FMLLaunchHandler;
 import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,7 +34,7 @@ public class CombativesCorePlugin implements IFMLLoadingPlugin, IEarlyMixinLoade
 
     @Override
     public void injectData(Map<String, Object> data) {
-        LOGGER.info("Combatives core plugin discovered; common pose mixin config will be offered to GTNHMixins");
+        LOGGER.info("Combatives core plugin discovered; Aqua crawl/swim mixins will be offered to GTNHMixins");
     }
 
     @Override
@@ -42,18 +44,32 @@ public class CombativesCorePlugin implements IFMLLoadingPlugin, IEarlyMixinLoade
 
     @Override
     public String getMixinConfig() {
-        LOGGER.info("Combatives common pose mixin config requested: {}", COMMON_MIXIN_CONFIG);
+        LOGGER.info("Combatives Aqua crawl/swim mixin config requested: {}", COMMON_MIXIN_CONFIG);
         return COMMON_MIXIN_CONFIG;
     }
 
     @Override
     public List<String> getMixins(Set<String> loadedCoreMods) {
-        LOGGER.info("Combatives common pose mixin config loaded: {}", COMMON_MIXIN_CONFIG);
-        return Arrays.asList(
+        List<String> mixins = new ArrayList<String>(Arrays.asList(
             "EntityPlayerMixin",
             "EntityMixin",
             "EntityLivingBaseMixin",
             "EntityPlayerMPMixin"
-        );
+        ));
+
+        if (FMLLaunchHandler.side().isClient()) {
+            mixins.addAll(Arrays.asList(
+                "EntityPlayerSPMixin",
+                "EntityClientPlayerMPMixin",
+                "EntityRendererMixin",
+                "ModelBipedMixin",
+                "RenderPlayerMixin",
+                "EntityOtherPlayerMPMixin",
+                "PlayerControllerMPMixin"
+            ));
+        }
+
+        LOGGER.info("Combatives Aqua crawl/swim mixins loaded from {}: {}", COMMON_MIXIN_CONFIG, mixins);
+        return mixins;
     }
 }

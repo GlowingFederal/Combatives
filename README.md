@@ -14,7 +14,7 @@ The port is intentionally scoped to player pose, collision bounds, eye-height st
 - Mod ID: `combatives`
 - Root package: `com.glowingfederal.combatives`
 - Forge target: `1.7.10-10.13.4.1614`
-- UniMixins-compatible Aqua swim/crawl mixins are queued from `mixins.combatives.common.json` by the core plugin, with client-only render/input/model mixins side-gated in `CombativesCorePlugin`
+- UniMixins-compatible Combatives movement mixins are queued from `mixins.combatives.common.json` by the core plugin, with client-only render/input/model mixins side-gated in `CombativesCorePlugin`
 - Common/client proxy structure plus a Combatives early mixin loader for common player pose-state injection
 - Always-on modern swimming and crawling behavior, refactored from the Aqua Acrobatics Legacy reference source
 - Dedicated crawl keybind (`C` by default) with common-preInit Combatives networking for authoritative server-side crawl state
@@ -24,7 +24,16 @@ The port is intentionally scoped to player pose, collision bounds, eye-height st
 - Initial config options:
   - `enableAngelicaCompat = true`
   - `debugMovement = false`
+  - `verboseMovementDebug = false`
   - `debugCamera = false`
+
+## Movement diagnostics
+
+Combatives movement diagnostics are split into three levels so normal crawling and swimming stay quiet by default:
+
+- Off/default (`debugMovement = false`, `verboseMovementDebug = false`): only warnings, errors, invalid state, rejected unsafe actions, and missing required runtime state are logged.
+- General (`debugMovement = true`): high-level lifecycle diagnostics such as crawl/swim enter/exit, rejected crawl exits due to clearance, server authority rejections, and one-time Combatives movement mixin summaries.
+- Verbose (`verboseMovementDebug = true`): per-frame/per-tick movement diagnostics, including render/model hook traces, grounding values, DataWatcher pose changes, and repeated eye-height/size recalculations. Verbose movement diagnostics imply the general movement diagnostics stream.
 
 ## Future work
 
@@ -34,4 +43,4 @@ Angelica compatibility must remain optional. Angelica is not a hard runtime depe
 
 ## Development notes
 
-See `docs/aqua-port-map.md` for the inspected Aqua source map and port/skipped-class rationale. Do not compile anything inside the reference folder. Do not compile or add generated binary files to commits or pull requests. Common and client Aqua swim/crawl mixins are loaded through `com.glowingfederal.combatives.loading.CombativesCorePlugin`, with the client render/input/model mixins added only on the physical client side. Do not port unrelated Aqua Acrobatics systems unless they are required for Combatives swimming/crawling behavior to function.
+See `docs/aqua-port-map.md` for the inspected Aqua source map and port/skipped-class rationale. Do not compile anything inside the reference folder. Do not compile or add generated binary files to commits or pull requests. Common and client Combatives movement mixins are loaded through `com.glowingfederal.combatives.loading.CombativesCorePlugin`, with the client render/input/model mixins added only on the physical client side. Do not port unrelated Aqua Acrobatics systems unless they are required for Combatives swimming/crawling behavior to function.

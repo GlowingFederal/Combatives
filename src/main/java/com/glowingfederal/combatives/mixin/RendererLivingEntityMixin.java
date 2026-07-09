@@ -24,7 +24,7 @@ public abstract class RendererLivingEntityMixin {
 
     private void combatives$debugAndCancelCrawlNameplate(String hook, EntityLivingBase entity, double distance, CallbackInfo ci) {
         if (!(entity instanceof EntityPlayer)) {
-            MovementDiagnostics.debug(hook + " nameplate hook entity=" + entity.getClass().getName() + " player=false distance=" + distance + " cancelAttempt=false");
+            MovementDiagnostics.verbose(hook + " nameplate hook entity=" + entity.getClass().getName() + " player=false distance=" + distance + " cancelAttempt=false");
             return;
         }
 
@@ -32,7 +32,7 @@ public abstract class RendererLivingEntityMixin {
         boolean crawl = entity instanceof ICombativesPlayerPose && ((ICombativesPlayerPose) entity).isCrawlKeyDown();
         boolean swim = entity instanceof ICombativesPlayerPose && ((ICombativesPlayerPose) entity).isSwimming();
         String pose = entity instanceof ICombativesPlayerPose ? String.valueOf(((ICombativesPlayerPose) entity).getPose()) : "unknown";
-        MovementDiagnostics.debug(player, hook + " nameplate hook entity=" + entity.getClass().getName() + " crawl=" + crawl + " swim=" + swim + " pose=" + pose + " distance=" + distance + " cancelAttempt=" + crawl);
+        MovementDiagnostics.verbose(player, hook + " nameplate hook entity=" + entity.getClass().getName() + " crawl=" + crawl + " swim=" + swim + " pose=" + pose + " distance=" + distance + " cancelAttempt=" + crawl);
         if (crawl) {
             ci.cancel();
         }

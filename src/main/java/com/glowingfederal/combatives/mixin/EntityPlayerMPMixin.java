@@ -44,7 +44,7 @@ public abstract class EntityPlayerMPMixin extends EntityPlayer {
         EntitySize size = pose.getSize(pose.getPose());
         if (this.width != size.width || this.height != size.height) {
             this.setSize(size.width, size.height);
-            MovementDiagnostics.debug(this, "server enforced size for " + pose.getPose() + " size=" + size.width + "x" + size.height);
+            MovementDiagnostics.verbose(this, "server enforced size for " + pose.getPose() + " size=" + size.width + "x" + size.height);
         }
     }
 }

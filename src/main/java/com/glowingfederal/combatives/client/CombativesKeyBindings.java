@@ -16,6 +16,6 @@ public final class CombativesKeyBindings {
         crawl = new KeyBinding("key.combatives.crawl", Keyboard.KEY_C, "key.categories.combatives");
         ClientRegistry.registerKeyBinding(crawl);
         Combatives.logger.info("Registered Combatives crawl keybind");
-        MovementDiagnostics.debug("crawl key registration complete");
+        MovementDiagnostics.verbose("crawl key registration complete");
     }
 }

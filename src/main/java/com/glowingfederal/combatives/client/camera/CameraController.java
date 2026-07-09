@@ -51,7 +51,6 @@ public final class CameraController {
 
         if (!CombativesConfig.enableCameraRotations) return;
 
-        clampYawToZero(0.0F);
         float pitch = clamp(bobPitch + shakePitch + leanPitch, -MAX_CAMERA_PITCH_DEGREES, MAX_CAMERA_PITCH_DEGREES);
         float roll = clamp(bobRoll + shakeRoll + leanRoll, -MAX_CAMERA_ROLL_DEGREES, MAX_CAMERA_ROLL_DEGREES);
         GL11.glRotatef(pitch, 1.0F, 0.0F, 0.0F);
@@ -86,10 +85,12 @@ public final class CameraController {
         float transformPitch = clamp(bobPitch + shakePitch + leanPitch, -MAX_CAMERA_PITCH_DEGREES, MAX_CAMERA_PITCH_DEGREES);
         float transformRoll = clamp(bobRoll + shakeRoll + leanRoll, -MAX_CAMERA_ROLL_DEGREES, MAX_CAMERA_ROLL_DEGREES);
         float transformYaw = clampYawToZero(0.0F);
-        Combatives.logger.info(
-            "Combatives camera debug: playerYawDelta={}, playerPitchDelta={}, transformPitch={}, transformRoll={}, transformYaw={}, yawNonZero={}",
-            yawDelta, pitchDelta, transformPitch, transformRoll, transformYaw, transformYaw != 0.0F
-        );
+        if (Combatives.logger != null) {
+            Combatives.logger.info(
+                "Combatives camera debug: playerYawDelta={}, playerPitchDelta={}, transformPitch={}, transformRoll={}, transformYaw={}, yawNonZero={}",
+                yawDelta, pitchDelta, transformPitch, transformRoll, transformYaw, transformYaw != 0.0F
+            );
+        }
     }
 
     private static float clampYawToZero(float yaw) {

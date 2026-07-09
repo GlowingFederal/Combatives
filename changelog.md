@@ -1,5 +1,11 @@
 # Changelog
 
+## Audit Combatives mouse input ownership
+
+- Moved Combatives camera state sampling to the tail of `EntityRenderer#updateCameraAndRender` so vanilla mouse handling has already completed before diagnostics read player yaw/pitch.
+- Verified Combatives source has no calls to `mouseHelper.mouseXYChange()`, `Mouse.getDX/DY()`, or manual `setAngles(...)` calls.
+- Tightened camera diagnostics so they only read player rotation state and never sample raw mouse deltas.
+
 ## Fix Combatives camera sensitivity safety clamps
 
 - Removed the Combatives player cameraYaw/cameraPitch rewrite so vanilla remains the only owner of player camera bob state.

@@ -24,7 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(EntityPlayerSP.class)
 public abstract class EntityPlayerSPMixin implements ICombativesClientPlayerSwimming {
-    @Shadow protected Minecraft mc;
+    @Shadow(aliases = "field_71159_c") protected Minecraft mc;
     @Shadow public MovementInput movementInput;
     @Shadow protected int sprintToggleTimer;
 
@@ -45,7 +45,10 @@ public abstract class EntityPlayerSPMixin implements ICombativesClientPlayerSwim
     @Override
     public boolean isForcedDown() {
         EntityPlayerSP self = (EntityPlayerSP) (Object) this;
-        ICombativesPlayerPose pose = (ICombativesPlayerPose) self;
+        ICombativesPlayerPose pose = this.combatives$getPoseState(self);
+        if (pose == null) {
+            return this.isActuallySneaking();
+        }
         return pose.isResizingAllowed() && !self.capabilities.isFlying ? this.combatives$isCrouching || pose.isVisuallySwimming() : this.isActuallySneaking();
     }
 
@@ -64,7 +67,8 @@ public abstract class EntityPlayerSPMixin implements ICombativesClientPlayerSwim
 
     @Override
     public boolean canSwimClient() {
-        return ((ICombativesPlayerPose) (Object) this).getEyesInWaterPlayer();
+        ICombativesPlayerPose pose = this.combatives$getPoseState((EntityPlayerSP) (Object) this);
+        return pose != null && pose.getEyesInWaterPlayer();
     }
 
     @Override
@@ -134,8 +138,8 @@ public abstract class EntityPlayerSPMixin implements ICombativesClientPlayerSwim
 
     private void combatives$handleCrawlJumpExit() {
         EntityPlayerSP self = (EntityPlayerSP) (Object) this;
-        ICombativesPlayerPose pose = (ICombativesPlayerPose) self;
-        if (!pose.isCrawlKeyDown()) {
+        ICombativesPlayerPose pose = this.combatives$getPoseState(self);
+        if (pose == null || !pose.isCrawlKeyDown()) {
             this.combatives$lastCrawlJumpExitDown = false;
             return;
         }
@@ -181,8 +185,8 @@ public abstract class EntityPlayerSPMixin implements ICombativesClientPlayerSwim
     @Inject(method = "onLivingUpdate", at = @At("TAIL"))
     private void combatives$onLivingUpdateTail(CallbackInfo ci) {
         EntityPlayerSP self = (EntityPlayerSP) (Object) this;
-        ICombativesPlayerPose pose = (ICombativesPlayerPose) self;
-        if (this.movementInput == null) {
+        ICombativesPlayerPose pose = this.combatives$getPoseState(self);
+        if (pose == null || this.movementInput == null) {
             return;
         }
 
@@ -200,6 +204,10 @@ public abstract class EntityPlayerSPMixin implements ICombativesClientPlayerSwim
         this.combatives$handleWaterSneaking();
     }
 
+    private ICombativesPlayerPose combatives$getPoseState(EntityPlayerSP self) {
+        return self instanceof ICombativesPlayerPose ? (ICombativesPlayerPose) self : null;
+    }
+
     private void combatives$updatePlayerMoveState() {
         if (!this.movementInput.sneak && this.isForcedDown()) {
             this.movementInput.moveStrafe *= 0.3F;
@@ -214,7 +222,10 @@ public abstract class EntityPlayerSPMixin implements ICombativesClientPlayerSwim
 
     private boolean combatives$isCrouching(boolean cantStand) {
         EntityPlayerSP self = (EntityPlayerSP) (Object) this;
-        ICombativesPlayerPose pose = (ICombativesPlayerPose) self;
+        ICombativesPlayerPose pose = this.combatives$getPoseState(self);
+        if (pose == null) {
+            return false;
+        }
         if ((!this.combatives$movementStorage.isFlying || !cantStand) && !pose.isSwimming() && (self.onGround || !((EntityPlayerSP) (Object) this).isInWater())) {
             if (!self.isOnLadder() && (pose.isPoseClear(Pose.CROUCHING) || self.noClip)) {
                 return this.movementInput.sneak || pose.isResizingAllowed() && !self.isPlayerSleeping() && cantStand;
@@ -249,7 +260,10 @@ public abstract class EntityPlayerSPMixin implements ICombativesClientPlayerSwim
             return;
         }
         EntityPlayerSP self = (EntityPlayerSP) (Object) this;
-        ICombativesPlayerPose pose = (ICombativesPlayerPose) self;
+        ICombativesPlayerPose pose = this.combatives$getPoseState(self);
+        if (pose == null) {
+            return;
+        }
         boolean notMoving = !this.isMovingForward(this.movementInput.moveForward, this.movementInput.moveStrafe) || !isSaturated;
         boolean collided = notMoving || ((EntityPlayerSP) (Object) this).isInWater() && !this.canSwimClient() && !this.combatives$movementStorage.isFlying;
         if (pose.isSwimming()) {

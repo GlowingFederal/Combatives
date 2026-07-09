@@ -38,7 +38,6 @@ public final class CameraController {
         if (CombativesConfig.enableCameraShake) shake.update(movement); else shake.reset();
         leanRoll = lean.getRoll(); leanPitch = lean.getPitch(); bobVertical = bob.getVertical(); bobSway = bob.getSway(); bobPitch = bob.getPitch(); bobRoll = bob.getRoll();
         shakeVertical = shake.getVertical(); shakePitch = shake.getPitch(); shakeRoll = shake.getRoll(); fovModifier = fov.getModifier();
-        logRotationDiagnostics(player);
     }
 
     public void applyTransforms(float partialTicks) {

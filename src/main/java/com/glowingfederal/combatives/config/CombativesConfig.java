@@ -17,7 +17,7 @@ public final class CombativesConfig {
     public static boolean enableCameraRotations = true;
     public static boolean enableCameraShake = true;
     public static boolean enableMouseDeltaClamp = true;
-    public static int maxMouseDelta = 120;
+    public static int maxMouseDelta = 80;
     public static boolean enableLandingCameraFeedback = true;
     public static double landingFeedbackStrength = 1.0D;
     public static boolean enableExplosionCameraFeedback = true;

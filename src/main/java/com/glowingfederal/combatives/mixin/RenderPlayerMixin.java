@@ -55,7 +55,7 @@ public abstract class RenderPlayerMixin extends RendererLivingEntity {
             }
 
             if (pose.isCrawlKeyDown()) {
-                boolean localPlayer = player.isUser();
+                boolean localPlayer = Minecraft.getMinecraft().thePlayer == player;
                 if ((localPlayer && !this.combatives$loggedLocalCrawlGrounding) || (!localPlayer && !this.combatives$loggedRemoteCrawlGrounding)) {
                     double interpolatedY = player.prevPosY + (player.posY - player.prevPosY) * partialTicks;
                     MovementDiagnostics.verbose(player, "crawl render grounding: isLocalPlayer=" + localPlayer

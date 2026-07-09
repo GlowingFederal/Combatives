@@ -25,6 +25,8 @@ public final class MovementCameraState {
     private boolean landed;
     private float landingStrength;
     private float lastFallDistance;
+    private double lastAirborneMotionY;
+    private boolean wasGrounded = true;
 
     public void update(EntityPlayerSP player, float partialTicks) {
         MovementInput input = player.movementInput;
@@ -52,8 +54,16 @@ public final class MovementCameraState {
             this.swimming = pose.isSwimming() || pose.isActuallySwimming();
             this.crawling = !this.swimming && pose.getPose() == Pose.SWIMMING;
         }
-        this.landed = player.onGround && this.lastFallDistance > 2.5F;
-        this.landingStrength = this.landed ? Math.min(this.lastFallDistance / 8.0F, 0.35F) : 0.0F;
+        boolean realLanding = !this.wasGrounded && player.onGround && (this.lastFallDistance > 1.5F || this.lastAirborneMotionY < -0.35D);
+        float fallSeverity = Math.max(this.lastFallDistance, (float) (-this.lastAirborneMotionY * 4.0D));
+        this.landed = realLanding && fallSeverity > 1.5F;
+        this.landingStrength = this.landed ? Math.min((fallSeverity - 1.5F) / 7.0F, 1.0F) : 0.0F;
+        if (!player.onGround && player.motionY < 0.0D) {
+            this.lastAirborneMotionY = player.motionY;
+        } else if (player.onGround) {
+            this.lastAirborneMotionY = 0.0D;
+        }
+        this.wasGrounded = player.onGround;
         this.lastFallDistance = player.fallDistance;
     }
 

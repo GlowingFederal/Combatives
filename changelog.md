@@ -227,3 +227,10 @@
 - Removed the non-reference visual helper path and restored RenderPlayer/ModelBiped to the direct Aqua swim-animation transform flow.
 - Fixed the early mixin loader so Combatives client render/model/input mixins are actually returned on the physical client side instead of sitting in an unqueued client config.
 - Updated documentation to clarify that the core plugin side-gates both common and client Combatives crawl/swim mixins.
+
+## Add production-safe mouse clamp and impact camera feedback
+
+- Added a client `MouseHelper#mouseXYChange` mixin that clamps abnormal raw LWJGL `deltaX`/`deltaY` values with `MathHelper.clamp_int` before vanilla camera sensitivity scaling consumes them; the clamp is configurable and logs only exceeded caps when camera debug logging is enabled.
+- Added visual-only landing camera feedback with fall-transition detection, step/jitter filtering, severity scaling, and hard-clamped translation, pitch, and roll in the existing Combatives camera transform pipeline.
+- Added visual-only explosion camera feedback from the client explosion packet path with distance falloff, low-frequency shake, strength scaling, and hard-clamped camera translation/rotation.
+- Registered the new client mixins through both the GTNHMixins early-loader list and the client mixin config so the generated `mixins.combatives.refmap.json` covers the new production targets without relying on disabled refmaps or MCP-only runtime names.

@@ -16,6 +16,12 @@ public final class CombativesConfig {
     public static boolean enableMovementFov = true;
     public static boolean enableCameraRotations = true;
     public static boolean enableCameraShake = true;
+    public static boolean enableMouseDeltaClamp = true;
+    public static int maxMouseDelta = 120;
+    public static boolean enableLandingCameraFeedback = true;
+    public static double landingFeedbackStrength = 1.0D;
+    public static boolean enableExplosionCameraFeedback = true;
+    public static double explosionFeedbackStrength = 1.0D;
     public static boolean enableAngelicaCameraCompat = true;
     public static boolean disableAngelicaViewBobbingCompat = true;
     public static boolean disableAngelicaDynamicFovCompat = true;
@@ -55,6 +61,12 @@ public final class CombativesConfig {
         enableMovementFov = config.getBoolean("enableMovementFov", CATEGORY_CAMERA, enableMovementFov, "Enable subtle movement-driven FOV changes.");
         enableCameraRotations = config.getBoolean("enableCameraRotations", CATEGORY_CAMERA, enableCameraRotations, "Emergency diagnostic toggle: when false, Combatives applies only camera translations and FOV, never pitch or roll rotations.");
         enableCameraShake = config.getBoolean("enableCameraShake", CATEGORY_CAMERA, enableCameraShake, "Enable the Combatives camera shake framework for movement impulses.");
+        enableMouseDeltaClamp = config.getBoolean("enableMouseDeltaClamp", CATEGORY_CAMERA, enableMouseDeltaClamp, "Clamp pathological raw LWJGL mouse deltas before vanilla camera sensitivity scaling consumes them.");
+        maxMouseDelta = config.getInt("maxMouseDelta", CATEGORY_CAMERA, maxMouseDelta, 1, 10000, "Maximum absolute raw mouse delta accepted from LWJGL per mouseXYChange call.");
+        enableLandingCameraFeedback = config.getBoolean("enableLandingCameraFeedback", CATEGORY_CAMERA, enableLandingCameraFeedback, "Enable visual-only landing camera dip and recovery impulses.");
+        landingFeedbackStrength = config.getFloat("landingFeedbackStrength", CATEGORY_CAMERA, (float) landingFeedbackStrength, 0.0F, 4.0F, "Multiplier for visual-only landing camera feedback strength.");
+        enableExplosionCameraFeedback = config.getBoolean("enableExplosionCameraFeedback", CATEGORY_CAMERA, enableExplosionCameraFeedback, "Enable visual-only low-frequency explosion camera feedback near client explosions.");
+        explosionFeedbackStrength = config.getFloat("explosionFeedbackStrength", CATEGORY_CAMERA, (float) explosionFeedbackStrength, 0.0F, 4.0F, "Multiplier for visual-only explosion camera feedback strength.");
         debugMovement = config.getBoolean(
             "debugMovement",
             CATEGORY_DEBUG,
@@ -92,6 +104,12 @@ public final class CombativesConfig {
         logger.info("Combatives config: enableMovementFov={}", enableMovementFov);
         logger.info("Combatives config: enableCameraRotations={}", enableCameraRotations);
         logger.info("Combatives config: enableCameraShake={}", enableCameraShake);
+        logger.info("Combatives config: enableMouseDeltaClamp={}", enableMouseDeltaClamp);
+        logger.info("Combatives config: maxMouseDelta={}", maxMouseDelta);
+        logger.info("Combatives config: enableLandingCameraFeedback={}", enableLandingCameraFeedback);
+        logger.info("Combatives config: landingFeedbackStrength={}", landingFeedbackStrength);
+        logger.info("Combatives config: enableExplosionCameraFeedback={}", enableExplosionCameraFeedback);
+        logger.info("Combatives config: explosionFeedbackStrength={}", explosionFeedbackStrength);
         logger.info("Combatives config: enableAngelicaCameraCompat={}", enableAngelicaCameraCompat);
         logger.info("Combatives config: disableAngelicaViewBobbingCompat={}", disableAngelicaViewBobbingCompat);
         logger.info("Combatives config: disableAngelicaDynamicFovCompat={}", disableAngelicaDynamicFovCompat);

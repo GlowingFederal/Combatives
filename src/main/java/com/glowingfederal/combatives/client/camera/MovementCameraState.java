@@ -67,7 +67,7 @@ public final class MovementCameraState {
             if (Combatives.logger != null && CombativesConfig.verboseCameraDebug && !player.onGround) {
                 Combatives.logger.info("Combatives landing airborne tracking: tick={}, motionY={}, fallDistance={}, previousMotionY={}, previousFallDistance={}", player.ticksExisted, player.motionY, player.fallDistance, this.previousMotionY, this.previousFallDistance);
             }
-            if (Combatives.logger != null && CombativesConfig.debugCamera && realLanding && !this.landed) {
+            if (Combatives.logger != null && CombativesConfig.verboseCameraDebug && realLanding && !this.landed) {
                 Combatives.logger.info("Combatives landing impulse rejected: reason=below_threshold_or_disabled, previousFallDistance={}, severity={}, enableCombativesCamera={}, enableLandingCameraFeedback={}", this.previousFallDistance, severity, CombativesConfig.enableCombativesCamera, CombativesConfig.enableLandingCameraFeedback);
             }
 

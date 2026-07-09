@@ -1,5 +1,12 @@
 # Changelog
 
+## Refine spring-based impact camera feedback
+
+- Refined landing and explosion effects to use severity-scaled damped spring responses instead of hard maxed impacts or generic shake.
+- Fixed landing magnitude scaling so accepted low, medium, large, and extreme falls preserve distinct dip and pitch strengths while rebound settles smoothly.
+- Added player-local directional explosion displacement with shock, body-pressure, and settling phases so front, rear, side, above, and below blasts read differently.
+- Blended movement bob down briefly after strong impacts so landing and explosion feedback remains visible without abruptly freezing normal camera motion.
+
 ## Retune landing and explosion camera feedback
 
 - Retuned landing and explosion feedback from effectively imperceptible generic shake into separate, distinct impact impulses with stronger visual-only translation and rotation clamps.

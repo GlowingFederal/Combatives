@@ -32,7 +32,7 @@ public final class CameraController {
     public void update(Minecraft mc, EntityPlayerSP player, float partialTicks) {
         if (!CombativesConfig.enableCombativesCamera || mc == null || player == null) { reset(); return; }
         movement.update(player, partialTicks);
-        if (CombativesConfig.enableCameraShake && CombativesConfig.enableLandingCameraFeedback && movement.hasLanded()) shake.addLandingImpulse(movement.getLandingStrength());
+        if (CombativesConfig.enableCameraShake && CombativesConfig.enableLandingCameraFeedback && movement.hasLanded()) shake.addLandingImpulse(movement.getLandingStrength(), movement.getStrafe(), movement.getSpeed());
         if (CombativesConfig.enableMovementLean) lean.update(movement); else lean.reset();
         if (CombativesConfig.enableProceduralBob) bob.update(movement); else bob.reset();
         if (CombativesConfig.enableMovementFov) fov.update(movement); else fov.reset();
@@ -44,8 +44,9 @@ public final class CameraController {
     public void applyTransforms(float partialTicks) {
         if (!CombativesConfig.enableCombativesCamera) return;
 
-        float ambientX = clamp(bobSway, -MAX_AMBIENT_X_OFFSET, MAX_AMBIENT_X_OFFSET);
-        float ambientY = clamp(bobVertical, -MAX_AMBIENT_Y_OFFSET, MAX_AMBIENT_Y_OFFSET);
+        float bobScale = 1.0F - clamp(shake.getBobSuppression(), 0.0F, 0.55F);
+        float ambientX = clamp(bobSway * bobScale, -MAX_AMBIENT_X_OFFSET, MAX_AMBIENT_X_OFFSET);
+        float ambientY = clamp(bobVertical * bobScale, -MAX_AMBIENT_Y_OFFSET, MAX_AMBIENT_Y_OFFSET);
         float impactX = clamp(shakeLateral, -MAX_IMPACT_X_OFFSET, MAX_IMPACT_X_OFFSET);
         float impactY = clamp(shakeVertical, -MAX_IMPACT_Y_OFFSET, MAX_IMPACT_Y_OFFSET);
         float impactZ = clamp(shakeForward, -MAX_IMPACT_Z_OFFSET, MAX_IMPACT_Z_OFFSET);
@@ -57,8 +58,8 @@ public final class CameraController {
         float pitch = 0.0F;
         float roll = 0.0F;
         if (CombativesConfig.enableCameraRotations) {
-            float ambientPitch = clamp(bobPitch + leanPitch, -MAX_CAMERA_PITCH_DEGREES, MAX_CAMERA_PITCH_DEGREES);
-            float ambientRoll = clamp(bobRoll + leanRoll, -MAX_CAMERA_ROLL_DEGREES, MAX_CAMERA_ROLL_DEGREES);
+            float ambientPitch = clamp(bobPitch * bobScale + leanPitch, -MAX_CAMERA_PITCH_DEGREES, MAX_CAMERA_PITCH_DEGREES);
+            float ambientRoll = clamp(bobRoll * bobScale + leanRoll, -MAX_CAMERA_ROLL_DEGREES, MAX_CAMERA_ROLL_DEGREES);
             pitch = ambientPitch + clamp(shakePitch, -MAX_IMPACT_PITCH_DEGREES, MAX_IMPACT_PITCH_DEGREES);
             roll = ambientRoll + clamp(shakeRoll, -MAX_IMPACT_ROLL_DEGREES, MAX_IMPACT_ROLL_DEGREES);
             GL11.glRotatef(pitch, 1.0F, 0.0F, 0.0F);
@@ -81,9 +82,7 @@ public final class CameraController {
         GL11.glRotatef(clamp(bobRoll, -MAX_CAMERA_ROLL_DEGREES, MAX_CAMERA_ROLL_DEGREES), 0.0F, 0.0F, 1.0F);
     }
 
-    private boolean hasNonzeroFeedback() {
-        return Math.abs(shakeVertical) > 0.0001F || Math.abs(shakeForward) > 0.0001F || Math.abs(shakeLateral) > 0.0001F || Math.abs(shakePitch) > 0.0001F || Math.abs(shakeRoll) > 0.0001F;
-    }
+
 
     private static float clamp(float value, float min, float max) {
         return value < min ? min : value > max ? max : value;
@@ -102,19 +101,25 @@ public final class CameraController {
         double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
         float radius = Math.max(8.0F, strength * 4.0F);
         float distanceFalloff = clamp(1.0F - (float) (distance / radius), 0.0F, 1.0F);
-        float normalizedStrength = clamp(strength / 4.0F, 0.0F, 2.0F);
-        float response = (float) Math.sqrt(normalizedStrength * distanceFalloff);
+        float strengthFactor = clamp(strength / 4.0F, 0.0F, 1.5F);
+        float response = (float) Math.pow(clamp(strengthFactor * distanceFalloff, 0.0F, 1.0F), 0.7F);
         if (response <= 0.0F) {
-            if (Combatives.logger != null && CombativesConfig.debugCamera) Combatives.logger.info("Combatives explosion impulse rejected: reason=outside_radius_or_zero_response, distance={}, radius={}, strength={}", distance, radius, strength);
+            if (Combatives.logger != null && CombativesConfig.verboseCameraDebug) Combatives.logger.info("Combatives explosion impulse rejected: reason=outside_radius_or_zero_response, distance={}, radius={}, strength={}", distance, radius, strength);
             return;
         }
         float yawRad = (float) Math.toRadians(player.rotationYaw);
-        double lookX = -Math.sin(yawRad);
-        double lookZ = Math.cos(yawRad);
-        double length = Math.max(0.001D, Math.sqrt(dx * dx + dz * dz));
-        float sideBias = clamp((float) ((lookZ * dx - lookX * dz) / length), -1.0F, 1.0F);
-        float directionBias = clamp((float) ((lookX * dx + lookZ * dz) / length), -1.0F, 1.0F);
-        shake.addExplosionImpulse(response, sideBias, directionBias);
+        double forwardX = -Math.sin(yawRad);
+        double forwardZ = Math.cos(yawRad);
+        double rightX = forwardZ;
+        double rightZ = -forwardX;
+        double invDistance = 1.0D / Math.max(0.001D, distance);
+        double dirX = dx * invDistance;
+        double dirY = dy * invDistance;
+        double dirZ = dz * invDistance;
+        float localForward = clamp((float) (dirX * forwardX + dirZ * forwardZ), -1.0F, 1.0F);
+        float localRight = clamp((float) (dirX * rightX + dirZ * rightZ), -1.0F, 1.0F);
+        float localVertical = clamp((float) dirY, -1.0F, 1.0F);
+        shake.addExplosionImpulse(response, localForward, localRight, localVertical);
     }
     public float getFovModifier() { return fovModifier; }
 }

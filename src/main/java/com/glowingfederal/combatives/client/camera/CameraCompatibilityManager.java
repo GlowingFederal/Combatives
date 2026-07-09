@@ -7,6 +7,7 @@ import cpw.mods.fml.common.Loader;
 public final class CameraCompatibilityManager {
     private static boolean initialized;
     private static boolean angelicaLoaded;
+    private static Boolean lastVanillaBobCancellationState;
 
     private CameraCompatibilityManager() {}
 
@@ -22,10 +23,19 @@ public final class CameraCompatibilityManager {
         }
     }
 
+    public static boolean shouldCancelVanillaViewBobbing() {
+        boolean cancel = CombativesConfig.enableCombativesCamera && CombativesConfig.enableProceduralBob;
+        if (CombativesConfig.debugCamera && (lastVanillaBobCancellationState == null || lastVanillaBobCancellationState.booleanValue() != cancel)) {
+            Combatives.logger.info("Combatives camera vanilla view bobbing cancellation {}", cancel ? "active" : "inactive");
+            lastVanillaBobCancellationState = Boolean.valueOf(cancel);
+        }
+        return cancel;
+    }
+
     public static boolean ownsViewBobbing() {
         init();
-        if (!CombativesConfig.enableCombativesCamera || !CombativesConfig.enableProceduralBob) return false;
-        return !angelicaLoaded || (CombativesConfig.enableAngelicaCameraCompat && CombativesConfig.disableAngelicaViewBobbingCompat);
+        return shouldCancelVanillaViewBobbing()
+            && (!angelicaLoaded || (CombativesConfig.enableAngelicaCameraCompat && CombativesConfig.disableAngelicaViewBobbingCompat));
     }
 
     public static boolean ownsDynamicFov() {

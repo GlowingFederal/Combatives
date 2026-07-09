@@ -1,5 +1,16 @@
 # Changelog
 
+## Preserve vanilla first-person arm bob while owning camera bob
+
+- Limited Combatives vanilla view-bob cancellation to the world camera path so the first-person arm/item render can still receive vanilla hand bobbing.
+- Added render-hand state tracking around `EntityRenderer#renderHand` without changing movement, crawl, swim, hitboxes, or pose sync.
+
+## Fix Combatives camera bob ownership
+
+- Added explicit vanilla view bobbing cancellation whenever the Combatives camera and procedural bob are enabled, without changing the user's vanilla View Bobbing option.
+- Kept Angelica bob ownership behind the existing optional compatibility flags while separating vanilla bob cancellation from Angelica ownership.
+- Consolidated camera Angelica compatibility config generation under the compatibility category so there is only one camera Angelica enable option.
+
 ## Combatives first-person camera overhaul foundation
 
 - Added the client-only Combatives camera controller stack for movement state sampling, subtle inertial lean, continuous procedural bob, movement FOV, and damped camera shake impulses.

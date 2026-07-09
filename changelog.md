@@ -109,3 +109,9 @@
 - Added `version.properties` with manually managed `mod_version` and automatically managed `build_number` values.
 - Added Gradle version loading so the project exposes `modVersion`, `buildNumber`, and `fullVersion`, with JARs using `mod_version.build_number`.
 - Added production-build build number incrementing with failed-build rollback while preserving `version.properties` comments and formatting.
+
+## Restore Aqua authoritative crawl and swim state machine
+
+- Replaced the local pose-selection rewrite with Aqua-style priority ordering so active swimming or crawl forcing selects the shared low SWIMMING pose before sneaking or standing clearance can run.
+- Removed client pose rebroadcast authority from the player tick path and made server-side handling of client pose packets preserve active server crawl/swim state instead of accepting STANDING or CROUCHING downgrades.
+- Restored Aqua low-pose render offsets and swim/crawl eye-height sizing behavior while keeping crawl toggle packet semantics server-authoritative.

@@ -10,6 +10,7 @@
     "EntityPlayerSPMixin",
     "EntityClientPlayerMPMixin",
     "EntityOtherPlayerMPMixin",
+    "EntityRendererMixin",
     "ModelBipedMixin",
     "RenderPlayerMixin",
     "RenderMixin",

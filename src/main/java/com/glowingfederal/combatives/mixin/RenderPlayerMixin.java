@@ -1,7 +1,6 @@
 package com.glowingfederal.combatives.mixin;
 
 import com.glowingfederal.combatives.client.model.ICombativesModelBipedSwimming;
-import com.glowingfederal.combatives.client.render.CombativesVisualPoseHelper;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.util.math.MathHelperNew;
@@ -19,6 +18,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(RenderPlayer.class)
 public abstract class RenderPlayerMixin extends RendererLivingEntity {
+    private static final float CRAWL_GROUNDING_Y = -0.10F;
+
+    private boolean combatives$loggedLocalCrawlGrounding;
+    private boolean combatives$loggedRemoteCrawlGrounding;
+
     public RenderPlayerMixin(ModelBase model, float shadowSize) {
         super(model, shadowSize);
     }
@@ -41,9 +45,37 @@ public abstract class RenderPlayerMixin extends RendererLivingEntity {
             float rotation = MathHelperNew.lerp(animation, 0.0F, targetPitch);
             GL11.glRotatef(rotation, 1.0F, 0.0F, 0.0F);
 
+            boolean landCrawl = pose.isCrawlKeyDown() && !player.isInWater();
+            float translateY = pose.isActuallySwimming() ? -1.0F : 0.0F;
+            float translateZ = pose.isActuallySwimming() ? 0.3F : 0.0F;
+            if (landCrawl && pose.isActuallySwimming()) {
+                translateY += CRAWL_GROUNDING_Y;
+            }
+
+            if (pose.isCrawlKeyDown()) {
+                boolean localPlayer = player.isUser();
+                if ((localPlayer && !this.combatives$loggedLocalCrawlGrounding) || (!localPlayer && !this.combatives$loggedRemoteCrawlGrounding)) {
+                    double interpolatedY = player.prevPosY + (player.posY - player.prevPosY) * partialTicks;
+                    MovementDiagnostics.debug(player, "crawl render grounding: isLocalPlayer=" + localPlayer
+                        + " posY=" + player.posY + " prevPosY=" + player.prevPosY + " lastTickPosY=" + player.lastTickPosY
+                        + " interpolatedRenderY=" + interpolatedY + " partialTicks=" + partialTicks
+                        + " yOffset=" + player.yOffset + " ySize=" + player.ySize + " width=" + player.width + " height=" + player.height
+                        + " pose=" + pose.getPose() + " crawl=" + pose.isCrawlKeyDown() + " swim=" + pose.isSwimming()
+                        + " actuallySwimming=" + pose.isActuallySwimming() + " landCrawl=" + landCrawl
+                        + " baseTranslateY=" + (pose.isActuallySwimming() ? -1.0F : 0.0F) + " groundingY=" + (landCrawl ? CRAWL_GROUNDING_Y : 0.0F)
+                        + " finalTranslateY=" + translateY + " translateZ=" + translateZ);
+                    if (localPlayer) {
+                        this.combatives$loggedLocalCrawlGrounding = true;
+                    } else {
+                        this.combatives$loggedRemoteCrawlGrounding = true;
+                    }
+                }
+            }
+
             if (pose.isActuallySwimming()) {
-                GL11.glTranslatef(0.0F, -1.0F, 0.3F);
+                GL11.glTranslatef(0.0F, translateY, translateZ);
             }
         }
     }
+
 }

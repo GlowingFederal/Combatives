@@ -1,5 +1,23 @@
 # Changelog
 
+## Add shared land-crawl grounding correction
+
+- Kept Aqua's single local/remote prone transform path and added a small internal land-crawl-only downward render correction after the Aqua rotation/translation calculation.
+- Left water swimming translation unchanged and expanded crawl render diagnostics to include base, correction, and final Y translation values once per local/remote crawl render session.
+
+## Restore Aqua crawl grounding diagnostics and nameplate cancel path
+
+- Reverted the experimental local/remote crawl render offset split and restored Aqua's single `RenderPlayer` prone translation for crawl/swim models.
+- Restored Aqua's remote-player `yOffset` relationship by keeping remote `EntityOtherPlayerMP` yOffset at `0.0F` after update instead of applying the local `0.28F` low-pose offset.
+- Added crawl-only render grounding diagnostics for local/remote identity, vertical positions, interpolation, yOffset/ySize, size, pose flags, and render translation values.
+- Moved crawl nameplate hiding to the shared `RendererLivingEntity#func_147906_a` label draw hook, which is the lowest label drawing path used by player renderers.
+
+## Polish crawl render height, jump exit, and nametags
+
+- Split land-crawl `RenderPlayer` translation for local and remote players so the local model is nudged down while remote crawlers are lifted out of the ground without touching water swimming translation.
+- Changed crawl jump handling so local jump input cancels vanilla jumping, requests crawl exit only when standing clearance is available, and the server rejects blocked crawl exits authoritatively.
+- Hid RenderPlayer nameplates while the synced crawl flag is active, matching sneak-style visibility without changing vanilla sneaking state.
+
 ## Fix Aqua-style crawl toggle request handling
 
 - Changed the crawl key packet semantics from a pressed/released state to a toggle request while keeping the existing packet registration path intact.

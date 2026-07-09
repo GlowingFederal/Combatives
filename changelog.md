@@ -1,5 +1,19 @@
 # Changelog
 
+## Refine spring-based impact camera feedback
+
+- Refined landing and explosion effects to use severity-scaled damped spring responses instead of hard maxed impacts or generic shake.
+- Fixed landing magnitude scaling so accepted low, medium, large, and extreme falls preserve distinct dip and pitch strengths while rebound settles smoothly.
+- Added player-local directional explosion displacement with shock, body-pressure, and settling phases so front, rear, side, above, and below blasts read differently.
+- Blended movement bob down briefly after strong impacts so landing and explosion feedback remains visible without abruptly freezing normal camera motion.
+
+## Retune landing and explosion camera feedback
+
+- Retuned landing and explosion feedback from effectively imperceptible generic shake into separate, distinct impact impulses with stronger visual-only translation and rotation clamps.
+- Changed landing feedback to use previous fall distance severity, ignore sub-threshold step-downs, and play a fast impact dip followed by smooth recovery instead of a long generic sine shake.
+- Changed explosion feedback to use nonlinear strength/distance response, immediate directional punch, biased roll/lateral motion, and short recoil settling so nearby TNT is clearly visible while distant blasts remain detectable.
+- Reduced camera diagnostic spam by keeping concise impulse/rejection logs, moving per-frame traces behind verbose camera debugging, and throttling mouse clamp warnings unless deltas are drastic.
+
 ## Clean up camera feedback diagnostics and Angelica scaffolding
 
 - Removed stale `updateCameraAndRender` repeated-call diagnostics so normal camera debugging no longer emits old render-spam investigation logs.

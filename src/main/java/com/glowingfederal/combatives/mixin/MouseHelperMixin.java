@@ -12,6 +12,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(MouseHelper.class)
 public abstract class MouseHelperMixin {
+    private static long combatives$lastMouseClampWarningMillis;
+
     @Shadow public int deltaX;
     @Shadow public int deltaY;
 
@@ -34,7 +36,12 @@ public abstract class MouseHelperMixin {
         this.deltaX = clampedX;
         this.deltaY = clampedY;
 
-        if (Combatives.logger != null && (CombativesConfig.debugCamera || CombativesConfig.verboseCameraDebug)) {
+        int maxAbsOriginal = Math.max(Math.abs(originalX), Math.abs(originalY));
+        boolean drastic = maxAbsOriginal >= cap * 4;
+        long now = System.currentTimeMillis();
+        boolean throttled = now - combatives$lastMouseClampWarningMillis >= 1000L;
+        if (Combatives.logger != null && (CombativesConfig.verboseCameraDebug || (drastic && CombativesConfig.debugCamera && throttled))) {
+            combatives$lastMouseClampWarningMillis = now;
             Combatives.logger.warn(
                 "Combatives clamped abnormal raw mouse delta: deltaX={} -> {}, deltaY={} -> {}, cap={}",
                 originalX,

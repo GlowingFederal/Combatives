@@ -41,6 +41,17 @@ public abstract class RenderPlayerMixin extends RendererLivingEntity {
             float rotation = MathHelperNew.lerp(animation, 0.0F, targetPitch);
             GL11.glRotatef(rotation, 1.0F, 0.0F, 0.0F);
 
+            if (pose.isCrawlKeyDown()) {
+                double interpolatedY = player.prevPosY + (player.posY - player.prevPosY) * partialTicks;
+                MovementDiagnostics.debug(player, "crawl render grounding: isLocalPlayer=" + player.isUser()
+                    + " posY=" + player.posY + " prevPosY=" + player.prevPosY + " lastTickPosY=" + player.lastTickPosY
+                    + " interpolatedRenderY=" + interpolatedY + " partialTicks=" + partialTicks
+                    + " yOffset=" + player.yOffset + " ySize=" + player.ySize + " width=" + player.width + " height=" + player.height
+                    + " pose=" + pose.getPose() + " crawl=" + pose.isCrawlKeyDown() + " swim=" + pose.isSwimming()
+                    + " actuallySwimming=" + pose.isActuallySwimming() + " translateY=" + (pose.isActuallySwimming() ? -1.0F : 0.0F)
+                    + " translateZ=" + (pose.isActuallySwimming() ? 0.3F : 0.0F));
+            }
+
             if (pose.isActuallySwimming()) {
                 boolean landCrawl = pose.isCrawlKeyDown() && !player.isInWater();
                 if (landCrawl) {
@@ -53,10 +64,4 @@ public abstract class RenderPlayerMixin extends RendererLivingEntity {
         }
     }
 
-    @Inject(method = { "func_96449_a(Lnet/minecraft/client/entity/AbstractClientPlayer;DDD)V", "passSpecialRender(Lnet/minecraft/client/entity/AbstractClientPlayer;DDD)V" }, at = @At("HEAD"), cancellable = true, require = 0)
-    private void combatives$hideCrawlNameplate(AbstractClientPlayer player, double x, double y, double z, CallbackInfo ci) {
-        if (player instanceof ICombativesPlayerPose && ((ICombativesPlayerPose) player).isCrawlKeyDown()) {
-            ci.cancel();
-        }
-    }
 }

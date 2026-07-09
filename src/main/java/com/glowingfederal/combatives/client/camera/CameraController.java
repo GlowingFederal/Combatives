@@ -1,5 +1,6 @@
 package com.glowingfederal.combatives.client.camera;
 
+import com.glowingfederal.combatives.Combatives;
 import com.glowingfederal.combatives.config.CombativesConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -21,6 +22,9 @@ public final class CameraController {
     private static final float MAX_CAMERA_Z_OFFSET = 0.04F;
 
     private float leanRoll, leanPitch, bobVertical, bobSway, bobPitch, bobRoll, shakeVertical, shakePitch, shakeRoll, fovModifier;
+    private float lastPlayerYaw, lastPlayerPitch;
+    private boolean haveLastPlayerRotation;
+    private long lastDebugLogMs;
 
     private CameraController() {}
 
@@ -34,6 +38,7 @@ public final class CameraController {
         if (CombativesConfig.enableCameraShake) shake.update(movement); else shake.reset();
         leanRoll = lean.getRoll(); leanPitch = lean.getPitch(); bobVertical = bob.getVertical(); bobSway = bob.getSway(); bobPitch = bob.getPitch(); bobRoll = bob.getRoll();
         shakeVertical = shake.getVertical(); shakePitch = shake.getPitch(); shakeRoll = shake.getRoll(); fovModifier = fov.getModifier();
+        logRotationDiagnostics(player);
     }
 
     public void applyTransforms(float partialTicks) {
@@ -71,6 +76,6 @@ public final class CameraController {
         return value < min ? min : value > max ? max : value;
     }
 
-    public void reset() { lean.reset(); bob.reset(); fov.reset(); shake.reset(); leanRoll = leanPitch = bobVertical = bobSway = bobPitch = bobRoll = shakeVertical = shakePitch = shakeRoll = fovModifier = 0.0F; }
+    public void reset() { lean.reset(); bob.reset(); fov.reset(); shake.reset(); leanRoll = leanPitch = bobVertical = bobSway = bobPitch = bobRoll = shakeVertical = shakePitch = shakeRoll = fovModifier = 0.0F; haveLastPlayerRotation = false; }
     public float getFovModifier() { return fovModifier; }
 }

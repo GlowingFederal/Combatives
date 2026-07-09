@@ -71,19 +71,15 @@ public abstract class EntityRendererMixin {
         }
     }
 
-    @Inject(method = "updateCameraAndRender", at = @At("TAIL"))
-    private void combatives$sampleCameraAfterVanillaInput(float partialTicks, CallbackInfo ci) {
+    @Inject(method = "orientCamera", at = @At("HEAD"))
+    private void combatives$capturePartialTicks(float partialTicks, CallbackInfo ci) {
+        this.combatives$partialTicks = partialTicks;
         Minecraft mc = Minecraft.getMinecraft();
         if (mc.thePlayer instanceof EntityPlayerSP) {
             CameraController.INSTANCE.update(mc, (EntityPlayerSP) mc.thePlayer, partialTicks);
         } else {
             CameraController.INSTANCE.reset();
         }
-    }
-
-    @Inject(method = "orientCamera", at = @At("HEAD"))
-    private void combatives$capturePartialTicks(float partialTicks, CallbackInfo ci) {
-        this.combatives$partialTicks = partialTicks;
     }
 
     @Inject(method = "orientCamera", at = @At("TAIL"))

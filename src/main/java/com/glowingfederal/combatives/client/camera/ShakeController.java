@@ -5,10 +5,11 @@ import com.glowingfederal.combatives.config.CombativesConfig;
 public final class ShakeController {
     private float pitch, roll, vertical, forward, landingVelocity, explosionVelocity, explosionPhase;
 
-    public void update(MovementCameraState state) {
+    public void update(MovementCameraState state, float partialTicks) {
+        float tickScale = Math.max(0.0F, Math.min(1.0F, partialTicks));
         landingVelocity *= 0.72F;
         explosionVelocity *= 0.88F;
-        explosionPhase += 0.42F;
+        explosionPhase += 0.42F * (0.5F + tickScale * 0.5F);
 
         float wave = (float) Math.sin(explosionPhase);
         float recovery = (float) Math.cos(explosionPhase * 0.7F);

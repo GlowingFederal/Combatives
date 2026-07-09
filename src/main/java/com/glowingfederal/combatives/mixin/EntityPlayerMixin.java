@@ -50,8 +50,6 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     }
 
     @Shadow public PlayerCapabilities capabilities;
-    @Shadow public float prevCameraYaw;
-    @Shadow public float cameraYaw;
     @Shadow(remap = false) public float eyeHeight;
     @Shadow public abstract void addMovementStat(double x, double y, double z);
 
@@ -473,14 +471,6 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         if (amount > 1.0F) amount = 1.0F;
         this.limbSwingAmount += (amount - this.limbSwingAmount) * 0.4F;
         this.limbSwing += this.limbSwingAmount;
-    }
-
-    @Inject(method = "onLivingUpdate", at = @At("TAIL"))
-    private void combatives$onLivingUpdate(CallbackInfo ci) {
-        float yaw = 0.0F;
-        if (this.onGround && !this.getShouldBeDead() && !this.isSwimming()) yaw = Math.min(0.1F, MathHelper.sqrt_double(this.motionX * this.motionX + this.motionZ * this.motionZ));
-        this.cameraYaw = this.prevCameraYaw + (yaw - this.prevCameraYaw) * 0.4F;
-        this.cameraPitch = 0.0F;
     }
 
     @Redirect(method = "sleepInBedAt", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/player/EntityPlayer;setSize(FF)V"))

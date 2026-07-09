@@ -14,6 +14,12 @@ public final class CameraController {
     private final FOVController fov = new FOVController();
     private final ShakeController shake = new ShakeController();
 
+    private static final float MAX_CAMERA_PITCH_DEGREES = 2.0F;
+    private static final float MAX_CAMERA_ROLL_DEGREES = 4.0F;
+    private static final float MAX_CAMERA_X_OFFSET = 0.04F;
+    private static final float MAX_CAMERA_Y_OFFSET = 0.06F;
+    private static final float MAX_CAMERA_Z_OFFSET = 0.04F;
+
     private float leanRoll, leanPitch, bobVertical, bobSway, bobPitch, bobRoll, shakeVertical, shakePitch, shakeRoll, fovModifier;
 
     private CameraController() {}
@@ -32,9 +38,18 @@ public final class CameraController {
 
     public void applyTransforms(float partialTicks) {
         if (!CombativesConfig.enableCombativesCamera) return;
-        applyCameraBobAndShake();
-        GL11.glRotatef(leanPitch, 1.0F, 0.0F, 0.0F);
-        GL11.glRotatef(leanRoll, 0.0F, 0.0F, 1.0F);
+
+        float xOffset = clamp(bobSway, -MAX_CAMERA_X_OFFSET, MAX_CAMERA_X_OFFSET);
+        float yOffset = clamp(bobVertical + shakeVertical, -MAX_CAMERA_Y_OFFSET, MAX_CAMERA_Y_OFFSET);
+        float zOffset = clamp(0.0F, -MAX_CAMERA_Z_OFFSET, MAX_CAMERA_Z_OFFSET);
+        GL11.glTranslatef(xOffset, yOffset, zOffset);
+
+        if (!CombativesConfig.enableCameraRotations) return;
+
+        float pitch = clamp(bobPitch + shakePitch + leanPitch, -MAX_CAMERA_PITCH_DEGREES, MAX_CAMERA_PITCH_DEGREES);
+        float roll = clamp(bobRoll + shakeRoll + leanRoll, -MAX_CAMERA_ROLL_DEGREES, MAX_CAMERA_ROLL_DEGREES);
+        GL11.glRotatef(pitch, 1.0F, 0.0F, 0.0F);
+        GL11.glRotatef(roll, 0.0F, 0.0F, 1.0F);
     }
 
     public void applyHandTransforms(float partialTicks) {
@@ -42,16 +57,18 @@ public final class CameraController {
         applyVanillaStyleBob();
     }
 
-    private void applyCameraBobAndShake() {
-        GL11.glTranslatef(bobSway, bobVertical + shakeVertical, 0.0F);
-        GL11.glRotatef(bobRoll + shakeRoll, 0.0F, 0.0F, 1.0F);
-        GL11.glRotatef(bobPitch + shakePitch, 1.0F, 0.0F, 0.0F);
+    private void applyVanillaStyleBob() {
+        float xOffset = clamp(bobSway, -MAX_CAMERA_X_OFFSET, MAX_CAMERA_X_OFFSET);
+        float yOffset = clamp(bobVertical, -MAX_CAMERA_Y_OFFSET, MAX_CAMERA_Y_OFFSET);
+        float zOffset = clamp(0.0F, -MAX_CAMERA_Z_OFFSET, MAX_CAMERA_Z_OFFSET);
+        GL11.glTranslatef(xOffset, yOffset, zOffset);
+        if (!CombativesConfig.enableCameraRotations) return;
+        GL11.glRotatef(clamp(bobPitch, -MAX_CAMERA_PITCH_DEGREES, MAX_CAMERA_PITCH_DEGREES), 1.0F, 0.0F, 0.0F);
+        GL11.glRotatef(clamp(bobRoll, -MAX_CAMERA_ROLL_DEGREES, MAX_CAMERA_ROLL_DEGREES), 0.0F, 0.0F, 1.0F);
     }
 
-    private void applyVanillaStyleBob() {
-        GL11.glTranslatef(bobSway, bobVertical, 0.0F);
-        GL11.glRotatef(bobRoll, 0.0F, 0.0F, 1.0F);
-        GL11.glRotatef(bobPitch, 1.0F, 0.0F, 0.0F);
+    private static float clamp(float value, float min, float max) {
+        return value < min ? min : value > max ? max : value;
     }
 
     public void reset() { lean.reset(); bob.reset(); fov.reset(); shake.reset(); leanRoll = leanPitch = bobVertical = bobSway = bobPitch = bobRoll = shakeVertical = shakePitch = shakeRoll = fovModifier = 0.0F; }

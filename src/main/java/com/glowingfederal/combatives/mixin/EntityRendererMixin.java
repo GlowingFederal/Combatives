@@ -26,8 +26,8 @@ public abstract class EntityRendererMixin {
     private float combatives$entityEyeHeight;
     private float combatives$partialTicks;
 
-    @Inject(method = "updateCameraAndRender", at = @At("HEAD"))
-    private void combatives$updateCamera(float partialTicks, CallbackInfo ci) {
+    @Inject(method = "updateCameraAndRender", at = @At("TAIL"))
+    private void combatives$sampleCameraAfterVanillaInput(float partialTicks, CallbackInfo ci) {
         if (this.mc.thePlayer instanceof EntityPlayerSP) {
             CameraController.INSTANCE.update(this.mc, (EntityPlayerSP) this.mc.thePlayer, partialTicks);
         } else {

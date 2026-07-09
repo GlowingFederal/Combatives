@@ -15,8 +15,8 @@ public final class MovementCameraState {
     private float strafe;
     private float speed;
     private float walkPhase;
-    private float cameraYaw;
-    private float cameraPitch;
+    private float vanillaCameraYaw;
+    private float vanillaCameraPitch;
     private boolean crawling;
     private boolean swimming;
     private boolean sneaking;
@@ -39,8 +39,8 @@ public final class MovementCameraState {
 
         float walkedDelta = player.distanceWalkedModified - player.prevDistanceWalkedModified;
         this.walkPhase = -(player.distanceWalkedModified + walkedDelta * partialTicks);
-        this.cameraYaw = player.prevCameraYaw + (player.cameraYaw - player.prevCameraYaw) * partialTicks;
-        this.cameraPitch = player.prevCameraPitch + (player.cameraPitch - player.prevCameraPitch) * partialTicks;
+        this.vanillaCameraYaw = player.prevCameraYaw + (player.cameraYaw - player.prevCameraYaw) * partialTicks;
+        this.vanillaCameraPitch = player.prevCameraPitch + (player.cameraPitch - player.prevCameraPitch) * partialTicks;
 
         this.grounded = player.onGround;
         this.sneaking = player.isSneaking();
@@ -65,8 +65,8 @@ public final class MovementCameraState {
     public float getStrafe() { return strafe; }
     public float getSpeed() { return speed; }
     public float getWalkPhase() { return walkPhase; }
-    public float getCameraYaw() { return cameraYaw; }
-    public float getCameraPitch() { return cameraPitch; }
+    public float getCameraYaw() { return vanillaCameraYaw; }
+    public float getCameraPitch() { return vanillaCameraPitch; }
     public boolean isCrawling() { return crawling; }
     public boolean isSwimming() { return swimming; }
     public boolean isSneaking() { return sneaking; }

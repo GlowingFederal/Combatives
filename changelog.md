@@ -1,5 +1,24 @@
 # Changelog
 
+## Add low-level look rotation diagnostics
+
+- Added a client-only `Entity#setAngles` diagnostic mixin for the local player that logs raw setAngles deltas, before/after yaw and pitch, per-call deltas, per-tick deltas, and a partial caller stack when yaw exceeds 90 degrees or pitch exceeds 45 degrees in one tick.
+- Removed the once-per-second camera yaw/pitch diagnostic so look-rotation spikes are captured at the actual mutation point instead of being hidden by accumulated camera sampling.
+- Audited the Combatives source for direct mouse delta reads, `mouseHelper.mouseXYChange()`, and manual `setAngles(...)` calls; none are present in the active Combatives source.
+
+## Audit Combatives mouse input ownership
+
+- Moved Combatives camera state sampling to the tail of `EntityRenderer#updateCameraAndRender` so vanilla mouse handling has already completed before diagnostics read player yaw/pitch.
+- Verified Combatives source has no calls to `mouseHelper.mouseXYChange()`, `Mouse.getDX/DY()`, or manual `setAngles(...)` calls.
+- Tightened camera diagnostics so they only read player rotation state and never sample raw mouse deltas.
+
+## Fix Combatives camera sensitivity safety clamps
+
+- Removed the Combatives player cameraYaw/cameraPitch rewrite so vanilla remains the only owner of player camera bob state.
+- Kept camera transforms at the orientCamera tail while hard-clamping visual-only X pitch, Z roll, and XYZ translation values; no Y-axis/yaw camera rotation is applied.
+- Added the `enableCameraRotations` emergency config toggle so camera rotations can be disabled while keeping camera translations and FOV active for sensitivity diagnosis.
+- Added throttled camera diagnostics for vanilla player yaw/pitch deltas and the total Combatives pitch/roll/yaw transform, with any nonzero yaw value forced back to zero.
+
 ## Rework Combatives bob to vanilla-style camera and hand motion
 
 - Replaced the custom procedural bob phase with a vanilla-style walk-distance, camera-yaw, and camera-pitch bob calculation with only subtle Combatives intensity scaling.

@@ -25,17 +25,22 @@ public abstract class RenderPlayerMixin extends RendererLivingEntity {
 
     @Inject(method = "renderFirstPersonArm", at = @At("HEAD"))
     private void combatives$resetFirstPersonSwimAnimation(EntityPlayer player, CallbackInfo ci) {
-        ((ICombativesModelBipedSwimming) (ModelBiped) this.mainModel).setSwimAnimation(0.0F);
+        ModelBiped modelPlayer = (ModelBiped) this.mainModel;
+        ((ICombativesModelBipedSwimming) modelPlayer).setSwimAnimation(0.0F);
     }
 
     @Inject(method = "rotateCorpse(Lnet/minecraft/client/entity/AbstractClientPlayer;FFF)V", at = @At("TAIL"))
-    private void combatives$applySwimRotations(AbstractClientPlayer player, float p_77043_2_, float rotationYaw, float partialTicks, CallbackInfo ci) {
-        if (CombativesVisualPoseHelper.isVisuallySwimmingOrCrawling(player) && player instanceof ICombativesPlayerPose) {
+    private void combatives$applyAquaSwimRotations(AbstractClientPlayer player, float p_77043_2_, float rotationYaw, float partialTicks, CallbackInfo ci) {
+        if (player instanceof ICombativesPlayerPose) {
             ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
-            float animation = CombativesVisualPoseHelper.getVisualSwimAnimation(player, partialTicks);
-            MovementDiagnostics.debug(player, "RenderPlayer hook fired: " + CombativesVisualPoseHelper.describe(player) + " animation=" + animation);
+            float animation = pose.getSwimAnimation(partialTicks);
+            if (animation > 0.0F || pose.isActuallySwimming()) {
+                MovementDiagnostics.debug(player, "RenderPlayer Aqua hook fired: crawl=" + pose.isCrawlKeyDown() + " swim=" + pose.isSwimming() + " pose=" + pose.getPose() + " animation=" + animation);
+            }
             float targetPitch = player.isInWater() ? -90.0F - player.rotationPitch : -90.0F;
-            GL11.glRotatef(MathHelperNew.lerp(animation, 0.0F, targetPitch), 1.0F, 0.0F, 0.0F);
+            float rotation = MathHelperNew.lerp(animation, 0.0F, targetPitch);
+            GL11.glRotatef(rotation, 1.0F, 0.0F, 0.0F);
+
             if (pose.isActuallySwimming()) {
                 GL11.glTranslatef(0.0F, -1.0F, 0.3F);
             }

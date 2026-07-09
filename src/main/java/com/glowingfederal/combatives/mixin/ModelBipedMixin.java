@@ -52,8 +52,9 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
         if (swimAnimation <= 0.0F) {
             return;
         }
-        if (entity instanceof EntityPlayer) {
-            MovementDiagnostics.debug((EntityPlayer) entity, "ModelBiped hook fired: " + CombativesVisualPoseHelper.describe((EntityPlayer) entity) + " animation=" + swimAnimation);
+        if (entity instanceof EntityPlayer && entity instanceof ICombativesPlayerPose) {
+            ICombativesPlayerPose pose = (ICombativesPlayerPose) entity;
+            MovementDiagnostics.debug((EntityPlayer) entity, "ModelBiped Aqua hook fired: crawl=" + pose.isCrawlKeyDown() + " swim=" + pose.isSwimming() + " pose=" + pose.getPose() + " animation=" + this.combatives$swimAnimation);
         }
         float cycle = limbSwing % 26.0F;
         float armBlend = this.onGround > 0.0F ? 0.0F : swimAnimation;

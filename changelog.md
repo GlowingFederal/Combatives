@@ -121,3 +121,9 @@
 - Added a client visual-pose helper so local, remote, and armor-model rendering can identify crawl/swim from the synced crawl flag, swim flag, or shared SWIMMING pose.
 - Routed RenderPlayer and ModelBiped through the helper, applying Aqua's prone/swim model rotation, translation, limb rotations, and temporary render/model debug logs whenever an active low pose is rendered.
 - Reverted the previous eye-height adjustment and kept this change focused on player model transforms rather than camera behavior.
+
+## Restore Aqua client render mixin loading
+
+- Removed the non-reference visual helper path and restored RenderPlayer/ModelBiped to the direct Aqua swim-animation transform flow.
+- Fixed the early mixin loader so Aqua client render/model/input mixins are actually returned on the physical client side instead of sitting in an unqueued client config.
+- Updated documentation to clarify that the core plugin side-gates both common and client Aqua crawl/swim mixins.

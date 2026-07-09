@@ -11,9 +11,7 @@ import net.minecraft.client.renderer.EntityRenderer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import org.lwjgl.opengl.Display;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
@@ -22,8 +20,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(EntityRenderer.class)
 public abstract class EntityRendererMixin {
-    @Shadow @Final private Minecraft mc;
-
     private float combatives$eyeHeight;
     private float combatives$previousEyeHeight;
     private float combatives$entityEyeHeight;
@@ -33,7 +29,8 @@ public abstract class EntityRendererMixin {
 
     @Inject(method = "updateCameraAndRender", at = @At("HEAD"))
     private void combatives$logCameraRenderEntry(float partialTicks, CallbackInfo ci) {
-        int currentTick = this.mc.thePlayer == null ? -1 : this.mc.thePlayer.ticksExisted;
+        Minecraft mc = Minecraft.getMinecraft();
+        int currentTick = mc.thePlayer == null ? -1 : mc.thePlayer.ticksExisted;
         if (this.combatives$lastRenderCallTick != currentTick) {
             this.combatives$lastRenderCallTick = currentTick;
             this.combatives$renderCallCountThisTick = 0;
@@ -55,7 +52,7 @@ public abstract class EntityRendererMixin {
             nanoTime,
             currentTime,
             this.combatives$renderCallCountThisTick,
-            this.mc.inGameHasFocus,
+            mc.inGameHasFocus,
             displayActive
         );
 
@@ -67,7 +64,7 @@ public abstract class EntityRendererMixin {
                 nanoTime,
                 currentTime,
                 this.combatives$renderCallCountThisTick,
-                this.mc.inGameHasFocus,
+                mc.inGameHasFocus,
                 displayActive,
                 combatives$partialStack()
             );
@@ -76,8 +73,9 @@ public abstract class EntityRendererMixin {
 
     @Inject(method = "updateCameraAndRender", at = @At("TAIL"))
     private void combatives$sampleCameraAfterVanillaInput(float partialTicks, CallbackInfo ci) {
-        if (this.mc.thePlayer instanceof EntityPlayerSP) {
-            CameraController.INSTANCE.update(this.mc, (EntityPlayerSP) this.mc.thePlayer, partialTicks);
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc.thePlayer instanceof EntityPlayerSP) {
+            CameraController.INSTANCE.update(mc, (EntityPlayerSP) mc.thePlayer, partialTicks);
         } else {
             CameraController.INSTANCE.reset();
         }
@@ -128,7 +126,7 @@ public abstract class EntityRendererMixin {
             ordinal = 1
     )
     private float combatives$getInterpolatedEyeHeight(float eyeHeight) {
-        Entity entity = this.mc.renderViewEntity;
+        Entity entity = Minecraft.getMinecraft().renderViewEntity;
 
         if (!(entity instanceof EntityPlayer)) {
             return eyeHeight;

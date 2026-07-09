@@ -11,6 +11,8 @@
     "EntityClientPlayerMPMixin",
     "EntityOtherPlayerMPMixin",
     "EntityRendererMixin",
+    "MouseHelperMixin",
+    "NetHandlerPlayClientMixin",
     "ModelBipedMixin",
     "RenderPlayerMixin",
     "RenderMixin",

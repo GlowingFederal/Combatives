@@ -1,5 +1,29 @@
 # Changelog
 
+## Rework Combatives bob to vanilla-style camera and hand motion
+
+- Replaced the custom procedural bob phase with a vanilla-style walk-distance, camera-yaw, and camera-pitch bob calculation with only subtle Combatives intensity scaling.
+- Kept vanilla `setupViewBobbing` canceled while applying a recreated first-person hand/item bob directly before item rendering.
+- Removed the failed render-hand bob passthrough so camera bob ownership no longer depends on vanilla bob rendering remaining active.
+
+## Preserve vanilla first-person arm bob while owning camera bob
+
+- Limited Combatives vanilla view-bob cancellation to the world camera path so the first-person arm/item render can still receive vanilla hand bobbing.
+- Added render-hand state tracking around `EntityRenderer#renderHand` without changing movement, crawl, swim, hitboxes, or pose sync.
+
+## Fix Combatives camera bob ownership
+
+- Added explicit vanilla view bobbing cancellation whenever the Combatives camera and procedural bob are enabled, without changing the user's vanilla View Bobbing option.
+- Kept Angelica bob ownership behind the existing optional compatibility flags while separating vanilla bob cancellation from Angelica ownership.
+- Consolidated camera Angelica compatibility config generation under the compatibility category so there is only one camera Angelica enable option.
+
+## Combatives first-person camera overhaul foundation
+
+- Added the client-only Combatives camera controller stack for movement state sampling, subtle inertial lean, continuous procedural bob, movement FOV, and damped camera shake impulses.
+- Routed EntityRenderer camera update, final transform application, vanilla bob ownership cancellation, and movement FOV composition through UniMixins without ASM or renderer replacement.
+- Added camera config toggles and safe Angelica camera ownership compatibility checks with quiet default logging.
+- Kept the camera foundation read-only with respect to movement, crawl/swim sync, hitboxes, weapons, recoil, and ADS behavior.
+
 ## Final movement diagnostics cleanup
 
 - Added separate `debugMovement` and `verboseMovementDebug` movement diagnostic levels so normal crawling/swimming remains quiet by default while general lifecycle events and verbose per-frame traces can be enabled independently.

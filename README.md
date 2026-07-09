@@ -21,11 +21,20 @@ The port is intentionally scoped to player pose, collision bounds, eye-height st
 - Explicit multiplayer pose synchronization from the owning client to the server and from the server to tracking clients, including join/respawn/dimension/tracking lifecycle resends
 - Lightweight horizontal momentum controller that shapes `motionX`/`motionZ` from input intent toward vanilla velocity targets while keeping collision, gravity, jumping, step handling, and `moveEntity` authoritative; normal movement is shaped through the vanilla `moveFlying` hook, while crawl and swim/water movement are shaped only in their dedicated Combatives branches
 - Client/server movement snapshots for future camera work, exposing velocity, acceleration, normalized speed, wish direction, grounded/sprint/sneak/crawl/swim/underwater/airborne flags, landing impact, and turn values
+- Client-only first-person camera foundation with read-only movement sampling, subtle procedural camera bob, recreated vanilla-style first-person arm/item bob, movement lean, movement FOV, a damped shake impulse framework, and optional Angelica camera ownership compatibility
 - Initial config options:
-  - `enableAngelicaCompat = true`
+  - `enableCombativesCamera = true`
+  - `enableProceduralBob = true`
+  - `enableMovementLean = true`
+  - `enableMovementFov = true`
+  - `enableCameraShake = true`
+  - `enableAngelicaCameraCompat = true`
+  - `disableAngelicaViewBobbingCompat = true`
+  - `disableAngelicaDynamicFovCompat = true`
   - `debugMovement = false`
   - `verboseMovementDebug = false`
   - `debugCamera = false`
+  - `verboseCameraDebug = false`
 
 ## Movement diagnostics
 
@@ -37,7 +46,7 @@ Combatives movement diagnostics are split into three levels so normal crawling a
 
 ## Future work
 
-Future work will include procedural camera motion consuming the movement snapshot data, recoil, landing effects, and optional Angelica compatibility.
+Future work will build on the camera foundation with weapon-specific first-person behavior and additional camera impulses.
 
 Angelica compatibility must remain optional. Angelica is not a hard runtime dependency.
 

@@ -59,17 +59,16 @@ public final class MovementCameraState {
         }
         if (player.ticksExisted != this.lastLandingSampleTick) {
             boolean wasAirborne = !this.wasGrounded;
-            boolean realLanding = wasAirborne && player.onGround && (this.previousFallDistance > 1.5F || this.previousMotionY < -0.35D);
-            float fallSeverity = Math.max(this.previousFallDistance, (float) (-this.previousMotionY * 4.0D));
-            this.landed = CombativesConfig.enableCombativesCamera && CombativesConfig.enableLandingCameraFeedback && realLanding && fallSeverity > 1.5F;
-            this.landingStrength = this.landed ? Math.min((fallSeverity - 1.5F) / 7.0F, 1.0F) : 0.0F;
+            boolean realLanding = wasAirborne && player.onGround;
+            float severity = clamp((this.previousFallDistance - 0.75F) / 5.0F, 0.0F, 1.0F);
+            this.landed = CombativesConfig.enableCombativesCamera && CombativesConfig.enableLandingCameraFeedback && realLanding && severity > 0.0F;
+            this.landingStrength = this.landed ? severity : 0.0F;
 
-            if (Combatives.logger != null && CombativesConfig.debugCamera && !player.onGround) {
+            if (Combatives.logger != null && CombativesConfig.verboseCameraDebug && !player.onGround) {
                 Combatives.logger.info("Combatives landing airborne tracking: tick={}, motionY={}, fallDistance={}, previousMotionY={}, previousFallDistance={}", player.ticksExisted, player.motionY, player.fallDistance, this.previousMotionY, this.previousFallDistance);
             }
-            if (Combatives.logger != null && CombativesConfig.debugCamera && realLanding) {
-                Combatives.logger.info("Combatives landing detected: tick={}, previousMotionY={}, previousFallDistance={}, severity={}, strength={}", player.ticksExisted, this.previousMotionY, this.previousFallDistance, fallSeverity, this.landingStrength);
-                if (!this.landed) Combatives.logger.info("Combatives landing ignored due to low severity or disabled toggles: enableCombativesCamera={}, enableLandingCameraFeedback={}, severity={}", CombativesConfig.enableCombativesCamera, CombativesConfig.enableLandingCameraFeedback, fallSeverity);
+            if (Combatives.logger != null && CombativesConfig.debugCamera && realLanding && !this.landed) {
+                Combatives.logger.info("Combatives landing impulse rejected: reason=below_threshold_or_disabled, previousFallDistance={}, severity={}, enableCombativesCamera={}, enableLandingCameraFeedback={}", this.previousFallDistance, severity, CombativesConfig.enableCombativesCamera, CombativesConfig.enableLandingCameraFeedback);
             }
 
             this.wasGrounded = player.onGround;
@@ -84,6 +83,10 @@ public final class MovementCameraState {
 
     private static float applyDeadzone(float value, float deadzone) {
         return Math.abs(value) < deadzone ? 0.0F : value;
+    }
+
+    private static float clamp(float value, float min, float max) {
+        return value < min ? min : value > max ? max : value;
     }
 
     public float getForward() { return forward; }

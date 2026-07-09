@@ -1,5 +1,12 @@
 # Changelog
 
+## Retune landing and explosion camera feedback
+
+- Retuned landing and explosion feedback from effectively imperceptible generic shake into separate, distinct impact impulses with stronger visual-only translation and rotation clamps.
+- Changed landing feedback to use previous fall distance severity, ignore sub-threshold step-downs, and play a fast impact dip followed by smooth recovery instead of a long generic sine shake.
+- Changed explosion feedback to use nonlinear strength/distance response, immediate directional punch, biased roll/lateral motion, and short recoil settling so nearby TNT is clearly visible while distant blasts remain detectable.
+- Reduced camera diagnostic spam by keeping concise impulse/rejection logs, moving per-frame traces behind verbose camera debugging, and throttling mouse clamp warnings unless deltas are drastic.
+
 ## Clean up camera feedback diagnostics and Angelica scaffolding
 
 - Removed stale `updateCameraAndRender` repeated-call diagnostics so normal camera debugging no longer emits old render-spam investigation logs.

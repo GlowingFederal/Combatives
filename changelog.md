@@ -1,5 +1,12 @@
 # Changelog
 
+## Disable duplicate client mixin manifest path
+
+- Removed the standalone jar manifest `MixinConfigs` declaration for `mixins.combatives.client.json` so Combatives client mixins are offered only through the GTNHMixins `IEarlyMixinLoader` path.
+- Temporarily removed `EntitySetAnglesDiagnosticsMixin` from the GTNHMixins early-loader client list and the dormant client mixin JSON while mouse sensitivity isolation continues.
+- Kept `EntityRendererMixin` unregistered; the source remains present for later controlled variants but is still not offered by either registration path.
+- Re-audited active Combatives source for `MouseHelper`, `Mouse.getDX`, `Mouse.getDY`, `deltaX`, `deltaY`, `setIngameFocus`, `setIngameNotInFocus`, `Mouse.setGrabbed`, `runTick`, and `runGameLoop`; the only active matches are movement interpolation variables named `deltaX`, so Combatives still has no direct mouse input hook.
+
 ## Temporarily unregister EntityRenderer camera mixin
 
 - Temporarily removed `EntityRendererMixin` from both the GTNHMixins early-loader client mixin list and the standalone client mixin JSON so `EntityRenderer#updateCameraAndRender` is completely absent from Combatives runtime mixin application for the first mouse-sensitivity test case.

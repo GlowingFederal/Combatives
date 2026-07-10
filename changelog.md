@@ -1,5 +1,11 @@
 # Changelog
 
+## Add initial public Combatives Camera API
+
+- Added the versioned `com.combatives.api.camera` package with preset effect types, capabilities, context objects, custom impulse descriptions, stacking modes, priorities, decay types, and continuous-effect handles.
+- Added an internal camera effect manager that validates API submissions, resolves presets, applies positional falloff, stacks and expires effects, saturates accumulated output, and feeds the existing Combatives camera controller without exposing renderer state.
+- Documented the public camera API usage, safety model, namespaced IDs, continuous effects, and networking-helper facade.
+
 ## Push impact camera feedback to cinematic strength
 
 - Boosted landing feedback again with an immediate compression offset plus much stronger spring velocity, translation, pitch, and roll caps so high-severity landings are plainly visible.

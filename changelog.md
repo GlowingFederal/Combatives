@@ -1,5 +1,11 @@
 # Changelog
 
+## Push impact camera feedback to cinematic strength
+
+- Boosted landing feedback again with an immediate compression offset plus much stronger spring velocity, translation, pitch, and roll caps so high-severity landings are plainly visible.
+- Boosted explosion shock and body-displacement phases with larger directional translations, pitch, roll, and velocity limits so TNT produces obvious camera pressure instead of subtle motion.
+- Raised final transform clamps and bob suppression further so dramatic impact impulses survive final camera composition.
+
 ## Make impact camera feedback more dramatic
 
 - Increased landing spring velocity, dip, pitch, forward compression, and movement-biased roll so accepted falls read clearly without reverting to maxed brick-wall impacts.

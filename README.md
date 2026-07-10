@@ -57,3 +57,25 @@ For production validation, build a reobfuscated jar and run it in a real Forge 1
 ## Development notes
 
 See `docs/aqua-port-map.md` for the inspected Aqua source map and port/skipped-class rationale. Do not compile anything inside the reference folder. Do not compile or add generated binary files to commits or pull requests. Common and client Combatives movement mixins are loaded through `com.glowingfederal.combatives.loading.CombativesCorePlugin`, with the client render/input/model mixins added only on the physical client side. Do not port unrelated Aqua Acrobatics systems unless they are required for Combatives swimming/crawling behavior to function.
+
+## Build outputs
+
+A production `assemble` or `build` now creates both supported distribution jars from the same source tree:
+
+- `build/libs/Combatives-<version>.jar` is the standard build and keeps the existing configuration behavior.
+- `build/libs/Combatives-Fairplay-<version>.jar` is the official Fairplay build variant.
+
+The Fairplay jar carries the display name `Combatives Fairplay` and contains build metadata that makes `BuildInfo.FAIRPLAY_BUILD` resolve to `true` at runtime. The standard jar carries the normal `Combatives` display name and resolves the same flag to `false`.
+
+## Fairplay build behavior
+
+Fairplay is a build/distribution variant only. It does not add multiplayer verification, networking, handshakes, hashing, anti-tamper behavior, or server enforcement.
+
+When the Fairplay jar starts, Combatives logs one informational message stating that Fairplay mode is active and gameplay/camera settings are locked. It then resolves gameplay and camera settings from the canonical defaults used by the standard config, instead of reading user-provided gameplay or camera config values.
+
+Fairplay uses a separate `Combatives-Fairplay.cfg` file so an existing standard Combatives config cannot interfere. That file intentionally exposes only:
+
+- `debug`
+- `verboseDebug`
+
+These two options enable the existing movement and camera diagnostic streams for debugging while leaving gameplay and camera behavior locked to the canonical defaults.

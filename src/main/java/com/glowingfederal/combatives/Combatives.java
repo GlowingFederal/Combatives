@@ -1,5 +1,6 @@
 package com.glowingfederal.combatives;
 
+import com.glowingfederal.combatives.build.BuildInfo;
 import com.glowingfederal.combatives.config.CombativesConfig;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.proxy.CommonProxy;
@@ -35,6 +36,9 @@ public class Combatives {
     public void preInit(FMLPreInitializationEvent event) {
         logger = event.getModLog();
         CombativesConfig.load(event.getSuggestedConfigurationFile());
+        if (BuildInfo.FAIRPLAY_BUILD) {
+            logger.info("Combatives Fairplay mode is active; gameplay and camera settings are locked to canonical defaults.");
+        }
         CombativesConfig.logLoadedValues(logger);
         MovementDiagnostics.logFeatureState();
         proxy.preInit(event);

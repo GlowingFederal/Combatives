@@ -2,6 +2,7 @@ package com.glowingfederal.combatives.config;
 
 import java.io.File;
 
+import com.glowingfederal.combatives.build.BuildInfo;
 import net.minecraftforge.common.config.Configuration;
 import org.apache.logging.log4j.Logger;
 
@@ -9,27 +10,68 @@ public final class CombativesConfig {
     private static final String CATEGORY_DEBUG = "debug";
     private static final String CATEGORY_CAMERA = "camera";
 
-    public static boolean enableCombativesCamera = true;
-    public static boolean enableProceduralBob = true;
-    public static boolean enableMovementLean = true;
-    public static boolean enableMovementFov = true;
-    public static boolean enableCameraRotations = true;
-    public static boolean enableCameraShake = true;
-    public static boolean enableMouseDeltaClamp = true;
-    public static int maxMouseDelta = 80;
-    public static boolean enableLandingCameraFeedback = true;
-    public static double landingFeedbackStrength = 1.0D;
-    public static boolean enableExplosionCameraFeedback = true;
-    public static double explosionFeedbackStrength = 1.0D;
-    public static boolean debugMovement = false;
-    public static boolean verboseMovementDebug = false;
-    public static boolean debugCamera = false;
-    public static boolean verboseCameraDebug = false;
+    public static boolean enableCombativesCamera = CombativesConfigDefaults.ENABLE_COMBATIVES_CAMERA;
+    public static boolean enableProceduralBob = CombativesConfigDefaults.ENABLE_PROCEDURAL_BOB;
+    public static boolean enableMovementLean = CombativesConfigDefaults.ENABLE_MOVEMENT_LEAN;
+    public static boolean enableMovementFov = CombativesConfigDefaults.ENABLE_MOVEMENT_FOV;
+    public static boolean enableCameraRotations = CombativesConfigDefaults.ENABLE_CAMERA_ROTATIONS;
+    public static boolean enableCameraShake = CombativesConfigDefaults.ENABLE_CAMERA_SHAKE;
+    public static boolean enableMouseDeltaClamp = CombativesConfigDefaults.ENABLE_MOUSE_DELTA_CLAMP;
+    public static int maxMouseDelta = CombativesConfigDefaults.MAX_MOUSE_DELTA;
+    public static boolean enableLandingCameraFeedback = CombativesConfigDefaults.ENABLE_LANDING_CAMERA_FEEDBACK;
+    public static double landingFeedbackStrength = CombativesConfigDefaults.LANDING_FEEDBACK_STRENGTH;
+    public static boolean enableExplosionCameraFeedback = CombativesConfigDefaults.ENABLE_EXPLOSION_CAMERA_FEEDBACK;
+    public static double explosionFeedbackStrength = CombativesConfigDefaults.EXPLOSION_FEEDBACK_STRENGTH;
+    public static boolean debugMovement = CombativesConfigDefaults.DEBUG;
+    public static boolean verboseMovementDebug = CombativesConfigDefaults.VERBOSE_DEBUG;
+    public static boolean debugCamera = CombativesConfigDefaults.DEBUG;
+    public static boolean verboseCameraDebug = CombativesConfigDefaults.VERBOSE_DEBUG;
 
     private CombativesConfig() {
     }
 
+    private static void applyCanonicalGameplayDefaults() {
+        enableCombativesCamera = CombativesConfigDefaults.ENABLE_COMBATIVES_CAMERA;
+        enableProceduralBob = CombativesConfigDefaults.ENABLE_PROCEDURAL_BOB;
+        enableMovementLean = CombativesConfigDefaults.ENABLE_MOVEMENT_LEAN;
+        enableMovementFov = CombativesConfigDefaults.ENABLE_MOVEMENT_FOV;
+        enableCameraRotations = CombativesConfigDefaults.ENABLE_CAMERA_ROTATIONS;
+        enableCameraShake = CombativesConfigDefaults.ENABLE_CAMERA_SHAKE;
+        enableMouseDeltaClamp = CombativesConfigDefaults.ENABLE_MOUSE_DELTA_CLAMP;
+        maxMouseDelta = CombativesConfigDefaults.MAX_MOUSE_DELTA;
+        enableLandingCameraFeedback = CombativesConfigDefaults.ENABLE_LANDING_CAMERA_FEEDBACK;
+        landingFeedbackStrength = CombativesConfigDefaults.LANDING_FEEDBACK_STRENGTH;
+        enableExplosionCameraFeedback = CombativesConfigDefaults.ENABLE_EXPLOSION_CAMERA_FEEDBACK;
+        explosionFeedbackStrength = CombativesConfigDefaults.EXPLOSION_FEEDBACK_STRENGTH;
+    }
+
+    private static File fairplayConfigFile(File suggestedConfigFile) {
+        File parent = suggestedConfigFile.getParentFile();
+        return new File(parent == null ? new File(".") : parent, "Combatives-Fairplay.cfg");
+    }
+
+    private static void loadFairplay(File suggestedConfigFile) {
+        applyCanonicalGameplayDefaults();
+
+        Configuration config = new Configuration(fairplayConfigFile(suggestedConfigFile));
+        config.load();
+        boolean debug = config.getBoolean("debug", CATEGORY_DEBUG, CombativesConfigDefaults.DEBUG, "Enable general Combatives movement and camera diagnostics.");
+        boolean verboseDebug = config.getBoolean("verboseDebug", CATEGORY_DEBUG, CombativesConfigDefaults.VERBOSE_DEBUG, "Enable verbose per-frame/per-tick Combatives movement and camera diagnostics. This implies debug output.");
+        debugMovement = debug;
+        debugCamera = debug;
+        verboseMovementDebug = verboseDebug;
+        verboseCameraDebug = verboseDebug;
+
+        if (config.hasChanged()) {
+            config.save();
+        }
+    }
+
     public static void load(File configFile) {
+        if (BuildInfo.FAIRPLAY_BUILD) {
+            loadFairplay(configFile);
+            return;
+        }
         Configuration config = new Configuration(configFile);
         config.load();
 

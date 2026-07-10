@@ -1,5 +1,11 @@
 # Changelog
 
+## Make impact camera feedback more dramatic
+
+- Increased landing spring velocity, dip, pitch, forward compression, and movement-biased roll so accepted falls read clearly without reverting to maxed brick-wall impacts.
+- Increased explosion shock, displacement, pitch, roll, and translation caps while preserving directional strength and distance scaling for far and nearby blasts.
+- Raised final impact transform clamps and bob-suppression headroom so stronger landing and explosion impulses are not hidden by normal movement bob.
+
 ## Refine spring-based impact camera feedback
 
 - Refined landing and explosion effects to use severity-scaled damped spring responses instead of hard maxed impacts or generic shake.

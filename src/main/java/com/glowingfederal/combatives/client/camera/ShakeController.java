@@ -4,15 +4,15 @@ import com.glowingfederal.combatives.Combatives;
 import com.glowingfederal.combatives.config.CombativesConfig;
 
 public final class ShakeController {
-    private static final float LANDING_MAX_DIP = 0.06F;
-    private static final float LANDING_MAX_PITCH = 3.0F;
-    private static final float LANDING_MAX_FORWARD = 0.018F;
-    private static final float LANDING_MAX_ROLL = 0.35F;
-    private static final float EXPLOSION_MAX_PITCH = 2.8F;
-    private static final float EXPLOSION_MAX_ROLL = 1.5F;
-    private static final float EXPLOSION_MAX_VERTICAL = 0.04F;
-    private static final float EXPLOSION_MAX_FORWARD = 0.04F;
-    private static final float EXPLOSION_MAX_LATERAL = 0.035F;
+    private static final float LANDING_MAX_DIP = 0.085F;
+    private static final float LANDING_MAX_PITCH = 4.5F;
+    private static final float LANDING_MAX_FORWARD = 0.035F;
+    private static final float LANDING_MAX_ROLL = 0.7F;
+    private static final float EXPLOSION_MAX_PITCH = 4.25F;
+    private static final float EXPLOSION_MAX_ROLL = 2.25F;
+    private static final float EXPLOSION_MAX_VERTICAL = 0.065F;
+    private static final float EXPLOSION_MAX_FORWARD = 0.065F;
+    private static final float EXPLOSION_MAX_LATERAL = 0.055F;
 
     private float pitch, roll, vertical, forward, lateral, bobSuppression;
     private float landingPosition, landingVelocity, landingRollBias;
@@ -28,18 +28,18 @@ public final class ShakeController {
         updateExplosionSpring(dt);
         updateShock(dt);
 
-        float landingCompression = clamp(landingPosition, -0.18F, 1.0F);
-        float landingVelocityShape = clamp(landingVelocity * 0.055F, -0.35F, 0.35F);
+        float landingCompression = clamp(landingPosition, -0.22F, 1.15F);
+        float landingVelocityShape = clamp(landingVelocity * 0.07F, -0.5F, 0.5F);
         float landingY = -LANDING_MAX_DIP * landingCompression;
-        float landingPitchOut = LANDING_MAX_PITCH * landingCompression * 0.78F;
+        float landingPitchOut = LANDING_MAX_PITCH * landingCompression * 0.9F;
         float landingZ = -LANDING_MAX_FORWARD * landingVelocityShape;
         float landingRollOut = LANDING_MAX_ROLL * landingCompression * landingRollBias;
 
-        pitch = clamp(landingPitchOut + explosionPitch + shockPitch, -3.0F, 3.0F);
-        roll = clamp(landingRollOut + explosionRoll + shockRoll, -1.5F, 1.5F);
-        vertical = clamp(landingY + explosionY + shockY, -0.065F, 0.065F);
-        forward = clamp(landingZ + explosionZ + shockZ, -0.04F, 0.04F);
-        lateral = clamp(explosionX + shockX, -0.035F, 0.035F);
+        pitch = clamp(landingPitchOut + explosionPitch + shockPitch, -4.5F, 4.5F);
+        roll = clamp(landingRollOut + explosionRoll + shockRoll, -2.25F, 2.25F);
+        vertical = clamp(landingY + explosionY + shockY, -0.09F, 0.09F);
+        forward = clamp(landingZ + explosionZ + shockZ, -0.065F, 0.065F);
+        lateral = clamp(explosionX + shockX, -0.055F, 0.055F);
 
         float landingEnergy = Math.min(1.0F, Math.abs(landingPosition) + Math.abs(landingVelocity) * 0.08F);
         float explosionEnergy = Math.min(1.0F, Math.abs(explosionX) * 18.0F + Math.abs(explosionY) * 14.0F + Math.abs(explosionZ) * 18.0F + Math.abs(shockPitch) * 0.2F);
@@ -50,7 +50,7 @@ public final class ShakeController {
         float acceleration = -190.0F * landingPosition - 20.0F * landingVelocity;
         landingVelocity += acceleration * dt;
         landingPosition += landingVelocity * dt;
-        landingPosition = clamp(landingPosition, -0.18F, 1.0F);
+        landingPosition = clamp(landingPosition, -0.22F, 1.15F);
         if (Math.abs(landingPosition) < 0.00001F && Math.abs(landingVelocity) < 0.00001F) {
             landingPosition = 0.0F;
             landingVelocity = 0.0F;
@@ -63,11 +63,11 @@ public final class ShakeController {
         explosionVelZ += (-55.0F * explosionZ - 9.0F * explosionVelZ) * dt;
         explosionVelPitch += (-70.0F * explosionPitch - 11.0F * explosionVelPitch) * dt;
         explosionVelRoll += (-60.0F * explosionRoll - 9.5F * explosionVelRoll) * dt;
-        explosionX = clamp(explosionX + explosionVelX * dt, -0.035F, 0.035F);
-        explosionY = clamp(explosionY + explosionVelY * dt, -0.04F, 0.04F);
-        explosionZ = clamp(explosionZ + explosionVelZ * dt, -0.04F, 0.04F);
-        explosionPitch = clamp(explosionPitch + explosionVelPitch * dt, -3.0F, 3.0F);
-        explosionRoll = clamp(explosionRoll + explosionVelRoll * dt, -1.5F, 1.5F);
+        explosionX = clamp(explosionX + explosionVelX * dt, -0.055F, 0.055F);
+        explosionY = clamp(explosionY + explosionVelY * dt, -0.065F, 0.065F);
+        explosionZ = clamp(explosionZ + explosionVelZ * dt, -0.065F, 0.065F);
+        explosionPitch = clamp(explosionPitch + explosionVelPitch * dt, -4.5F, 4.5F);
+        explosionRoll = clamp(explosionRoll + explosionVelRoll * dt, -2.25F, 2.25F);
         if (Math.abs(explosionX) < 0.00001F && Math.abs(explosionVelX) < 0.00001F) { explosionX = 0.0F; explosionVelX = 0.0F; }
         if (Math.abs(explosionY) < 0.00001F && Math.abs(explosionVelY) < 0.00001F) { explosionY = 0.0F; explosionVelY = 0.0F; }
         if (Math.abs(explosionZ) < 0.00001F && Math.abs(explosionVelZ) < 0.00001F) { explosionZ = 0.0F; explosionVelZ = 0.0F; }
@@ -100,9 +100,9 @@ public final class ShakeController {
             return;
         }
         float response = (float) Math.pow(scaledSeverity, 0.65F);
-        landingVelocity += 13.0F * response;
-        landingVelocity = clamp(landingVelocity, -3.0F, 16.0F);
-        float movementRoll = clamp(strafe * speed * 2.0F, -1.0F, 1.0F);
+        landingVelocity += 20.0F * response;
+        landingVelocity = clamp(landingVelocity, -4.0F, 24.0F);
+        float movementRoll = clamp(strafe * speed * 3.2F, -1.0F, 1.0F);
         landingRollBias = Math.abs(movementRoll) > 0.12F ? -movementRoll : 0.0F;
         if (Combatives.logger != null && (CombativesConfig.verboseCameraDebug || (CombativesConfig.debugCamera && response >= 0.35F))) {
             Combatives.logger.info("Combatives landing impulse created: severity={}, response={}, targetDip={}, targetPitch={}, rollBias={}", scaledSeverity, response, LANDING_MAX_DIP * response, LANDING_MAX_PITCH * response, landingRollBias);
@@ -120,23 +120,23 @@ public final class ShakeController {
         }
 
         float sharpness = smoothstep(scaled);
-        shockX = clamp(shockX + localRight * EXPLOSION_MAX_LATERAL * scaled * 0.85F, -0.035F, 0.035F);
-        shockY = clamp(shockY + localVertical * EXPLOSION_MAX_VERTICAL * scaled * 0.75F, -0.04F, 0.04F);
-        shockZ = clamp(shockZ - localForward * EXPLOSION_MAX_FORWARD * scaled * 0.85F, -0.04F, 0.04F);
-        shockPitch = clamp(shockPitch + (0.35F + Math.abs(localForward) * 0.65F + Math.max(0.0F, localVertical) * 0.25F) * EXPLOSION_MAX_PITCH * scaled * 0.55F, -3.0F, 3.0F);
-        shockRoll = clamp(shockRoll - localRight * EXPLOSION_MAX_ROLL * scaled * 0.75F, -1.5F, 1.5F);
+        shockX = clamp(shockX + localRight * EXPLOSION_MAX_LATERAL * scaled * 1.05F, -0.055F, 0.055F);
+        shockY = clamp(shockY + localVertical * EXPLOSION_MAX_VERTICAL * scaled * 1.0F, -0.065F, 0.065F);
+        shockZ = clamp(shockZ - localForward * EXPLOSION_MAX_FORWARD * scaled * 1.05F, -0.065F, 0.065F);
+        shockPitch = clamp(shockPitch + (0.35F + Math.abs(localForward) * 0.65F + Math.max(0.0F, localVertical) * 0.25F) * EXPLOSION_MAX_PITCH * scaled * 0.8F, -4.5F, 4.5F);
+        shockRoll = clamp(shockRoll - localRight * EXPLOSION_MAX_ROLL * scaled * 1.0F, -2.25F, 2.25F);
         shockAge = 0.0F;
 
-        explosionVelX += localRight * EXPLOSION_MAX_LATERAL * scaled * 18.0F;
-        explosionVelY += localVertical * EXPLOSION_MAX_VERTICAL * scaled * 16.0F;
-        explosionVelZ += -localForward * EXPLOSION_MAX_FORWARD * scaled * 18.0F;
-        explosionVelPitch += (0.4F + Math.abs(localForward) * 0.6F) * EXPLOSION_MAX_PITCH * sharpness * 7.0F;
-        explosionVelRoll += -localRight * EXPLOSION_MAX_ROLL * scaled * 8.0F;
-        explosionVelX = clamp(explosionVelX, -0.8F, 0.8F);
-        explosionVelY = clamp(explosionVelY, -0.8F, 0.8F);
-        explosionVelZ = clamp(explosionVelZ, -0.8F, 0.8F);
-        explosionVelPitch = clamp(explosionVelPitch, -22.0F, 22.0F);
-        explosionVelRoll = clamp(explosionVelRoll, -14.0F, 14.0F);
+        explosionVelX += localRight * EXPLOSION_MAX_LATERAL * scaled * 24.0F;
+        explosionVelY += localVertical * EXPLOSION_MAX_VERTICAL * scaled * 22.0F;
+        explosionVelZ += -localForward * EXPLOSION_MAX_FORWARD * scaled * 24.0F;
+        explosionVelPitch += (0.4F + Math.abs(localForward) * 0.6F) * EXPLOSION_MAX_PITCH * sharpness * 9.0F;
+        explosionVelRoll += -localRight * EXPLOSION_MAX_ROLL * scaled * 10.0F;
+        explosionVelX = clamp(explosionVelX, -1.4F, 1.4F);
+        explosionVelY = clamp(explosionVelY, -1.4F, 1.4F);
+        explosionVelZ = clamp(explosionVelZ, -1.4F, 1.4F);
+        explosionVelPitch = clamp(explosionVelPitch, -38.0F, 38.0F);
+        explosionVelRoll = clamp(explosionVelRoll, -24.0F, 24.0F);
 
         if (Combatives.logger != null && (CombativesConfig.verboseCameraDebug || (CombativesConfig.debugCamera && scaled >= 0.35F))) {
             Combatives.logger.info("Combatives explosion impulse created: response={}, localForward={}, localRight={}, localVertical={}", scaled, localForward, localRight, localVertical);

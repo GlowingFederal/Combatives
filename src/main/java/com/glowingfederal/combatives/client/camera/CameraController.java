@@ -15,15 +15,15 @@ public final class CameraController {
     private final FOVController fov = new FOVController();
     private final ShakeController shake = new ShakeController();
 
-    private static final float MAX_CAMERA_PITCH_DEGREES = 3.0F;
+    private static final float MAX_CAMERA_PITCH_DEGREES = 4.0F;
     private static final float MAX_CAMERA_ROLL_DEGREES = 4.0F;
     private static final float MAX_AMBIENT_X_OFFSET = 0.04F;
     private static final float MAX_AMBIENT_Y_OFFSET = 0.06F;
-    private static final float MAX_IMPACT_PITCH_DEGREES = 3.0F;
-    private static final float MAX_IMPACT_ROLL_DEGREES = 1.5F;
-    private static final float MAX_IMPACT_X_OFFSET = 0.035F;
-    private static final float MAX_IMPACT_Y_OFFSET = 0.065F;
-    private static final float MAX_IMPACT_Z_OFFSET = 0.035F;
+    private static final float MAX_IMPACT_PITCH_DEGREES = 4.5F;
+    private static final float MAX_IMPACT_ROLL_DEGREES = 2.25F;
+    private static final float MAX_IMPACT_X_OFFSET = 0.055F;
+    private static final float MAX_IMPACT_Y_OFFSET = 0.09F;
+    private static final float MAX_IMPACT_Z_OFFSET = 0.065F;
 
     private float leanRoll, leanPitch, bobVertical, bobSway, bobPitch, bobRoll, shakeVertical, shakeForward, shakeLateral, shakePitch, shakeRoll, fovModifier;
 
@@ -44,7 +44,7 @@ public final class CameraController {
     public void applyTransforms(float partialTicks) {
         if (!CombativesConfig.enableCombativesCamera) return;
 
-        float bobScale = 1.0F - clamp(shake.getBobSuppression(), 0.0F, 0.55F);
+        float bobScale = 1.0F - clamp(shake.getBobSuppression(), 0.0F, 0.65F);
         float ambientX = clamp(bobSway * bobScale, -MAX_AMBIENT_X_OFFSET, MAX_AMBIENT_X_OFFSET);
         float ambientY = clamp(bobVertical * bobScale, -MAX_AMBIENT_Y_OFFSET, MAX_AMBIENT_Y_OFFSET);
         float impactX = clamp(shakeLateral, -MAX_IMPACT_X_OFFSET, MAX_IMPACT_X_OFFSET);
@@ -101,8 +101,8 @@ public final class CameraController {
         double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
         float radius = Math.max(8.0F, strength * 4.0F);
         float distanceFalloff = clamp(1.0F - (float) (distance / radius), 0.0F, 1.0F);
-        float strengthFactor = clamp(strength / 4.0F, 0.0F, 1.5F);
-        float response = (float) Math.pow(clamp(strengthFactor * distanceFalloff, 0.0F, 1.0F), 0.7F);
+        float strengthFactor = clamp(strength / 4.0F, 0.0F, 2.0F);
+        float response = (float) Math.pow(clamp(strengthFactor * distanceFalloff, 0.0F, 1.0F), 0.6F);
         if (response <= 0.0F) {
             if (Combatives.logger != null && CombativesConfig.verboseCameraDebug) Combatives.logger.info("Combatives explosion impulse rejected: reason=outside_radius_or_zero_response, distance={}, radius={}, strength={}", distance, radius, strength);
             return;

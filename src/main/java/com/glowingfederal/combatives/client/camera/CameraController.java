@@ -2,6 +2,7 @@ package com.glowingfederal.combatives.client.camera;
 
 import com.glowingfederal.combatives.Combatives;
 import com.glowingfederal.combatives.config.CombativesConfig;
+import com.glowingfederal.combatives.client.camera.internal.CameraEffectManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import org.lwjgl.opengl.GL11;
@@ -37,6 +38,7 @@ public final class CameraController {
         if (CombativesConfig.enableProceduralBob) bob.update(movement); else bob.reset();
         if (CombativesConfig.enableMovementFov) fov.update(movement); else fov.reset();
         if (CombativesConfig.enableCameraShake) shake.update(movement, partialTicks); else shake.reset();
+        CameraEffectManager.update(player);
         leanRoll = lean.getRoll(); leanPitch = lean.getPitch(); bobVertical = bob.getVertical(); bobSway = bob.getSway(); bobPitch = bob.getPitch(); bobRoll = bob.getRoll();
         shakeVertical = shake.getVertical(); shakeForward = shake.getForward(); shakeLateral = shake.getLateral(); shakePitch = shake.getPitch(); shakeRoll = shake.getRoll(); fovModifier = fov.getModifier();
     }
@@ -47,9 +49,9 @@ public final class CameraController {
         float bobScale = 1.0F - clamp(shake.getBobSuppression(), 0.0F, 0.8F);
         float ambientX = clamp(bobSway * bobScale, -MAX_AMBIENT_X_OFFSET, MAX_AMBIENT_X_OFFSET);
         float ambientY = clamp(bobVertical * bobScale, -MAX_AMBIENT_Y_OFFSET, MAX_AMBIENT_Y_OFFSET);
-        float impactX = clamp(shakeLateral, -MAX_IMPACT_X_OFFSET, MAX_IMPACT_X_OFFSET);
-        float impactY = clamp(shakeVertical, -MAX_IMPACT_Y_OFFSET, MAX_IMPACT_Y_OFFSET);
-        float impactZ = clamp(shakeForward, -MAX_IMPACT_Z_OFFSET, MAX_IMPACT_Z_OFFSET);
+        float impactX = clamp(shakeLateral + CameraEffectManager.getX(), -MAX_IMPACT_X_OFFSET, MAX_IMPACT_X_OFFSET);
+        float impactY = clamp(shakeVertical + CameraEffectManager.getY(), -MAX_IMPACT_Y_OFFSET, MAX_IMPACT_Y_OFFSET);
+        float impactZ = clamp(shakeForward + CameraEffectManager.getZ(), -MAX_IMPACT_Z_OFFSET, MAX_IMPACT_Z_OFFSET);
         float xOffset = ambientX + impactX;
         float yOffset = ambientY + impactY;
         float zOffset = impactZ;
@@ -60,8 +62,8 @@ public final class CameraController {
         if (CombativesConfig.enableCameraRotations) {
             float ambientPitch = clamp(bobPitch * bobScale + leanPitch, -MAX_CAMERA_PITCH_DEGREES, MAX_CAMERA_PITCH_DEGREES);
             float ambientRoll = clamp(bobRoll * bobScale + leanRoll, -MAX_CAMERA_ROLL_DEGREES, MAX_CAMERA_ROLL_DEGREES);
-            pitch = ambientPitch + clamp(shakePitch, -MAX_IMPACT_PITCH_DEGREES, MAX_IMPACT_PITCH_DEGREES);
-            roll = ambientRoll + clamp(shakeRoll, -MAX_IMPACT_ROLL_DEGREES, MAX_IMPACT_ROLL_DEGREES);
+            pitch = ambientPitch + clamp(shakePitch + CameraEffectManager.getPitch(), -MAX_IMPACT_PITCH_DEGREES, MAX_IMPACT_PITCH_DEGREES);
+            roll = ambientRoll + clamp(shakeRoll + CameraEffectManager.getRoll(), -MAX_IMPACT_ROLL_DEGREES, MAX_IMPACT_ROLL_DEGREES);
             GL11.glRotatef(pitch, 1.0F, 0.0F, 0.0F);
             GL11.glRotatef(roll, 0.0F, 0.0F, 1.0F);
         }
@@ -88,7 +90,7 @@ public final class CameraController {
         return value < min ? min : value > max ? max : value;
     }
 
-    public void reset() { lean.reset(); bob.reset(); fov.reset(); shake.reset(); leanRoll = leanPitch = bobVertical = bobSway = bobPitch = bobRoll = shakeVertical = shakeForward = shakeLateral = shakePitch = shakeRoll = fovModifier = 0.0F; }
+    public void reset() { lean.reset(); bob.reset(); fov.reset(); shake.reset(); CameraEffectManager.reset(); leanRoll = leanPitch = bobVertical = bobSway = bobPitch = bobRoll = shakeVertical = shakeForward = shakeLateral = shakePitch = shakeRoll = fovModifier = 0.0F; }
 
     public void addExplosionFeedback(EntityPlayerSP player, double x, double y, double z, float strength) {
         if (!CombativesConfig.enableCombativesCamera || !CombativesConfig.enableCameraShake || !CombativesConfig.enableExplosionCameraFeedback || player == null) {
@@ -121,5 +123,5 @@ public final class CameraController {
         float localVertical = clamp((float) dirY, -1.0F, 1.0F);
         shake.addExplosionImpulse(response, localForward, localRight, localVertical);
     }
-    public float getFovModifier() { return fovModifier; }
+    public float getFovModifier() { return fovModifier + CameraEffectManager.getFov() * 0.01F; }
 }

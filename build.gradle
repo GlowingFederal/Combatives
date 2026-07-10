@@ -109,7 +109,7 @@ gradle.buildFinished { result ->
 }
 
 group = "com.glowingfederal.combatives"
-archivesBaseName = "combatives"
+archivesBaseName = "Combatives"
 
 minecraft {
     version = "1.7.10-10.13.4.1614-1.7.10"
@@ -170,22 +170,87 @@ jar {
     from(combativesRefmapFile) {
         into ''
     }
+    from('build/generated-resources/combatives/normal') {
+        into ''
+    }
 }
 
 reobf {
     addExtraSrgFile combativesOutSrgFile
 }
 
+task generateNormalBuildInfo {
+    outputs.file file('build/generated-resources/combatives/normal/combatives-build.properties')
+    doLast {
+        def outputFile = file('build/generated-resources/combatives/normal/combatives-build.properties')
+        outputFile.parentFile.mkdirs()
+        outputFile.text = 'fairplayBuild=false\n'
+    }
+}
+
+task generateFairplayBuildInfo {
+    outputs.file file('build/generated-resources/combatives/fairplay/combatives-build.properties')
+    doLast {
+        def outputFile = file('build/generated-resources/combatives/fairplay/combatives-build.properties')
+        outputFile.parentFile.mkdirs()
+        outputFile.text = 'fairplayBuild=true\n'
+    }
+}
+
 processResources {
     from(sourceSets.main.resources.srcDirs) {
         include 'mcmod.info'
-        expand version: project.version
+        expand version: project.version, modName: 'Combatives'
     }
 
     from(sourceSets.main.resources.srcDirs) {
         exclude 'mcmod.info'
     }
 }
+
+jar.dependsOn generateNormalBuildInfo
+
+task processFairplayResources(type: Copy) {
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+        expand version: project.version, modName: 'Combatives Fairplay'
+    }
+    into file('build/generated-resources/combatives/fairplayResources')
+}
+
+task fairplayJar(type: Jar, dependsOn: [classes, generateFairplayBuildInfo, processFairplayResources]) {
+    baseName = 'Combatives-Fairplay'
+    extension = 'jar'
+    from(sourceSets.main.output) {
+        exclude 'mcmod.info'
+        exclude 'combatives-build.properties'
+    }
+    from(combativesRefmapFile) {
+        into ''
+    }
+    from('build/generated-resources/combatives/fairplay') {
+        include 'combatives-build.properties'
+        into ''
+    }
+    from('build/generated-resources/combatives/fairplayResources') {
+        include 'mcmod.info'
+        into ''
+    }
+    manifest {
+        attributes(
+                'ForceLoadAsMod': 'true',
+                'FMLCorePlugin': 'com.glowingfederal.combatives.loading.CombativesCorePlugin',
+                'FMLCorePluginContainsFMLMod': 'true'
+        )
+    }
+}
+
+assemble.dependsOn fairplayJar
+
+reobf {
+    fairplayJar { }
+}
+
 
 jar {
     manifest {

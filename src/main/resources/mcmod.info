@@ -1,8 +1,8 @@
 [{
   "modid": "combatives",
-  "name": "Combatives",
+  "name": "${modName}",
   "description": "A Battlefield-inspired movement and camera overhaul foundation for Forge 1.7.10.",
-  "version": "1.0.0",
+  "version": "${version}",
   "mcversion": "1.7.10",
   "url": "",
   "updateUrl": "",

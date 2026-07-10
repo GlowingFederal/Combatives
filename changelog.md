@@ -1,5 +1,12 @@
 # Changelog
 
+## Implement official Fairplay build variant
+
+- Added a Fairplay distribution jar alongside the standard Combatives jar, with distinct build metadata, display name, and generated build-resource flag.
+- Added canonical configuration defaults shared by the standard config and Fairplay runtime settings so default values have a single source of truth.
+- Locked Fairplay gameplay and camera settings to canonical defaults while keeping a separate Fairplay config file containing only `debug` and `verboseDebug`.
+- Added one-time startup logging for Fairplay mode and documented the dual-jar build outputs and Fairplay behavior.
+
 ## Add initial public Combatives Camera API
 
 - Added the versioned `com.combatives.api.camera` package with preset effect types, capabilities, context objects, custom impulse descriptions, stacking modes, priorities, decay types, and continuous-effect handles.

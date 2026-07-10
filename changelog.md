@@ -1,5 +1,13 @@
 # Changelog
 
+## Fix Combatives Camera API yaw channel
+
+- Fixed the public camera API yaw contract so `CameraImpulse` yaw is validated, stored, envelope-sampled, stacked, saturated, independently hard-clamped, exposed in final camera output, and applied as a visual-only render transform.
+- Added granular camera capabilities for pitch, yaw, and roll and stopped relying on a broad rotation capability to represent per-axis support.
+- Added a conservative independently tunable `maxCameraYawDegrees` config value and updated verbose camera diagnostics to report pitch, yaw, roll, translation, and FOV for active effects and final output.
+- Added development assertions covering one-channel camera submissions, combined and stacked yaw, same-ID yaw stacking modes, positional yaw, continuous yaw, saturation, clamp behavior, NaN yaw rejection, and camera-disabled rejection.
+- Documented that yaw offsets are visual-only and do not mutate player yaw, mouse input, mouse deltas, or `Entity#setAngles`.
+
 ## Implement official Fairplay build variant
 
 - Added a Fairplay distribution jar alongside the standard Combatives jar, with distinct build metadata, display name, and generated build-resource flag.

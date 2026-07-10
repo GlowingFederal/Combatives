@@ -4,7 +4,7 @@ Combatives exposes a stable, versioned camera-effect API under `com.combatives.a
 
 ## Version and capabilities
 
-Use `CombativesCameraAPI.getApiVersion()` and `CombativesCameraAPI.getCapabilities()` instead of checking the Combatives mod version. API version 1 supports preset effects, custom impulses, positional falloff, rotation, translation, FOV contributions, and continuous-effect handles.
+Use `CombativesCameraAPI.getApiVersion()` and `CombativesCameraAPI.getCapabilities()` instead of checking the Combatives mod version. API version 1 supports preset effects, custom impulses, positional falloff, granular pitch/yaw/roll rotation capabilities, translation, FOV contributions, and continuous-effect handles. `ROTATION_YAW` is advertised only because yaw is now consumed by validation, active state, envelope sampling, stacking, nonlinear saturation, an independent hard yaw clamp, final frame output, and the Combatives-owned visual-only render transform.
 
 ## Presets
 
@@ -22,7 +22,7 @@ CombativesCameraAPI.trigger(CameraEffectType.EXPLOSION, context, strength);
 
 ## Custom effects
 
-Advanced integrations may submit `CameraImpulse` descriptions. Every custom impulse must use a namespaced ID such as `mcheli:rotor_vibration`. The fields are effect intent only; they are not direct camera transforms and still pass through Combatives validation, stacking, saturation, and clamps.
+Advanced integrations may submit `CameraImpulse` descriptions. Every custom impulse must use a namespaced ID such as `mcheli:rotor_vibration`. The fields are effect intent only; they are not direct camera transforms and still pass through Combatives validation, stacking, saturation, and clamps. Yaw impulses are accepted as visual-only horizontal camera offsets; Combatives never writes `player.rotationYaw`, `player.prevRotationYaw`, mouse deltas, mouse input consumption, or `Entity#setAngles` for camera API yaw. Render composition keeps the existing order of translation, pitch, roll, with yaw inserted between pitch and roll so API yaw follows the established rotation path without creating another mixin or injection point.
 
 ## Continuous effects
 

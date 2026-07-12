@@ -6,6 +6,8 @@ import java.lang.reflect.Method;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.settings.GameSettings;
+import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.entity.Entity;
 
@@ -14,6 +16,8 @@ public final class MinecraftClientAccess {
     private static Field playerField;
     private static Field worldField;
     private static Field renderViewEntityField;
+    private static Field gameSettingsField;
+    private static Field sprintKeyBindingField;
 
     private MinecraftClientAccess() {
     }
@@ -48,6 +52,15 @@ public final class MinecraftClientAccess {
         return (Entity) getFieldValue(getMinecraft(), getRenderViewEntityField());
     }
 
+    public static GameSettings getGameSettings() {
+        return (GameSettings) getFieldValue(getMinecraft(), getGameSettingsField());
+    }
+
+    public static KeyBinding getSprintKeyBinding() {
+        GameSettings settings = getGameSettings();
+        return settings == null ? null : (KeyBinding) getFieldValue(settings, getSprintKeyBindingField());
+    }
+
     private static Method getGetMinecraftMethod() {
         if (getMinecraftMethod != null) {
             return getMinecraftMethod;
@@ -65,28 +78,42 @@ public final class MinecraftClientAccess {
 
     private static Field getPlayerField() {
         if (playerField == null) {
-            playerField = getField("field_71439_g", "thePlayer");
+            playerField = getMinecraftField("field_71439_g", "thePlayer");
         }
         return playerField;
     }
 
     private static Field getWorldField() {
         if (worldField == null) {
-            worldField = getField("field_71441_e", "theWorld");
+            worldField = getMinecraftField("field_71441_e", "theWorld");
         }
         return worldField;
     }
 
     private static Field getRenderViewEntityField() {
         if (renderViewEntityField == null) {
-            renderViewEntityField = getField("field_71451_h", "renderViewEntity");
+            renderViewEntityField = getMinecraftField("field_71451_h", "renderViewEntity");
         }
         return renderViewEntityField;
     }
 
-    private static Object getFieldValue(Minecraft minecraft, Field field) {
+    private static Field getGameSettingsField() {
+        if (gameSettingsField == null) {
+            gameSettingsField = getMinecraftField("field_71474_y", "gameSettings");
+        }
+        return gameSettingsField;
+    }
+
+    private static Field getSprintKeyBindingField() {
+        if (sprintKeyBindingField == null) {
+            sprintKeyBindingField = getGameSettingsField("field_151444_V", "keyBindSprint");
+        }
+        return sprintKeyBindingField;
+    }
+
+    private static Object getFieldValue(Object owner, Field field) {
         try {
-            return field.get(minecraft);
+            return field.get(owner);
         } catch (IllegalAccessException e) {
             throw new IllegalStateException("Unable to access Minecraft field " + field.getName(), e);
         }
@@ -100,21 +127,29 @@ public final class MinecraftClientAccess {
         }
     }
 
-    private static Field getField(String srgName, String deobfuscatedName) {
-        Field field = findField(srgName);
+    private static Field getMinecraftField(String srgName, String deobfuscatedName) {
+        return getField(Minecraft.class, srgName, deobfuscatedName);
+    }
+
+    private static Field getGameSettingsField(String srgName, String deobfuscatedName) {
+        return getField(GameSettings.class, srgName, deobfuscatedName);
+    }
+
+    private static Field getField(Class<?> owner, String srgName, String deobfuscatedName) {
+        Field field = findField(owner, srgName);
         if (field == null) {
-            field = findField(deobfuscatedName);
+            field = findField(owner, deobfuscatedName);
         }
         if (field == null) {
-            throw new IllegalStateException("Unable to locate Minecraft field " + srgName + "/" + deobfuscatedName);
+            throw new IllegalStateException("Unable to locate " + owner.getName() + " field " + srgName + "/" + deobfuscatedName);
         }
         field.setAccessible(true);
         return field;
     }
 
-    private static Field findField(String name) {
+    private static Field findField(Class<?> owner, String name) {
         try {
-            return Minecraft.class.getDeclaredField(name);
+            return owner.getDeclaredField(name);
         } catch (NoSuchFieldException e) {
             return null;
         }

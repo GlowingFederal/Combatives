@@ -1,5 +1,10 @@
 # Changelog
 
+## Fix production key binding lookup
+
+- Added SRG-first key binding access for `KeyBinding#getIsKeyPressed` and the sprint key binding so client tick handlers do not call unmapped development names in production.
+- Searched the source tree for direct `Minecraft.getMinecraft`, Minecraft client field, and `KeyBinding#getIsKeyPressed` call sites and routed the remaining high-risk client input paths through access helpers.
+
 ## Fix production Minecraft field lookup
 
 - Extended the client Minecraft access helper to resolve `thePlayer`, `theWorld`, and `renderViewEntity` by SRG field names before falling back to development names.

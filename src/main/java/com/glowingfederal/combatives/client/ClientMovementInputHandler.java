@@ -16,7 +16,7 @@ public class ClientMovementInputHandler {
         if (event.phase != TickEvent.Phase.END || MinecraftClientAccess.getPlayer() == null || CombativesKeyBindings.crawl == null) {
             return;
         }
-        boolean crawlDown = CombativesKeyBindings.crawl.getIsKeyPressed();
+        boolean crawlDown = ClientKeyBindingAccess.isKeyDown(CombativesKeyBindings.crawl);
         if (crawlDown == this.lastCrawlDown) {
             return;
         }

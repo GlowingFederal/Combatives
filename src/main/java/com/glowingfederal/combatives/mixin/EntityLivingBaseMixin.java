@@ -9,7 +9,6 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -20,8 +19,6 @@ public abstract class EntityLivingBaseMixin extends Entity {
     public EntityLivingBaseMixin(World world) {
         super(world);
     }
-
-    @Shadow(aliases = "func_70060_a") public abstract void moveFlying(float strafe, float forward, float friction);
 
     @Inject(method = "jump", at = @At("HEAD"), cancellable = true)
     private void combatives$cancelCrawlJump(CallbackInfo ci) {
@@ -44,19 +41,19 @@ public abstract class EntityLivingBaseMixin extends Entity {
         if (entity instanceof ICombativesPlayerPose) {
             return ((ICombativesPlayerPose) entity).isActuallySneaking();
         }
-        return ((EntityAccessor) entity).combatives$invokeIsSneaking();
+        return entity.isSneaking();
     }
 
     @Redirect(method = "moveEntityWithHeading", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/EntityLivingBase;moveFlying(FFF)V"))
     private void combatives$shapeMoveFlying(EntityLivingBase entity, float strafe, float forward, float friction) {
         if (!(entity instanceof EntityPlayer) || MovementController.shouldBypass((EntityPlayer) entity)) {
-            ((EntityAccessor) entity).combatives$invokeMoveFlying(strafe, forward, friction);
+            entity.moveFlying(strafe, forward, friction);
             return;
         }
         EntityPlayer player = (EntityPlayer) entity;
         double currentX = player.motionX;
         double currentZ = player.motionZ;
-        ((EntityAccessor) entity).combatives$invokeMoveFlying(strafe, forward, friction);
+        entity.moveFlying(strafe, forward, friction);
         MovementController.MovementResult result = MovementController.shape(player, strafe, forward, player.rotationYaw, currentX, currentZ, player.motionX, player.motionZ);
         player.motionX = result.motionX;
         player.motionZ = result.motionZ;

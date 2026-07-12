@@ -1,7 +1,7 @@
 package com.glowingfederal.combatives.mixin;
 
-import com.glowingfederal.combatives.client.MinecraftClientAccess;
 import com.glowingfederal.combatives.client.camera.CameraController;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.network.NetHandlerPlayClient;
 import net.minecraft.network.play.server.S27PacketExplosion;
@@ -12,9 +12,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(NetHandlerPlayClient.class)
 public abstract class NetHandlerPlayClientMixin {
-    @Inject(method = "func_147283_a", at = @At("TAIL"))
+    @Inject(method = "func_147283_a(Lnet/minecraft/network/play/server/S27PacketExplosion;)V", at = @At("TAIL"))
     private void combatives$addExplosionCameraFeedback(S27PacketExplosion packet, CallbackInfo ci) {
-        EntityPlayerSP player = MinecraftClientAccess.getPlayer();
+        EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
         if (player == null) {
             return;
         }

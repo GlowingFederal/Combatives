@@ -13,6 +13,6 @@ public abstract class PlayerControllerMPMixin {
     private boolean combatives$useActualSneakForRightClick(EntityPlayer player) {
         return player instanceof ICombativesClientPlayerSwimming
             ? ((ICombativesClientPlayerSwimming) player).isActuallySneaking()
-            : ((EntityAccessor) player).combatives$invokeIsSneaking();
+            : player.isSneaking();
     }
 }

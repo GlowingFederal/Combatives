@@ -6,6 +6,7 @@ import com.glowingfederal.combatives.network.NetworkHandler;
 import com.glowingfederal.combatives.network.message.PacketCrawlKeyState;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
+import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 
 public class ClientMovementInputHandler {
@@ -13,15 +14,15 @@ public class ClientMovementInputHandler {
 
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || MinecraftClientAccess.getPlayer() == null || CombativesKeyBindings.crawl == null) {
+        if (event.phase != TickEvent.Phase.END || Minecraft.getMinecraft().thePlayer == null || CombativesKeyBindings.crawl == null) {
             return;
         }
-        boolean crawlDown = ClientKeyBindingAccess.isKeyDown(CombativesKeyBindings.crawl);
+        boolean crawlDown = CombativesKeyBindings.crawl.getIsKeyPressed();
         if (crawlDown == this.lastCrawlDown) {
             return;
         }
         this.lastCrawlDown = crawlDown;
-        EntityPlayer player = MinecraftClientAccess.getPlayer();
+        EntityPlayer player = Minecraft.getMinecraft().thePlayer;
         MovementDiagnostics.verbose(player, "crawl key " + (crawlDown ? "pressed" : "released"));
         if (!crawlDown) {
             MovementDiagnostics.verbose(player, "crawl key released: debounce reset only");

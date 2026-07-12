@@ -1,29 +1,18 @@
 # Changelog
 
-## Fix production key binding lookup
+## Audit Fairplay remapping workaround cleanup
 
-- Added SRG-first key binding access for `KeyBinding#getIsKeyPressed` and the sprint key binding so client tick handlers do not call unmapped development names in production.
-- Searched the source tree for direct `Minecraft.getMinecraft`, Minecraft client field, and `KeyBinding#getIsKeyPressed` call sites and routed the remaining high-risk client input paths through access helpers.
+- Removed the temporary SRG-first Minecraft singleton/client-field helper and restored normal mapped calls for `Minecraft.getMinecraft()`, `thePlayer`, `theWorld`, `renderViewEntity`, `gameSettings`, and `keyBindSprint`.
+- Removed the temporary SRG-first key binding reflection helper and restored direct `KeyBinding#getIsKeyPressed()` calls for crawl and sprint input.
+- Removed the temporary `EntityAccessor` invoker mixin and the invalid inherited `EntityLivingBase#moveFlying` shadow alias, restoring normal public `isSneaking()` and `moveFlying(...)` calls in movement redirects and custom crawl/swim paths.
+- Added the full descriptor to the `NetHandlerPlayClient` explosion packet tail injection to avoid descriptor discovery warnings.
+- Documented the actual Fairplay production crash root cause: the Fairplay jar previously packaged unreobfuscated classes, while the corrected build now derives Fairplay classes from the reobfuscated normal jar and only replaces intended Fairplay resources/metadata.
 
-## Fix production Minecraft field lookup
+## Superseded Fairplay production remapping diagnosis
 
-- Extended the client Minecraft access helper to resolve `thePlayer`, `theWorld`, and `renderViewEntity` by SRG field names before falling back to development names.
-- Replaced direct client singleton field reads in crawl input, camera/render, packet, and client network handlers so production clients do not crash with `NoSuchFieldError: thePlayer`.
-
-## Fix production Minecraft singleton lookup
-
-- Replaced direct client calls to `Minecraft.getMinecraft()` with a small client access helper that locates the runtime singleton method by SRG name (`func_71410_x`) first and falls back to the deobfuscated name in development.
-- Routed crawl input, client pose sync, camera, render, and client packet handlers through the helper so production clients do not crash with `NoSuchMethodError: net.minecraft.client.Minecraft.getMinecraft()`.
-
-## Fix production entity movement invoker remapping
-
-- Replaced owner-typed production calls to `Entity#isSneaking` and `Entity#moveFlying` across movement redirect handlers with an `Entity` invoker mixin so redirected vanilla movement calls remap to their runtime names without requiring invalid inherited shadows on `EntityLivingBase`.
-- Registered the new accessor in the common mixin list and routed the server/common and client sneak/moveFlying fallbacks through it while keeping the redirects limited to actual Combatives pose and player momentum logic.
-
-## Fix production moveFlying redirect crash
-
-- Fixed the common `EntityLivingBase#moveEntityWithHeading` movement redirect so vanilla `moveFlying` is invoked through an Entity invoker instead of an owner-typed call that can survive in production as deobfuscated `moveFlying(FFF)`.
-- This prevents non-player entities such as chickens from crashing dedicated servers with `NoSuchMethodError: net.minecraft.entity.EntityLivingBase.moveFlying(FFF)V` while preserving the player-only momentum shaping path.
+- Kept a concise history of the earlier Fairplay crash investigation: temporary reflection/accessor workarounds were tried for key bindings, Minecraft client fields, singleton access, and entity movement calls.
+- Those source-level remapping workarounds are no longer part of the implementation because the actual defect was the Fairplay artifact packaging unreobfuscated development classes.
+- The corrected build derives the Fairplay jar from the reobfuscated normal jar, so ordinary mapped MCP source calls are expected and production-safe.
 
 ## Fix Combatives Camera API yaw channel
 

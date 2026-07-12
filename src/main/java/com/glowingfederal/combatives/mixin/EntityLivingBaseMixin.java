@@ -95,8 +95,25 @@ public abstract class EntityLivingBaseMixin extends Entity {
         return entity.isSneaking();
     }
 
+    @Inject(method = "moveEntityWithHeading", at = @At("HEAD"))
+    private void combatives$captureTravelStart(float strafe, float forward, CallbackInfo ci) {
+        this.combatives$deferMovementShape = false;
+        EntityLivingBase self = (EntityLivingBase) (Object) this;
+        if (self instanceof EntityPlayer) {
+            EntityPlayer player = (EntityPlayer) self;
+            this.combatives$travelStartX = player.posX;
+            this.combatives$travelStartY = player.posY;
+            this.combatives$travelStartZ = player.posZ;
+            this.combatives$travelStartMotionX = player.motionX;
+            this.combatives$travelStartMotionY = player.motionY;
+            this.combatives$travelStartMotionZ = player.motionZ;
+            this.combatives$travelStartInWater = player.isInWater();
+            this.combatives$travelStartOnGround = player.onGround;
+        }
+    }
+
     @Redirect(method = "moveEntityWithHeading", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/EntityLivingBase;moveFlying(FFF)V"))
-    private void combatives$shapeMoveFlying(EntityLivingBase entity, float strafe, float forward, float friction) {
+    private void combatives$captureMoveFlying(EntityLivingBase entity, float strafe, float forward, float friction) {
         if (!(entity instanceof EntityPlayer) || MovementController.shouldBypass((EntityPlayer) entity)) {
             double beforeY = entity.motionY;
             entity.moveFlying(strafe, forward, friction);
@@ -118,6 +135,9 @@ public abstract class EntityLivingBaseMixin extends Entity {
         if (player instanceof ICombativesMovementState) {
             ((ICombativesMovementState) player).setCombativesMovementSnapshot(result.snapshot);
         }
+        boolean swimming = player instanceof ICombativesPlayerPose && ((ICombativesPlayerPose) player).isSwimming();
+        boolean crawling = player instanceof ICombativesPlayerPose && ((ICombativesPlayerPose) player).getPose() == Pose.SWIMMING && !swimming;
+        MovementDiagnostics.verbose(player, "travel transition startPos=(" + this.combatives$travelStartX + "," + this.combatives$travelStartY + "," + this.combatives$travelStartZ + ") endPos=(" + player.posX + "," + player.posY + "," + player.posZ + ") stepUp=" + stepUp + " inWater=" + this.combatives$travelStartInWater + "->" + player.isInWater() + " exitedWater=" + exitedWater + " crawl=" + crawling + " swim=" + swimming + " onGround=" + this.combatives$travelStartOnGround + "->" + player.onGround + " collidedH=" + player.isCollidedHorizontally + " collidedV=" + player.isCollidedVertically + " motionStart=(" + this.combatives$travelStartMotionX + "," + this.combatives$travelStartMotionY + "," + this.combatives$travelStartMotionZ + ") motionAfterVanilla=(" + postVanillaX + "," + postVanillaY + "," + postVanillaZ + ") motionFinal=(" + finalX + "," + player.motionY + "," + finalZ + ") profile=" + (result == null ? MovementController.selectProfile(player) : result.profile) + " targetHorizontalSpeed=" + (result == null ? 0.0D : result.targetSpeed) + " accelerationLimit=" + (result == null ? 0.0D : result.accelerationLimit) + " appliedHorizontalDelta=" + (result == null ? 0.0D : result.appliedHorizontalDelta) + " drag=" + (result == null ? 1.0D : result.appliedDrag) + " clampRan=" + (result != null && result.speedClampRan) + " inputMag=" + Math.sqrt(this.combatives$shapeStrafe * this.combatives$shapeStrafe + this.combatives$shapeForward * this.combatives$shapeForward) + " acceptedVanillaStep=" + acceptedVanillaStep + " shaped=" + shaped);
     }
 
     @Unique

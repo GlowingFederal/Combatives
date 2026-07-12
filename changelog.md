@@ -1,4 +1,11 @@
 # Changelog
+## Preserve stair momentum after accepted vanilla step-ups
+
+- Fixed the remaining stair slowdown by preserving the grounded horizontal baseline that Combatives intended immediately before vanilla collision handling when vanilla accepts a small `stepHeight` rise, then restoring that friction-adjusted baseline only on the next tick if the stair collision clipped horizontal speed far below the intended value.
+- Kept flat-ground acceleration, drag, turn limits, and speed clamps unchanged; the restoration is limited to the tick immediately after a confirmed grounded step-up within the player's existing `stepHeight`.
+- Expanded verbose stair tracing across the shape, accepted-step, and follow-up baseline stages to report tick, Y delta, entry speed, post-`moveFlying` speed, post-Combatives-shape speed, collision flags, profiles, landing snapshot state, acceleration, drag, applied delta, clamp result, sprint state, and whether the rise was within `stepHeight`.
+- Documented the root cause: after a successful vanilla stair step, the collision-clipped post-step horizontal velocity became the next tick's Combatives acceleration baseline, causing repeated near-zero re-acceleration on each stair section even though the step itself had succeeded.
+
 ## Restore horizontal movement and trace vertical movement regressions
 
 - Reverted the prior stair/water-exit movement reshaping change so Combatives horizontal acceleration, drag, momentum, and speed clamping return to the pre-`ffd1c3e` behavior.

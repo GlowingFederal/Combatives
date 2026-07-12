@@ -406,23 +406,8 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         if (customCrawling && !MovementController.shouldBypassUnsafe(this.getPlayer())) {
             this.combatives$moveCrawlingWithHeading(strafe, forward);
         } else if (!this.capabilities.isFlying && this.isInWater()) {
-            float drag = this.isSprinting() ? 0.9F : 0.8F;
-            double currentX = this.motionX;
-            double currentZ = this.motionZ;
-            this.moveFlying(strafe, forward, 0.02F);
-            if (!MovementController.shouldBypassUnsafe(this.getPlayer())) {
-                MovementController.MovementResult result = MovementController.shape(this.getPlayer(), strafe, forward, this.rotationYaw, currentX, currentZ, this.motionX, this.motionZ);
-                this.motionX = result.motionX;
-                this.motionZ = result.motionZ;
-                this.setCombativesMovementSnapshot(result.snapshot);
-            }
-            this.moveEntity(this.motionX, this.motionY, this.motionZ);
-            if (this.isCollidedHorizontally && this.isOnLadder()) this.motionY = 0.2D;
-            this.motionX *= drag;
-            this.motionY *= 0.8D;
-            this.motionZ *= drag;
-            if (!this.isSprinting()) this.motionY -= 0.005D;
-            this.updateCombativesLimbSwing();
+            MovementDiagnostics.verbose(this.getPlayer(), "ordinary water travel delegated to vanilla: motionY=" + this.motionY + " onGround=" + this.onGround + " collidedH=" + this.isCollidedHorizontally + " collidedV=" + this.isCollidedVertically + " crawl=" + this.isCrawlKeyDown() + " swim=" + this.isSwimming());
+            super.moveEntityWithHeading(strafe, forward);
         } else {
             super.moveEntityWithHeading(strafe, forward);
         }

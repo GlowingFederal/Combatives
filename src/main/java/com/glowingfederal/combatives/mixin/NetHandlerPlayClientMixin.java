@@ -12,19 +12,27 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(NetHandlerPlayClient.class)
 public abstract class NetHandlerPlayClientMixin {
-    @Inject(method = "func_147283_a(Lnet/minecraft/network/play/server/S27PacketExplosion;)V", at = @At("TAIL"))
-    private void combatives$addExplosionCameraFeedback(S27PacketExplosion packet, CallbackInfo ci) {
+
+    @Inject(
+            method = "handleExplosion(Lnet/minecraft/network/play/server/S27PacketExplosion;)V",
+            at = @At("TAIL")
+    )
+    private void combatives$addExplosionCameraFeedback(
+            S27PacketExplosion packet,
+            CallbackInfo ci
+    ) {
         EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
+
         if (player == null) {
             return;
         }
 
         CameraController.INSTANCE.addExplosionFeedback(
-            player,
-            packet.func_149148_f(),
-            packet.func_149143_g(),
-            packet.func_149145_h(),
-            packet.func_149146_i()
+                player,
+                packet.func_149148_f(),
+                packet.func_149143_g(),
+                packet.func_149145_h(),
+                packet.func_149146_i()
         );
     }
 }

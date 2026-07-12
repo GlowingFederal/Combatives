@@ -1,5 +1,10 @@
 # Changelog
 
+## Fix production Minecraft singleton lookup
+
+- Replaced direct client calls to `Minecraft.getMinecraft()` with a small client access helper that locates the runtime singleton method by SRG name (`func_71410_x`) first and falls back to the deobfuscated name in development.
+- Routed crawl input, client pose sync, camera, render, and client packet handlers through the helper so production clients do not crash with `NoSuchMethodError: net.minecraft.client.Minecraft.getMinecraft()`.
+
 ## Fix production entity movement invoker remapping
 
 - Replaced owner-typed production calls to `Entity#isSneaking` and `Entity#moveFlying` across movement redirect handlers with an `Entity` invoker mixin so redirected vanilla movement calls remap to their runtime names without requiring invalid inherited shadows on `EntityLivingBase`.

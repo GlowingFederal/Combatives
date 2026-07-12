@@ -1,5 +1,6 @@
 package com.glowingfederal.combatives.mixin;
 
+import com.glowingfederal.combatives.client.MinecraftClientAccess;
 import com.glowingfederal.combatives.client.camera.CameraController;
 import com.glowingfederal.combatives.config.CombativesConfig;
 import com.glowingfederal.combatives.util.math.MathHelperNew;
@@ -25,7 +26,7 @@ public abstract class EntityRendererMixin {
     @Inject(method = "orientCamera", at = @At("HEAD"))
     private void combatives$capturePartialTicks(float partialTicks, CallbackInfo ci) {
         this.combatives$partialTicks = partialTicks;
-        Minecraft mc = Minecraft.getMinecraft();
+        Minecraft mc = MinecraftClientAccess.getMinecraft();
         if (mc.thePlayer instanceof EntityPlayerSP) {
             CameraController.INSTANCE.update(mc, (EntityPlayerSP) mc.thePlayer, partialTicks);
         } else {
@@ -73,7 +74,7 @@ public abstract class EntityRendererMixin {
             ordinal = 1
     )
     private float combatives$getInterpolatedEyeHeight(float eyeHeight) {
-        Entity entity = Minecraft.getMinecraft().renderViewEntity;
+        Entity entity = MinecraftClientAccess.getMinecraft().renderViewEntity;
 
         if (!(entity instanceof EntityPlayer)) {
             return eyeHeight;

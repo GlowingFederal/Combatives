@@ -111,8 +111,24 @@ public abstract class EntityLivingBaseMixin extends Entity {
         return entity.isSneaking();
     }
 
+    @Inject(method = "moveEntityWithHeading", at = @At("HEAD"))
+    private void combatives$captureTravelStart(float strafe, float forward, CallbackInfo ci) {
+        EntityLivingBase self = (EntityLivingBase) (Object) this;
+        if (self instanceof EntityPlayer) {
+            EntityPlayer player = (EntityPlayer) self;
+            this.combatives$travelStartX = player.posX;
+            this.combatives$travelStartY = player.posY;
+            this.combatives$travelStartZ = player.posZ;
+            this.combatives$travelStartMotionX = player.motionX;
+            this.combatives$travelStartMotionY = player.motionY;
+            this.combatives$travelStartMotionZ = player.motionZ;
+            this.combatives$travelStartInWater = player.isInWater();
+            this.combatives$travelStartOnGround = player.onGround;
+        }
+    }
+
     @Redirect(method = "moveEntityWithHeading", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/EntityLivingBase;moveFlying(FFF)V"))
-    private void combatives$shapeMoveFlying(EntityLivingBase entity, float strafe, float forward, float friction) {
+    private void combatives$captureMoveFlying(EntityLivingBase entity, float strafe, float forward, float friction) {
         if (!(entity instanceof EntityPlayer) || MovementController.shouldBypass((EntityPlayer) entity)) {
             double beforeY = entity.motionY;
             entity.moveFlying(strafe, forward, friction);
@@ -141,6 +157,29 @@ public abstract class EntityLivingBaseMixin extends Entity {
         if (player instanceof ICombativesMovementState) {
             ((ICombativesMovementState) player).setCombativesMovementSnapshot(result.snapshot);
         }
+        boolean swimming = player instanceof ICombativesPlayerPose && ((ICombativesPlayerPose) player).isSwimming();
+        boolean crawling = player instanceof ICombativesPlayerPose && ((ICombativesPlayerPose) player).getPose() == Pose.SWIMMING && !swimming;
+    }
+
+    @Unique
+    private void combatives$logVerticalWriteCheck(String stage, EntityPlayer player, double beforeY, double afterY) {
+        if (player != null && Math.abs(afterY - beforeY) > 1.0E-9D) {
+            MovementDiagnostics.verbose(player, "vertical motion changed during horizontal-only stage=" + stage + " beforeY=" + beforeY + " afterY=" + afterY + " delta=" + (afterY - beforeY));
+        }
+    }
+
+    @Unique
+    private void combatives$logVerticalStage(String stage, EntityPlayer player, boolean force, double previousY) {
+        if (player == null || !MovementDiagnostics.isVerboseEnabled()) {
+            return;
+        }
+        boolean swimming = player instanceof ICombativesPlayerPose && ((ICombativesPlayerPose) player).isSwimming();
+        boolean crawling = player instanceof ICombativesPlayerPose && ((ICombativesPlayerPose) player).getPose() == Pose.SWIMMING && !swimming;
+        boolean relevant = force || player.isInWater() || this.combatives$travelStartInWater || Math.abs(player.motionY) > 1.0E-6D || player.isCollided || player.isCollidedHorizontally || player.isCollidedVertically || player.onGround != this.combatives$travelStartOnGround || Math.abs(player.posY - this.combatives$travelStartY) > 1.0E-4D;
+        if (!relevant) {
+            return;
+        }
+        MovementDiagnostics.verbose(player, "vertical stage=" + stage + " pos=(" + player.posX + "," + player.posY + "," + player.posZ + ") deltaPos=(" + (player.posX - this.combatives$travelStartX) + "," + (player.posY - this.combatives$travelStartY) + "," + (player.posZ - this.combatives$travelStartZ) + ") motion=(" + player.motionX + "," + player.motionY + "," + player.motionZ + ") startMotion=(" + this.combatives$travelStartMotionX + "," + this.combatives$travelStartMotionY + "," + this.combatives$travelStartMotionZ + ") onGround=" + this.combatives$travelStartOnGround + "->" + player.onGround + " collided=" + player.isCollided + " collidedH=" + player.isCollidedHorizontally + " collidedV=" + player.isCollidedVertically + " fallDistance=" + player.fallDistance + " stepHeight=" + player.stepHeight + " inWater=" + this.combatives$travelStartInWater + "->" + player.isInWater() + " isJumping=" + this.isJumping + " crawl=" + crawling + " swim=" + swimming + " profile=" + this.combatives$travelStartProfile + "->" + MovementController.selectProfile(player) + " bbox=" + player.boundingBox);
     }
 
     @Unique

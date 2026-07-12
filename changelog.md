@@ -1,4 +1,13 @@
 # Changelog
+## Fix movement around stairs and water exits
+
+- Moved Combatives horizontal momentum shaping out of the `moveFlying` redirect and into the end of `EntityLivingBase#moveEntityWithHeading`, so vanilla acceleration, drag, collision resolution, and step-height correction complete before Combatives adjusts player horizontal motion.
+- Preserved the production-safe redirected `moveFlying` path as a capture point only; non-player entities, bypassed players, water movement, ladders, riding, no-clip, sleeping, dead players, creative flight, and Combatives crawl/swim poses continue to run vanilla movement without Combatives shaping.
+- Treat vanilla-accepted stair, slab, and block-edge step-ups within the player's existing `stepHeight` as continuous grounded travel and skip Combatives reshaping for that tick, preventing every step from being interpreted as a wall collision, landing, overspeed event, or acceleration reset.
+- Kept normal water movement and water-jump upward motion untouched for players who are in water but not in the Combatives swim pose, restoring vanilla-compatible ledge exits without requiring the Combatives swimming state.
+- Added verbose-only transition diagnostics for relevant step and water-edge ticks, including pre/post positions, water exit state, crawl/swim state, ground/collision flags, vertical step amount, pre/post vanilla motion, final shaped motion, selected movement profile, input magnitude, and whether Combatives shaping ran.
+- Root cause: Combatives previously rewrote horizontal velocity inside the `moveFlying` redirect before vanilla `moveEntity` collision and step resolution had finished. Vanilla stair and ledge corrections were then treated like ordinary speed/turn/deceleration input and reinforced every tick, fighting `stepHeight` movement and water-edge carry.
+
 
 ## Audit Fairplay remapping workaround cleanup
 

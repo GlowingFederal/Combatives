@@ -49,7 +49,7 @@ public class PacketPlayerPoseS2C implements IMessage {
         @Override
         @SideOnly(Side.CLIENT)
         public IMessage onMessage(PacketPlayerPoseS2C message, MessageContext ctx) {
-            Entity entity = MinecraftClientAccess.getMinecraft().theWorld == null ? null : MinecraftClientAccess.getMinecraft().theWorld.getEntityByID(message.entityId);
+            Entity entity = MinecraftClientAccess.getWorld() == null ? null : MinecraftClientAccess.getWorld().getEntityByID(message.entityId);
             if (entity instanceof EntityPlayer) {
                 PoseSync.applyAuthoritativePose((EntityPlayer) entity, message.pose, message.swimming, message.crawlKeyDown, "server");
                 entity.yOffset = message.pose == Pose.SWIMMING ? 0.28F : 1.62F;

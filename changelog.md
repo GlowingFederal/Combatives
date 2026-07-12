@@ -1,5 +1,10 @@
 # Changelog
 
+## Fix production Minecraft field lookup
+
+- Extended the client Minecraft access helper to resolve `thePlayer`, `theWorld`, and `renderViewEntity` by SRG field names before falling back to development names.
+- Replaced direct client singleton field reads in crawl input, camera/render, packet, and client network handlers so production clients do not crash with `NoSuchFieldError: thePlayer`.
+
 ## Fix production Minecraft singleton lookup
 
 - Replaced direct client calls to `Minecraft.getMinecraft()` with a small client access helper that locates the runtime singleton method by SRG name (`func_71410_x`) first and falls back to the deobfuscated name in development.

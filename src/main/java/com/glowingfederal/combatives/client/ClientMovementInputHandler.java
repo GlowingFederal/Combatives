@@ -13,7 +13,7 @@ public class ClientMovementInputHandler {
 
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || MinecraftClientAccess.getMinecraft().thePlayer == null || CombativesKeyBindings.crawl == null) {
+        if (event.phase != TickEvent.Phase.END || MinecraftClientAccess.getPlayer() == null || CombativesKeyBindings.crawl == null) {
             return;
         }
         boolean crawlDown = CombativesKeyBindings.crawl.getIsKeyPressed();
@@ -21,7 +21,7 @@ public class ClientMovementInputHandler {
             return;
         }
         this.lastCrawlDown = crawlDown;
-        EntityPlayer player = MinecraftClientAccess.getMinecraft().thePlayer;
+        EntityPlayer player = MinecraftClientAccess.getPlayer();
         MovementDiagnostics.verbose(player, "crawl key " + (crawlDown ? "pressed" : "released"));
         if (!crawlDown) {
             MovementDiagnostics.verbose(player, "crawl key released: debounce reset only");

@@ -27,8 +27,9 @@ public abstract class EntityRendererMixin {
     private void combatives$capturePartialTicks(float partialTicks, CallbackInfo ci) {
         this.combatives$partialTicks = partialTicks;
         Minecraft mc = MinecraftClientAccess.getMinecraft();
-        if (mc.thePlayer instanceof EntityPlayerSP) {
-            CameraController.INSTANCE.update(mc, (EntityPlayerSP) mc.thePlayer, partialTicks);
+        EntityPlayerSP player = MinecraftClientAccess.getPlayer();
+        if (player != null) {
+            CameraController.INSTANCE.update(mc, player, partialTicks);
         } else {
             CameraController.INSTANCE.reset();
         }
@@ -74,7 +75,7 @@ public abstract class EntityRendererMixin {
             ordinal = 1
     )
     private float combatives$getInterpolatedEyeHeight(float eyeHeight) {
-        Entity entity = MinecraftClientAccess.getMinecraft().renderViewEntity;
+        Entity entity = MinecraftClientAccess.getRenderViewEntity();
 
         if (!(entity instanceof EntityPlayer)) {
             return eyeHeight;

@@ -193,7 +193,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     }
 
     private float getEyeHeight(Pose pose, EntitySize size) { return pose == Pose.SLEEPING || pose == Pose.DYING ? 0.2F : this.getStandingEyeHeight(pose, size); }
-    @Override public boolean isActuallySneaking() { return this.isSneaking(); }
+    @Override public boolean isActuallySneaking() { return ((EntityAccessor) (Object) this).combatives$invokeIsSneaking(); }
     @Override public float getStandingEyeHeight(Pose pose, EntitySize size) {
         if (pose == Pose.SWIMMING || pose == Pose.FALL_FLYING || pose == Pose.SPIN_ATTACK) return this.eyeHeight;
         if (pose == Pose.CROUCHING) return 0.35F;
@@ -409,7 +409,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
             float drag = this.isSprinting() ? 0.9F : 0.8F;
             double currentX = this.motionX;
             double currentZ = this.motionZ;
-            this.moveFlying(strafe, forward, 0.02F);
+            ((EntityAccessor) (Object) this).combatives$invokeMoveFlying(strafe, forward, 0.02F);
             if (!MovementController.shouldBypassUnsafe(this.getPlayer())) {
                 MovementController.MovementResult result = MovementController.shape(this.getPlayer(), strafe, forward, this.rotationYaw, currentX, currentZ, this.motionX, this.motionZ);
                 this.motionX = result.motionX;
@@ -445,7 +445,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         float moveFactor = this.onGround ? this.getAIMoveSpeed() * groundAcceleration : this.jumpMovementFactor;
         double currentX = this.motionX;
         double currentZ = this.motionZ;
-        this.moveFlying(strafe, forward, moveFactor);
+        ((EntityAccessor) (Object) this).combatives$invokeMoveFlying(strafe, forward, moveFactor);
         MovementController.MovementResult result = MovementController.shape(this.getPlayer(), strafe, forward, this.rotationYaw, currentX, currentZ, this.motionX, this.motionZ);
         this.motionX = result.motionX;
         this.motionZ = result.motionZ;

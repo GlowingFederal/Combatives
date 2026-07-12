@@ -12,6 +12,6 @@ public abstract class EntityClientPlayerMPMixin {
     private boolean combatives$sendActualSneaking(EntityClientPlayerMP player) {
         return player instanceof ICombativesClientPlayerSwimming
             ? ((ICombativesClientPlayerSwimming) player).isActuallySneaking()
-            : player.isSneaking();
+            : ((EntityAccessor) player).combatives$invokeIsSneaking();
     }
 }

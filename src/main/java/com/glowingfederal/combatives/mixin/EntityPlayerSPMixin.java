@@ -1,5 +1,7 @@
 package com.glowingfederal.combatives.mixin;
 
+import com.glowingfederal.combatives.client.ClientKeyBindingAccess;
+import com.glowingfederal.combatives.client.MinecraftClientAccess;
 import com.glowingfederal.combatives.client.ICombativesClientPlayerSwimming;
 import com.glowingfederal.combatives.client.MovementInputStorage;
 import com.glowingfederal.combatives.entity.Pose;
@@ -238,7 +240,7 @@ public abstract class EntityPlayerSPMixin implements ICombativesClientPlayerSwim
         boolean wasSneaking = this.combatives$movementStorage.sneak;
         boolean wasSwimmingMove = this.isUsingSwimmingAnimation(this.combatives$movementStorage.moveForward, this.combatives$movementStorage.moveStrafe);
         boolean sprintEnvironment = ((EntityPlayerSP) (Object) this).onGround || this.canSwimClient() || this.combatives$movementStorage.isFlying;
-        boolean sprintKeyDown = this.mc != null && this.mc.gameSettings.keyBindSprint.getIsKeyPressed();
+        boolean sprintKeyDown = this.mc != null && ClientKeyBindingAccess.isKeyDown(MinecraftClientAccess.getSprintKeyBinding());
         if (sprintEnvironment && !wasSneaking && !wasSwimmingMove && this.isUsingSwimmingAnimation() && !((EntityPlayerSP) (Object) this).isSprinting()
             && isSaturated && !((EntityPlayerSP) (Object) this).isPotionActive(Potion.blindness)) {
             if (this.combatives$movementStorage.sprintToggleTimer <= 0 && !sprintKeyDown) {

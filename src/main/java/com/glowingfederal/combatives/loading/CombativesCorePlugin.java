@@ -57,6 +57,7 @@ public class CombativesCorePlugin implements IFMLLoadingPlugin, IEarlyMixinLoade
     public List<String> getMixins(Set<String> loadedCoreMods) {
         List<String> mixins = new ArrayList<String>(Arrays.asList(
             "EntityPlayerMixin",
+            "EntityAccessor",
             "EntityMixin",
             "EntityLivingBaseMixin",
             "EntityPlayerMPMixin"

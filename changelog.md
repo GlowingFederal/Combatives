@@ -1,5 +1,30 @@
 # Changelog
 
+## Fix production key binding lookup
+
+- Added SRG-first key binding access for `KeyBinding#getIsKeyPressed` and the sprint key binding so client tick handlers do not call unmapped development names in production.
+- Searched the source tree for direct `Minecraft.getMinecraft`, Minecraft client field, and `KeyBinding#getIsKeyPressed` call sites and routed the remaining high-risk client input paths through access helpers.
+
+## Fix production Minecraft field lookup
+
+- Extended the client Minecraft access helper to resolve `thePlayer`, `theWorld`, and `renderViewEntity` by SRG field names before falling back to development names.
+- Replaced direct client singleton field reads in crawl input, camera/render, packet, and client network handlers so production clients do not crash with `NoSuchFieldError: thePlayer`.
+
+## Fix production Minecraft singleton lookup
+
+- Replaced direct client calls to `Minecraft.getMinecraft()` with a small client access helper that locates the runtime singleton method by SRG name (`func_71410_x`) first and falls back to the deobfuscated name in development.
+- Routed crawl input, client pose sync, camera, render, and client packet handlers through the helper so production clients do not crash with `NoSuchMethodError: net.minecraft.client.Minecraft.getMinecraft()`.
+
+## Fix production entity movement invoker remapping
+
+- Replaced owner-typed production calls to `Entity#isSneaking` and `Entity#moveFlying` across movement redirect handlers with an `Entity` invoker mixin so redirected vanilla movement calls remap to their runtime names without requiring invalid inherited shadows on `EntityLivingBase`.
+- Registered the new accessor in the common mixin list and routed the server/common and client sneak/moveFlying fallbacks through it while keeping the redirects limited to actual Combatives pose and player momentum logic.
+
+## Fix production moveFlying redirect crash
+
+- Fixed the common `EntityLivingBase#moveEntityWithHeading` movement redirect so vanilla `moveFlying` is invoked through an Entity invoker instead of an owner-typed call that can survive in production as deobfuscated `moveFlying(FFF)`.
+- This prevents non-player entities such as chickens from crashing dedicated servers with `NoSuchMethodError: net.minecraft.entity.EntityLivingBase.moveFlying(FFF)V` while preserving the player-only momentum shaping path.
+
 ## Fix Combatives Camera API yaw channel
 
 - Fixed the public camera API yaw contract so `CameraImpulse` yaw is validated, stored, envelope-sampled, stacked, saturated, independently hard-clamped, exposed in final camera output, and applied as a visual-only render transform.

@@ -1,16 +1,16 @@
 package com.glowingfederal.combatives.client.camera.internal;
 
+import com.glowingfederal.combatives.client.MinecraftClientAccess;
 import com.combatives.api.camera.*;
 import com.glowingfederal.combatives.Combatives;
 import com.glowingfederal.combatives.config.CombativesConfig;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import java.util.*;
 
 public final class CameraEffectManager {
     private static final int MAX_IMPULSES=64, MAX_CONTINUOUS=32; private static final ArrayList<Active> impulses=new ArrayList<Active>(); private static final ArrayList<Handle> continuous=new ArrayList<Handle>(); private static float pitch,yaw,roll,x,y,z,fov;
     private CameraEffectManager(){}
-    public static boolean isAvailable(){return Minecraft.getMinecraft()!=null&&CombativesConfig.enableCombativesCamera;}
+    public static boolean isAvailable(){return MinecraftClientAccess.getMinecraft()!=null&&CombativesConfig.enableCombativesCamera;}
     public static boolean trigger(CameraEffectType type, CameraEffectContext ctx, float strength){ if(type==null) return reject("missing_type"); strength=safe(strength,0,1); if(strength<=0)return reject("zero_strength"); return submitImpulse(preset(type,ctx,strength)); }
     public static boolean submitImpulse(CameraImpulse in){ if(!isAvailable())return reject("camera_unavailable_or_disabled"); CameraImpulse i=sanitize(in); if(i==null)return false; if(!hasProcessableChannel(i))return reject("no_processable_channels"); if(impulses.size()>=MAX_IMPULSES) impulses.remove(0); if (!resolveStacking(impulses,i)) return false; impulses.add(new Active(i,1)); logDebug("camera API impulse created id="+i.getEffectId()+" pitch="+i.getPitch()+" yaw="+i.getYaw()+" roll="+i.getRoll()+" translation=("+i.getTranslateX()+","+i.getTranslateY()+","+i.getTranslateZ()+") fov="+i.getFov()); return true; }
     static boolean submitImpulseForDevelopmentTest(CameraImpulse in){ CameraImpulse i=sanitize(in); if(i==null||!hasProcessableChannel(i))return false; if (!resolveStacking(impulses,i)) return false; impulses.add(new Active(i,1)); return true; }

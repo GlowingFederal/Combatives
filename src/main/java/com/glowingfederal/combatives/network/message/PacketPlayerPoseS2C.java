@@ -1,5 +1,6 @@
 package com.glowingfederal.combatives.network.message;
 
+import com.glowingfederal.combatives.client.MinecraftClientAccess;
 import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.network.PoseSync;
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
@@ -8,7 +9,6 @@ import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 
@@ -49,7 +49,7 @@ public class PacketPlayerPoseS2C implements IMessage {
         @Override
         @SideOnly(Side.CLIENT)
         public IMessage onMessage(PacketPlayerPoseS2C message, MessageContext ctx) {
-            Entity entity = Minecraft.getMinecraft().theWorld == null ? null : Minecraft.getMinecraft().theWorld.getEntityByID(message.entityId);
+            Entity entity = MinecraftClientAccess.getMinecraft().theWorld == null ? null : MinecraftClientAccess.getMinecraft().theWorld.getEntityByID(message.entityId);
             if (entity instanceof EntityPlayer) {
                 PoseSync.applyAuthoritativePose((EntityPlayer) entity, message.pose, message.swimming, message.crawlKeyDown, "server");
                 entity.yOffset = message.pose == Pose.SWIMMING ? 0.28F : 1.62F;

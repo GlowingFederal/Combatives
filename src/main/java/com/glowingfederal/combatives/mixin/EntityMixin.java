@@ -16,7 +16,7 @@ public abstract class EntityMixin {
         if (entity instanceof ICombativesPlayerPose) {
             return ((ICombativesPlayerPose) entity).isActuallySneaking();
         }
-        return entity.isSneaking();
+        return ((EntityAccessor) entity).combatives$invokeIsSneaking();
     }
 
     @ModifyConstant(method = "handleWaterMovement", constant = @Constant(doubleValue = -0.4000000059604645D))

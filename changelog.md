@@ -1,8 +1,13 @@
 # Changelog
 
+## Fix production entity movement invoker remapping
+
+- Replaced owner-typed production calls to `Entity#isSneaking` and `Entity#moveFlying` across movement redirect handlers with an `Entity` invoker mixin so redirected vanilla movement calls remap to their runtime names without requiring invalid inherited shadows on `EntityLivingBase`.
+- Registered the new accessor in the common mixin list and routed the server/common and client sneak/moveFlying fallbacks through it while keeping the redirects limited to actual Combatives pose and player momentum logic.
+
 ## Fix production moveFlying redirect crash
 
-- Fixed the common `EntityLivingBase#moveEntityWithHeading` movement redirect so vanilla `moveFlying` is invoked through a mixin shadow with the SRG alias instead of an owner-typed call that can survive in production as deobfuscated `moveFlying(FFF)`.
+- Fixed the common `EntityLivingBase#moveEntityWithHeading` movement redirect so vanilla `moveFlying` is invoked through an Entity invoker instead of an owner-typed call that can survive in production as deobfuscated `moveFlying(FFF)`.
 - This prevents non-player entities such as chickens from crashing dedicated servers with `NoSuchMethodError: net.minecraft.entity.EntityLivingBase.moveFlying(FFF)V` while preserving the player-only momentum shaping path.
 
 ## Fix Combatives Camera API yaw channel

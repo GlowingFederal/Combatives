@@ -44,19 +44,19 @@ public abstract class EntityLivingBaseMixin extends Entity {
         if (entity instanceof ICombativesPlayerPose) {
             return ((ICombativesPlayerPose) entity).isActuallySneaking();
         }
-        return entity.isSneaking();
+        return ((EntityAccessor) entity).combatives$invokeIsSneaking();
     }
 
     @Redirect(method = "moveEntityWithHeading", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/EntityLivingBase;moveFlying(FFF)V"))
     private void combatives$shapeMoveFlying(EntityLivingBase entity, float strafe, float forward, float friction) {
         if (!(entity instanceof EntityPlayer) || MovementController.shouldBypass((EntityPlayer) entity)) {
-            ((EntityLivingBaseMixin) (Object) entity).moveFlying(strafe, forward, friction);
+            ((EntityAccessor) entity).combatives$invokeMoveFlying(strafe, forward, friction);
             return;
         }
         EntityPlayer player = (EntityPlayer) entity;
         double currentX = player.motionX;
         double currentZ = player.motionZ;
-        ((EntityLivingBaseMixin) (Object) entity).moveFlying(strafe, forward, friction);
+        ((EntityAccessor) entity).combatives$invokeMoveFlying(strafe, forward, friction);
         MovementController.MovementResult result = MovementController.shape(player, strafe, forward, player.rotationYaw, currentX, currentZ, player.motionX, player.motionZ);
         player.motionX = result.motionX;
         player.motionZ = result.motionZ;

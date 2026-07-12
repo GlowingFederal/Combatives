@@ -1,4 +1,11 @@
 # Changelog
+## Restore horizontal movement and trace vertical movement regressions
+
+- Reverted the prior stair/water-exit movement reshaping change so Combatives horizontal acceleration, drag, momentum, and speed clamping return to the pre-`ffd1c3e` behavior.
+- Restored ordinary non-Combatives-swimming water travel to vanilla `moveEntityWithHeading`, preserving vanilla water jump acceleration, ledge-exit collision handling, `motionY`, and collision flags while leaving the explicit Combatives swim/crawl movement paths unchanged.
+- Added verbose-only vertical transition diagnostics around jump handling, `moveEntityWithHeading`, and the Combatives `moveFlying` redirect, including motion, position delta, bounding box, jump state, water state, collision flags, fall distance, step height, and previous/current movement profile.
+- Added verbose-only warnings if a horizontal-only Combatives movement stage changes `motionY`, so future investigation can identify accidental vertical writes without changing normal logs.
+
 
 ## Audit Fairplay remapping workaround cleanup
 

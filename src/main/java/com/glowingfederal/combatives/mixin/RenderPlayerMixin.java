@@ -1,10 +1,10 @@
 package com.glowingfederal.combatives.mixin;
 
-import com.glowingfederal.combatives.client.MinecraftClientAccess;
 import com.glowingfederal.combatives.client.model.ICombativesModelBipedSwimming;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.util.math.MathHelperNew;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.model.ModelBiped;
@@ -55,7 +55,7 @@ public abstract class RenderPlayerMixin extends RendererLivingEntity {
             }
 
             if (pose.isCrawlKeyDown()) {
-                boolean localPlayer = MinecraftClientAccess.getPlayer() == player;
+                boolean localPlayer = Minecraft.getMinecraft().thePlayer == player;
                 if ((localPlayer && !this.combatives$loggedLocalCrawlGrounding) || (!localPlayer && !this.combatives$loggedRemoteCrawlGrounding)) {
                     double interpolatedY = player.prevPosY + (player.posY - player.prevPosY) * partialTicks;
                     MovementDiagnostics.verbose(player, "crawl render grounding: isLocalPlayer=" + localPlayer

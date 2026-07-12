@@ -6,6 +6,7 @@ import java.util.Map;
 import com.glowingfederal.combatives.entity.EntitySize;
 import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
+import com.glowingfederal.combatives.entity.player.PlayerStepHeight;
 import com.glowingfederal.combatives.movement.ICombativesMovementState;
 import com.glowingfederal.combatives.movement.MovementController;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
@@ -66,6 +67,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     private boolean crawlKeyDown;
     private Pose combativesPose = Pose.STANDING;
     private boolean combativesPoseWatcherReady;
+    private int combativesLastStepHeightWarningTick = -200;
     private MovementSnapshot combativesMovementSnapshot = MovementSnapshot.EMPTY;
 
     public EntityPlayerMixin(World world) {
@@ -79,6 +81,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         this.combativesPose = Pose.STANDING;
         this.getDataWatcher().addObject(POSE_WATCHER_ID, Pose.STANDING.ordinal());
         this.combativesPoseWatcherReady = true;
+        PlayerStepHeight.restoreVanillaStepHeight(this.getPlayer(), "EntityPlayer<init>");
     }
 
 
@@ -160,6 +163,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
             }
         }
         this.combativesSize = newSize;
+        this.combatives$warnUnexpectedStepHeight("recalculateSize");
     }
 
     private void recalculateSize(EntitySize oldSize, EntitySize newSize) {
@@ -290,6 +294,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     @Inject(method = "onUpdate", at = @At(value = "INVOKE", target = "cpw/mods/fml/common/FMLCommonHandler.onPlayerPostTick(Lnet/minecraft/entity/player/EntityPlayer;)V", shift = At.Shift.AFTER, remap = false))
     private void combatives$postPostTick(CallbackInfo ci) {
         this.updatePose();
+        this.combatives$warnUnexpectedStepHeight("post-player-tick");
         if (this.eyeHeight != this.previousEyeHeight) this.recalculateEyeHeight();
     }
 
@@ -381,6 +386,17 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         }
         this.lastLoggedPose = pose;
         this.recalculateSize();
+    }
+
+    private void combatives$warnUnexpectedStepHeight(String source) {
+        if (this.ticksExisted - this.combativesLastStepHeightWarningTick < 100) {
+            return;
+        }
+        float before = this.stepHeight;
+        PlayerStepHeight.warnIfUnexpected(this.getPlayer(), source);
+        if (before != PlayerStepHeight.VANILLA_PLAYER_STEP_HEIGHT) {
+            this.combativesLastStepHeightWarningTick = this.ticksExisted;
+        }
     }
 
     private AxisAlignedBB getBoundingBox(Pose pose) {

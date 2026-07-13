@@ -1,4 +1,18 @@
 # Changelog
+## Restore vanilla pushOutOfBlocks for normal movement
+
+- Removed Combatives' client-side `EntityPlayerSP#pushOutOfBlocks` replacement so ordinary standing, walking, sprinting, sneaking, jumping, water movement, stairs, slabs, trapdoors, doors, fence gates, snow layers, and ladders use vanilla collision push-out behavior again.
+- Removed the crawl/swim full-block occupancy push-out helper that treated partial collision geometry as full cubes and overwrote horizontal motion with a fixed `0.1D` vector.
+- Left crawl/swim pose, sizing, water-exit jumping, step-height parity, horizontal acceleration, drag, momentum, and stair velocity baselines unchanged; if low-pose recovery is needed later, it must be reintroduced behind a real crawl/swim low-pose gate and use actual world collision boxes.
+- Documented the remaining regression root cause: the custom crawl/swim clearance push-out was firing during normal standing/sprinting profiles, replacing intended horizontal velocity near partial blocks and causing client/server correction loops.
+
+## Restore vanilla player step height on both sides
+
+- Restored the vanilla 1.7.10 player `stepHeight` value of `0.5F` in Combatives' common `EntityPlayer` construction path so `EntityPlayerSP`, `EntityPlayerMP`, integrated-server players, dedicated-server players, respawned players, and dimension-transfer recreations all keep the same stair collision capability.
+- Added lifecycle reinforcement on join, login, respawn, and dimension-change pose-sync paths without changing horizontal acceleration, drag, momentum, stair velocity baselines, Y-position, `yOffset`, or non-player entity step heights.
+- Added debug-only, throttled warnings that report side, player class, pose, source, and likely caller if a normal player is observed with a non-vanilla step height during pose or size recalculation.
+- Documented the regression root cause: the Aqua-derived common player initialization restored pose watcher and size state but did not preserve vanilla's player-specific `stepHeight`, leaving authoritative server players at the base `Entity` value of `0.0F`; restoring `0.5F` lets the server accept the same vanilla step-up the client already predicted and prevents the correction loop that pushed players back off stairs.
+
 ## Preserve stair momentum after accepted vanilla step-ups
 
 - Fixed the remaining stair slowdown by preserving the grounded horizontal baseline that Combatives intended immediately before vanilla collision handling when vanilla accepts a small `stepHeight` rise, then restoring that friction-adjusted baseline only on the next tick if the stair collision clipped horizontal speed far below the intended value.

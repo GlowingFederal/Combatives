@@ -1,4 +1,11 @@
 # Changelog
+## Restore vanilla pushOutOfBlocks for normal movement
+
+- Removed Combatives' client-side `EntityPlayerSP#pushOutOfBlocks` replacement so ordinary standing, walking, sprinting, sneaking, jumping, water movement, stairs, slabs, trapdoors, doors, fence gates, snow layers, and ladders use vanilla collision push-out behavior again.
+- Removed the crawl/swim full-block occupancy push-out helper that treated partial collision geometry as full cubes and overwrote horizontal motion with a fixed `0.1D` vector.
+- Left crawl/swim pose, sizing, water-exit jumping, step-height parity, horizontal acceleration, drag, momentum, and stair velocity baselines unchanged; if low-pose recovery is needed later, it must be reintroduced behind a real crawl/swim low-pose gate and use actual world collision boxes.
+- Documented the remaining regression root cause: the custom crawl/swim clearance push-out was firing during normal standing/sprinting profiles, replacing intended horizontal velocity near partial blocks and causing client/server correction loops.
+
 ## Restore vanilla player step height on both sides
 
 - Restored the vanilla 1.7.10 player `stepHeight` value of `0.5F` in Combatives' common `EntityPlayer` construction path so `EntityPlayerSP`, `EntityPlayerMP`, integrated-server players, dedicated-server players, respawned players, and dimension-transfer recreations all keep the same stair collision capability.

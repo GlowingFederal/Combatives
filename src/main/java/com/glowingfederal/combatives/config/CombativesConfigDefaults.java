@@ -8,7 +8,7 @@ public final class CombativesConfigDefaults {
     public static final boolean ENABLE_CAMERA_ROTATIONS = true;
     public static final boolean ENABLE_CAMERA_SHAKE = true;
     public static final float MAX_CAMERA_YAW_DEGREES = 4.0F;
-    public static final boolean ENABLE_MOUSE_DELTA_CLAMP = true;
+    public static final boolean ENABLE_MOUSE_DELTA_CLAMP = false;
     public static final int MAX_MOUSE_DELTA = 80;
     public static final boolean ENABLE_LANDING_CAMERA_FEEDBACK = true;
     public static final double LANDING_FEEDBACK_STRENGTH = 1.0D;

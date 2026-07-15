@@ -82,13 +82,15 @@ public abstract class EntityRendererMixin {
             return eyeHeight;
         }
 
-        this.combatives$entityEyeHeight = ((EntityPlayer) entity).getEyeHeight();
-        if (this.combatives$isVanillaBaselinePose((EntityPlayer) entity)) {
+        EntityPlayer player = (EntityPlayer) entity;
+        if (this.combatives$isVanillaBaselinePose(player)) {
+            this.combatives$entityEyeHeight = eyeHeight;
             this.combatives$eyeHeight = eyeHeight;
             this.combatives$previousEyeHeight = eyeHeight;
             return eyeHeight;
         }
 
+        this.combatives$entityEyeHeight = this.combatives$getLowPoseCameraEyeHeight(player, eyeHeight);
         if (this.combatives$eyeHeight <= 0.0F || this.combatives$previousEyeHeight <= 0.0F) {
             this.combatives$eyeHeight = eyeHeight;
             this.combatives$previousEyeHeight = eyeHeight;
@@ -99,6 +101,13 @@ public abstract class EntityRendererMixin {
                 this.combatives$previousEyeHeight,
                 this.combatives$eyeHeight
         );
+    }
+
+    private float combatives$getLowPoseCameraEyeHeight(EntityPlayer player, float vanillaEyeHeight) {
+        if (player.height <= 0.61F) {
+            return 0.0F;
+        }
+        return player.getEyeHeight() > 0.0F ? player.getEyeHeight() : vanillaEyeHeight;
     }
 
     private boolean combatives$isVanillaBaselinePose(EntityPlayer player) {

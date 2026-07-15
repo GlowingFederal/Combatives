@@ -130,6 +130,13 @@ public abstract class EntityRendererMixin {
         return vanillaCameraOffset;
     }
 
+    private float combatives$getLowPoseCameraEyeHeight(EntityPlayer player, float vanillaEyeHeight) {
+        if (player.height <= 0.61F) {
+            return 0.0F;
+        }
+        return player.getEyeHeight() > 0.0F ? player.getEyeHeight() : vanillaEyeHeight;
+    }
+
     private boolean combatives$isVanillaBaselinePose(EntityPlayer player) {
         if (!(player instanceof ICombativesPlayerPose)) {
             return true;

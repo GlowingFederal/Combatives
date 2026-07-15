@@ -27,6 +27,7 @@ public final class CameraController {
     private static final float MAX_IMPACT_Z_OFFSET = 0.16F;
 
     private float leanRoll, leanPitch, bobVertical, bobSway, bobPitch, bobRoll, shakeVertical, shakeForward, shakeLateral, shakePitch, shakeRoll, fovModifier;
+    private float lastTranslationY;
 
     private CameraController() {}
 
@@ -54,6 +55,7 @@ public final class CameraController {
         float impactZ = clamp(shakeForward + CameraEffectManager.getZ(), -MAX_IMPACT_Z_OFFSET, MAX_IMPACT_Z_OFFSET);
         float xOffset = ambientX + impactX;
         float yOffset = ambientY + impactY;
+        this.lastTranslationY = yOffset;
         float zOffset = impactZ;
         GL11.glTranslatef(xOffset, yOffset, zOffset);
 
@@ -94,7 +96,7 @@ public final class CameraController {
         return value < min ? min : value > max ? max : value;
     }
 
-    public void reset() { lean.reset(); bob.reset(); fov.reset(); shake.reset(); CameraEffectManager.reset(); leanRoll = leanPitch = bobVertical = bobSway = bobPitch = bobRoll = shakeVertical = shakeForward = shakeLateral = shakePitch = shakeRoll = fovModifier = 0.0F; }
+    public void reset() { lean.reset(); bob.reset(); fov.reset(); shake.reset(); CameraEffectManager.reset(); leanRoll = leanPitch = bobVertical = bobSway = bobPitch = bobRoll = shakeVertical = shakeForward = shakeLateral = shakePitch = shakeRoll = fovModifier = lastTranslationY = 0.0F; }
 
     public void addExplosionFeedback(EntityPlayerSP player, double x, double y, double z, float strength) {
         if (!CombativesConfig.enableCombativesCamera || !CombativesConfig.enableCameraShake || !CombativesConfig.enableExplosionCameraFeedback || player == null) {
@@ -128,4 +130,5 @@ public final class CameraController {
         shake.addExplosionImpulse(response, localForward, localRight, localVertical);
     }
     public float getFovModifier() { return fovModifier + CameraEffectManager.getFov() * 0.01F; }
+    public float getLastTranslationY() { return lastTranslationY; }
 }

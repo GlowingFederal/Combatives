@@ -1,4 +1,13 @@
 # Changelog
+## Fix pose-driven crawl camera origin
+
+- Fixed the crawl first-person base camera origin by making `EntityRenderer#orientCamera` consume the current client pose every render frame and return the computed low-pose camera offset directly instead of relying on stale cached eye-height interpolation or collision-height timing.
+- Preserved vanilla standing and vanilla sneaking camera offsets exactly by returning the original `yOffset - 1.62F` local for non-low poses.
+- Made crawling/swimming explicitly compute the `orientCamera` local offset needed to place the base first-person origin at `boundingBox.minY + 0.28`, so the camera lowers even when `posY` has not yet been rebuilt around the low client `yOffset`; procedural camera translations are applied only afterward as small visual effects.
+- Refreshed local pose camera state immediately on pose changes and crawl-key prediction by updating client `yOffset`, recalculating the Combatives eye-height cache, and recalculating size without waiting for an unrelated later watcher or player-tick update.
+- Added debug-camera origin diagnostics for crawl enter/exit, including player class, pose, partial ticks, interpolated Y, `yOffset`, `getEyeHeight()`, base camera Y, pose camera offset, procedural translation Y, final camera Y, and warnings for unchanged pose-transition base Y or standing baseline divergence.
+- Documented the actual root cause: the crawl pose/body changed, but the first-person base camera origin kept using the old interpolated `posY`/local camera offset relationship instead of a pose-derived crawl origin, so `orientCamera` did not move with the lowered crawl body.
+
 ## Audit mouse aiming ownership and unregister raw delta hook
 
 - Audited vanilla, Combatives, and Angelica mouse ownership paths: vanilla consumes `MouseHelper#mouseXYChange` once in `EntityRenderer#updateCameraAndRender`, applies the cubic `mouseSensitivity` scale and optional vanilla smoothing, then calls `EntityPlayerSP#setAngles`.

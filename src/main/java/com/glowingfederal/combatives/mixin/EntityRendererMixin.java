@@ -2,6 +2,8 @@ package com.glowingfederal.combatives.mixin;
 
 import com.glowingfederal.combatives.client.camera.CameraController;
 import com.glowingfederal.combatives.config.CombativesConfig;
+import com.glowingfederal.combatives.entity.Pose;
+import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.util.math.MathHelperNew;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -81,12 +83,30 @@ public abstract class EntityRendererMixin {
         }
 
         this.combatives$entityEyeHeight = ((EntityPlayer) entity).getEyeHeight();
+        if (this.combatives$isVanillaBaselinePose((EntityPlayer) entity)) {
+            this.combatives$eyeHeight = eyeHeight;
+            this.combatives$previousEyeHeight = eyeHeight;
+            return eyeHeight;
+        }
+
+        if (this.combatives$eyeHeight <= 0.0F || this.combatives$previousEyeHeight <= 0.0F) {
+            this.combatives$eyeHeight = eyeHeight;
+            this.combatives$previousEyeHeight = eyeHeight;
+        }
 
         return MathHelperNew.lerp(
                 this.combatives$partialTicks,
                 this.combatives$previousEyeHeight,
                 this.combatives$eyeHeight
         );
+    }
+
+    private boolean combatives$isVanillaBaselinePose(EntityPlayer player) {
+        if (!(player instanceof ICombativesPlayerPose)) {
+            return true;
+        }
+        ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
+        return pose.getPose() == Pose.STANDING && !pose.isSwimming() && !pose.isCrawlKeyDown() && !pose.isActuallySwimming();
     }
 
     @Inject(method = "updateRenderer", at = @At("TAIL"))

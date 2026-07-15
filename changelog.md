@@ -1,4 +1,11 @@
 # Changelog
+## Restore vanilla first-person standing camera baseline
+
+- Fixed the Combatives `EntityRenderer#orientCamera` eye-height interpolation hook so normal standing first person returns vanilla's sampled `getEyeHeight()` value unchanged instead of replacing it with Combatives' visual interpolation accumulator.
+- Reset the visual interpolation accumulator to the vanilla sampled eye height whenever the player is in the vanilla baseline pose, preventing stale crawl/swim transition values from leaking into standing camera setup after leaving low poses, respawn, or dimension changes.
+- Kept crawl/swim visual eye-height interpolation for low-pose transitions only, while leaving `EntityPlayer#getEyeHeight`, `yOffset`, player position, bounding boxes, ray tracing, projectile origins, and server-authoritative eye height unchanged.
+- Documented the root cause: the Aqua-derived `ModifyVariable` in `orientCamera` replaced vanilla's first-person eye-height local for every player pose, including ordinary standing, so the camera baseline became the interpolated visual value rather than vanilla's authoritative eye-height sample.
+
 ## Restore vanilla pushOutOfBlocks for normal movement
 
 - Removed Combatives' client-side `EntityPlayerSP#pushOutOfBlocks` replacement so ordinary standing, walking, sprinting, sneaking, jumping, water movement, stairs, slabs, trapdoors, doors, fence gates, snow layers, and ladders use vanilla collision push-out behavior again.

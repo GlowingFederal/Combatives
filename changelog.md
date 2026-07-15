@@ -1,4 +1,27 @@
 # Changelog
+## Fix pose-driven crawl camera origin
+
+- Fixed the crawl first-person base camera origin by making `EntityRenderer#orientCamera` consume the current client pose every render frame and return the computed low-pose camera offset directly instead of relying on stale cached eye-height interpolation or collision-height timing.
+- Preserved vanilla standing and vanilla sneaking camera offsets exactly by returning the original `yOffset - 1.62F` local for non-low poses.
+- Made crawling/swimming explicitly compute the `orientCamera` local offset needed to place the base first-person origin at `boundingBox.minY + 0.28`, so the camera lowers even when `posY` has not yet been rebuilt around the low client `yOffset`; procedural camera translations are applied only afterward as small visual effects.
+- Refreshed local pose camera state immediately on pose changes and crawl-key prediction by updating client `yOffset`, recalculating the Combatives eye-height cache, and recalculating size without waiting for an unrelated later watcher or player-tick update.
+- Added debug-camera origin diagnostics for crawl enter/exit, including player class, pose, partial ticks, interpolated Y, `yOffset`, `getEyeHeight()`, base camera Y, pose camera offset, procedural translation Y, final camera Y, and warnings for unchanged pose-transition base Y or standing baseline divergence.
+- Documented the actual root cause: the crawl pose/body changed, but the first-person base camera origin kept using the old interpolated `posY`/local camera offset relationship instead of a pose-derived crawl origin, so `orientCamera` did not move with the lowered crawl body.
+
+## Audit mouse aiming ownership and unregister raw delta hook
+
+- Audited vanilla, Combatives, and Angelica mouse ownership paths: vanilla consumes `MouseHelper#mouseXYChange` once in `EntityRenderer#updateCameraAndRender`, applies the cubic `mouseSensitivity` scale and optional vanilla smoothing, then calls `EntityPlayerSP#setAngles`.
+- Removed `MouseHelperMixin` from active Combatives mixin registration so Combatives no longer rewrites raw `deltaX` / `deltaY` in the live mouse path; the prior clamp remains dormant source only and must be treated as an input-path mutation if ever re-enabled.
+- Documented that the active `EntityRendererMixin` affects visual GL camera transforms and low-pose eye-height interpolation only, not mouse deltas, sensitivity settings, mouse filters, or `setAngles`.
+- Documented the Angelica comparison: its zoom mixin changes the vanilla sensitivity multiplier and smooth-camera reads while zoom is active, but the inspected reference code does not call `mouseXYChange` or double-consume raw mouse deltas.
+
+## Fix crawl/swim camera height and make mouse clamp opt-in
+
+- Restored Aqua-style first-person low-pose camera interpolation for crawling and swimming by targeting a zero local eye-height offset whenever the player collision height is the prone `0.6F` size, while still returning vanilla's sampled `orientCamera` eye-height unchanged for normal standing baseline poses.
+- Kept the vanilla standing height fix intact by resetting the interpolation accumulator to the exact vanilla local eye-height only for the true standing, non-swimming, non-crawling baseline.
+- Made the raw mouse delta clamp disabled by default because even a symmetric cap changes vanilla's high-delta sensitivity curve before vanilla applies its own sensitivity scaling; the clamp remains available as an explicit diagnostic/emergency option.
+- Documented the sensitivity investigation result: the height fix itself only changes the first-person camera Y offset in `orientCamera`; the active input-affecting path is the `MouseHelper#mouseXYChange` tail clamp, which rewrites `deltaX` and `deltaY` before vanilla consumes them.
+
 ## Restore vanilla first-person standing camera baseline
 
 - Fixed the Combatives `EntityRenderer#orientCamera` eye-height interpolation hook so normal standing first person returns vanilla's sampled `getEyeHeight()` value unchanged instead of replacing it with Combatives' visual interpolation accumulator.

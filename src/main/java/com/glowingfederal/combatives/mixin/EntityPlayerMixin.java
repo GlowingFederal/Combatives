@@ -199,7 +199,8 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     private float getEyeHeight(Pose pose, EntitySize size) { return pose == Pose.SLEEPING || pose == Pose.DYING ? 0.2F : this.getStandingEyeHeight(pose, size); }
     @Override public boolean isActuallySneaking() { return this.isSneaking(); }
     @Override public float getStandingEyeHeight(Pose pose, EntitySize size) {
-        if (pose == Pose.SWIMMING || pose == Pose.FALL_FLYING || pose == Pose.SPIN_ATTACK) return this.eyeHeight;
+        if (pose == Pose.SWIMMING) return 0.28F;
+        if (pose == Pose.FALL_FLYING || pose == Pose.SPIN_ATTACK) return this.eyeHeight;
         if (pose == Pose.CROUCHING) return 0.35F;
         return this.eyeHeight;
     }
@@ -210,8 +211,14 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
             MovementDiagnostics.verbose(this.getPlayer(), "setPose " + old + " -> " + pose + " via " + this.combatives$getPoseCaller());
         }
         this.combativesPose = pose;
+        if (this.worldObj != null && this.worldObj.isRemote) {
+            this.yOffset = pose == Pose.SWIMMING ? 0.28F : 1.62F;
+        }
         if (this.combativesPoseWatcherReady) {
             this.getDataWatcher().updateObject(POSE_WATCHER_ID, pose.ordinal());
+        }
+        if (old != pose) {
+            this.recalculateEyeHeight();
         }
     }
 
@@ -271,10 +278,19 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
             this.crawlKeyDown = false;
             return;
         }
-        if (this.crawlKeyDown != down) {
+        boolean changed = this.crawlKeyDown != down;
+        if (changed) {
             MovementDiagnostics.debug(this.getPlayer(), "crawl request " + (down ? "accepted" : "released"));
         }
         this.crawlKeyDown = down;
+        if (changed && this.worldObj != null && this.worldObj.isRemote) {
+            if (down) {
+                this.setPose(Pose.SWIMMING);
+            } else if (!this.isSwimming() && this.getPose() == Pose.SWIMMING && this.isPoseClear(Pose.STANDING)) {
+                this.setPose(Pose.STANDING);
+            }
+            this.recalculateSize();
+        }
     }
 
     @Inject(method = "getEyeHeight", at = @At("HEAD"), cancellable = true)

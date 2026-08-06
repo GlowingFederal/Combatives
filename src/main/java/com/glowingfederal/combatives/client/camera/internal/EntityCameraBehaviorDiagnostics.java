@@ -32,9 +32,13 @@ final class EntityCameraBehaviorDiagnostics {
         if (!CombativesConfig.debugCamera) return;
         Combatives.logger.info("Player motion camera event provider={} {}",provider,values);
     }
-    static void inertia(double forward,double lateral,double turn,float contribution) {
+    static void landing(String phase,float compression,float target,float velocity,float roll) {
+        if (!CombativesConfig.verboseCameraDebug || Math.abs(compression) <= 0.001F) return;
+        Combatives.logger.info("Player landing phase={} compression={} springTarget={} springVelocity={} unevenRoll={}",phase,compression,target,velocity,roll);
+    }
+    static void inertia(double rawForward,double rawLateral,double forward,double lateral,double turn,float contribution,boolean ascent,int takeoffBlend,float composition) {
         if (!CombativesConfig.verboseCameraDebug || contribution <= 0.008F) return;
-        Combatives.logger.info("Player inertia contribution={} forwardAcceleration={} lateralAcceleration={} turnLag={}",contribution,forward,lateral,turn);
+        Combatives.logger.info("Player inertia contribution={} rawAcceleration=({},{}) filteredAcceleration=({},{}) turnLag={} ascent={} takeoffBlendSamples={} composition={}",contribution,rawForward,rawLateral,forward,lateral,turn,ascent,takeoffBlend,composition);
     }
     static void motionSample(String provider,EntityMotionSample m) {
         if (!CombativesConfig.verboseCameraDebug) return;

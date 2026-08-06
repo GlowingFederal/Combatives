@@ -1,4 +1,12 @@
 # Changelog
+## (02d182a Combatives Camera Motion Polish Pass)
+
+- Removed sprint-jump camera jitter at its source by preserving grounded inertia across takeoff and slew-limiting only the short ballistic transition instead of reacting to position-derived acceleration spikes.
+- Reworked landing internally into a downward impact/compression hold and critically damped recovery, with restrained pitch and uneven-ground roll, so contact reads as weight transfer rather than an immediate reversal or bounce.
+- Strengthened freefall with separate fall-speed and unsupported-time envelopes, a longer progressive ease, and restrained downward/forward displacement and pitch.
+- Added physical-transition composition so landing briefly attenuates inertia while freefall fades naturally, with all output still routed through the existing provider sink and shared safety clamps.
+- Expanded debug tuning data with ascent state, raw and filtered acceleration, takeoff blend samples, composition weight, freefall envelopes, and landing compression/spring phase values; updated the provider documentation accordingly.
+
 ## (dafcd44 Expand Entity Camera Behavior Framework)
 
 - Added deterministic multi-provider ordering by descending priority, lexical registration ID, and registration sequence without introducing exclusive behavior ownership.

@@ -4,9 +4,24 @@
 
 The framework has one directional ownership path:
 
-`mounted entity -> EntityMotionSampler -> provider -> CameraEffectSink -> CameraEffectManager -> CameraController -> render mixins`
+`camera entity -> EntityMotionSampler -> provider -> CameraEffectSink -> CameraEffectManager -> CameraController -> render mixins`
 
-Observation, interpretation, camera intent, accumulation, final camera state, and rendering remain separate concerns. The registry is empty by default, so this layer produces no output until an integration registers a provider. It never grants exclusive mount ownership and every matching provider contributes in a stable order.
+Observation, interpretation, camera intent, accumulation, final camera state, and rendering remain separate concerns. The camera entity is the local player when unmounted and the ridden entity when mounted. The built-in player registrations are the first consumers; integrations can add generic mounted-entity registrations without exclusive ownership, and every matching provider contributes in stable order.
+
+## Built-in generic player providers
+
+Four independent providers match the local player and consume the same immutable sample created once per tick:
+
+- **Landing** tracks the fastest sampled downward velocity until the grounded transition, then combines that velocity, sampled vertical acceleration, and fall distance as a secondary severity signal. It submits a short vertical compression, slight pitch, and acceleration-directed micro-roll impulse.
+- **Freefall** requires at least four consecutive unsupported ticks below the downward-speed threshold. This excludes steps, slabs, terrain jitter, and ordinary jump arcs; its restrained downward float eases in with fall speed and fades promptly when support returns.
+- **Inertia** maps sample-local forward acceleration to acceleration/braking pitch, lateral acceleration to roll and lateral lag, and yaw rate weighted by horizontal speed to subtle directional head lag. It is a frame contribution and adds no input filtering or latency.
+- **Collision** requires meaningful prior horizontal speed, abrupt speed loss, and horizontal acceleration together. Its cooldown and thresholds prevent stationary wall pushing from retriggering, while local acceleration supplies the physical pitch/roll/translation direction.
+
+Landing and collision use finite impulses; freefall and inertia submit current-frame contributions. Every intent passes through `CameraEffectSink`, so these effects compose with explosions and retain the shared manager/controller safety clamps. Providers never change rotation, input, player movement, or entity motion.
+
+The `camera` configuration category exposes an enable flag and `0.0`–`4.0` strength for each provider. Landing retains the existing public `enableLandingCameraFeedback`/`landingFeedbackStrength` pair for configuration compatibility; the other pairs are `enablePlayerFreefallCamera`/`playerFreefallCameraStrength`, `enablePlayerInertiaCamera`/`playerInertiaCameraStrength`, and `enablePlayerCollisionCamera`/`playerCollisionCameraStrength`. The provider framework is an implementation detail and does not add a second landing control.
+
+General diagnostics report provider lifecycle plus landing, freefall, and collision events. Verbose camera diagnostics add provider emissions, inertia contributions, and shared world/local velocity, acceleration, speed, yaw-rate, and discontinuity values. Formatting and timing remain guarded when diagnostics are disabled.
 
 ## Registration, ordering, and identity
 
@@ -28,7 +43,7 @@ The environment is intentionally separate from `MountCameraContext`. It is gener
 
 ## Provider lifecycle
 
-For each mounted entity the manager performs the following lifecycle:
+For each camera entity (the player while unmounted, otherwise its mount) the manager performs the following lifecycle:
 
 1. Sample the mount once for the current client tick.
 2. Evaluate every matcher and sort all matches deterministically.
@@ -84,4 +99,4 @@ Horse gait/rocking, boats, vehicle inertia/impacts/suspension, aircraft/engine/r
 
 ## Compatibility guarantee
 
-No actual camera behavior is registered or implemented here. Landing effects, explosion effects, movement lean, procedural bob, public Camera API submissions, continuous effects, mount compatibility, and the render pipeline retain their existing paths. With an empty registry, no provider callback or sink submission occurs and camera output is identical to the pre-framework output.
+The built-in providers apply only to the local unmounted player. Explosion effects, movement lean, procedural bob, public Camera API submissions, continuous effects, mounted-entity compatibility, and the render pipeline retain their existing paths. On mounting, the player providers detach and the same generic manager immediately samples and matches the mount for future integrations.

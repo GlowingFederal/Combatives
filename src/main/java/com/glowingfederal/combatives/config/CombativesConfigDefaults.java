@@ -12,8 +12,6 @@ public final class CombativesConfigDefaults {
     public static final int MAX_MOUSE_DELTA = 80;
     public static final boolean ENABLE_LANDING_CAMERA_FEEDBACK = true;
     public static final double LANDING_FEEDBACK_STRENGTH = 1.0D;
-    public static final boolean ENABLE_PLAYER_LANDING_CAMERA = true;
-    public static final double PLAYER_LANDING_CAMERA_STRENGTH = 1.0D;
     public static final boolean ENABLE_PLAYER_FREEFALL_CAMERA = true;
     public static final double PLAYER_FREEFALL_CAMERA_STRENGTH = 1.0D;
     public static final boolean ENABLE_PLAYER_INERTIA_CAMERA = true;

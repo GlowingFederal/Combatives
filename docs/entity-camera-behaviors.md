@@ -19,7 +19,7 @@ Four independent providers match the local player and consume the same immutable
 
 Landing and collision use finite impulses; freefall and inertia submit current-frame contributions. Every intent passes through `CameraEffectSink`, so these effects compose with explosions and retain the shared manager/controller safety clamps. Providers never change rotation, input, player movement, or entity motion.
 
-The `camera` configuration category exposes an enable flag and `0.0`–`4.0` strength for each provider: `enablePlayerLandingCamera`/`playerLandingCameraStrength`, `enablePlayerFreefallCamera`/`playerFreefallCameraStrength`, `enablePlayerInertiaCamera`/`playerInertiaCameraStrength`, and `enablePlayerCollisionCamera`/`playerCollisionCameraStrength`.
+The `camera` configuration category exposes an enable flag and `0.0`–`4.0` strength for each provider. Landing retains the existing public `enableLandingCameraFeedback`/`landingFeedbackStrength` pair for configuration compatibility; the other pairs are `enablePlayerFreefallCamera`/`playerFreefallCameraStrength`, `enablePlayerInertiaCamera`/`playerInertiaCameraStrength`, and `enablePlayerCollisionCamera`/`playerCollisionCameraStrength`. The provider framework is an implementation detail and does not add a second landing control.
 
 General diagnostics report provider lifecycle plus landing, freefall, and collision events. Verbose camera diagnostics add provider emissions, inertia contributions, and shared world/local velocity, acceleration, speed, yaw-rate, and discontinuity values. Formatting and timing remain guarded when diagnostics are disabled.
 

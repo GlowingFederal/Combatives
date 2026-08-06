@@ -54,14 +54,14 @@ public final class BuiltinPlayerCameraBehaviors {
             EntityPlayerSP player=player(c); EntityMotionSample m=c.getMotion();
             if(player==null || m.isDiscontinuity()){reset();grounded=player==null||player.onGround;return;}
             if(!player.onGround) { fastestDescent=Math.min(fastestDescent,m.getVerticalVelocity()); greatestFallDistance=Math.max(greatestFallDistance,player.fallDistance); }
-            if(CombativesConfig.enablePlayerLandingCamera && CombativesConfig.enableLandingCameraFeedback && player.onGround && !grounded) {
+            if(CombativesConfig.enableLandingCameraFeedback && player.onGround && !grounded) {
                 double speed=Math.max(0,-fastestDescent);
                 double arrest=Math.max(0,m.getVerticalAcceleration());
                 double fall=Math.max(0,greatestFallDistance-1.5D);
                 float severity=clamp((speed-0.24D)*1.15D + arrest*0.55D + fall*0.035D,0,1);
                 severity=severity*severity*(3F-2F*severity);
                 if(severity>0.012F) {
-                    float strength=clamp(severity*CombativesConfig.playerLandingCameraStrength*CombativesConfig.landingFeedbackStrength,0,1);
+                    float strength=clamp(severity*CombativesConfig.landingFeedbackStrength,0,1);
                     float uneven=clamp(m.getLateralAcceleration()*0.35D,-0.22D,0.22D);
                     sink.emitImpulse(CameraImpulse.builder("combatives:player_landing")
                         .sourceEntity(player).rotation(3.6F*strength,0,uneven*strength)

@@ -18,6 +18,7 @@ import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.material.Material;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.PlayerCapabilities;
@@ -69,6 +70,10 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     private boolean combativesPoseWatcherReady;
     private int combativesLastStepHeightWarningTick = -200;
     private MovementSnapshot combativesMovementSnapshot = MovementSnapshot.EMPTY;
+    private Entity combativesLastRidingEntity;
+    private Entity combativesDismountedEntity;
+    private boolean combativesDismountHandoff;
+    private int combativesLastMountWaitLogTick = -20;
 
     public EntityPlayerMixin(World world) {
         super(world);
@@ -309,6 +314,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
 
     @Inject(method = "onUpdate", at = @At(value = "INVOKE", target = "cpw/mods/fml/common/FMLCommonHandler.onPlayerPostTick(Lnet/minecraft/entity/player/EntityPlayer;)V", shift = At.Shift.AFTER, remap = false))
     private void combatives$postPostTick(CallbackInfo ci) {
+        this.combatives$updateMountLifecycle();
         this.updatePose();
         this.combatives$warnUnexpectedStepHeight("post-player-tick");
         if (this.eyeHeight != this.previousEyeHeight) this.recalculateEyeHeight();
@@ -325,8 +331,36 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
             return;
         }
 
-        if (this.isRiding() || this.capabilities.isFlying || this.isOnLadder()) {
-            if (this.isCrawlKeyDown()) {
+        if (this.isRiding()) {
+            // A rider overlapping its mount is normal. Entity collision must not
+            // keep Combatives' prone box alive across the vanilla mount lifecycle.
+            if (this.crawlKeyDown) {
+                this.setCrawlKeyDown(false);
+            }
+            this.combatives$setSwimming(false, "mounted");
+            this.combatives$selectPose(Pose.STANDING);
+            return;
+        }
+
+        if (this.combativesDismountHandoff) {
+            if (!this.isPoseClear(Pose.STANDING)) {
+                // Preserve vanilla's full player box while vanilla or the mount
+                // resolves its exit position. Shrinking here lets a player slide
+                // into vehicle collision that a vanilla-sized rider cannot enter.
+                this.combatives$selectPose(Pose.STANDING);
+                if (this.ticksExisted - this.combativesLastMountWaitLogTick >= 20) {
+                    this.combativesLastMountWaitLogTick = this.ticksExisted;
+                    this.combatives$logMountState("dismount handoff waiting for standing clearance", this.combativesDismountedEntity);
+                }
+                return;
+            }
+            this.combativesDismountHandoff = false;
+            this.combatives$logMountState("dismount handoff complete", this.combativesDismountedEntity);
+            this.combativesDismountedEntity = null;
+        }
+
+        if (this.capabilities.isFlying || this.isOnLadder()) {
+            if (this.crawlKeyDown) {
                 this.setCrawlKeyDown(false);
             }
             this.combatives$selectPose(this.isPoseClear(Pose.STANDING) ? Pose.STANDING : this.getPose());
@@ -378,6 +412,47 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         }
 
         this.combatives$selectPose(finalPose);
+    }
+
+    private void combatives$updateMountLifecycle() {
+        Entity current = this.ridingEntity;
+        if (current == this.combativesLastRidingEntity) {
+            return;
+        }
+        if (this.combativesLastRidingEntity != null && current == null) {
+            this.combativesDismountedEntity = this.combativesLastRidingEntity;
+            this.combativesDismountHandoff = true;
+            this.combatives$logMountState("dismount detected", this.combativesDismountedEntity);
+        } else if (current != null) {
+            this.combativesDismountHandoff = false;
+            this.combativesDismountedEntity = null;
+            this.combatives$logMountState(this.combativesLastRidingEntity == null ? "mount detected" : "riding entity changed", current);
+        }
+        this.combativesLastRidingEntity = current;
+    }
+
+    private void combatives$logMountState(String event, Entity mount) {
+        if (!MovementDiagnostics.isVerboseEnabled()) {
+            return;
+        }
+        AxisAlignedBB playerBox = this.boundingBox;
+        AxisAlignedBB mountBox = mount == null ? null : mount.boundingBox;
+        int collisions = this.worldObj.getCollidingBoundingBoxes(this, this.getBoundingBox(Pose.STANDING)).size();
+        MovementDiagnostics.verbose(this.getPlayer(), event
+            + " side=" + (this.worldObj.isRemote ? "client" : "server")
+            + " tick=" + this.ticksExisted
+            + " playerId=" + this.getEntityId()
+            + " mountId=" + (mount == null ? "none" : mount.getEntityId())
+            + " mountClass=" + (mount == null ? "none" : mount.getClass().getName())
+            + " riding=" + (this.ridingEntity != null)
+            + " pose=" + this.getPose()
+            + " crawlRequest=" + this.crawlKeyDown
+            + " size=" + this.width + "x" + this.height
+            + " pos=" + this.posX + "," + this.posY + "," + this.posZ
+            + " playerAABB=" + playerBox
+            + " mountAABB=" + mountBox
+            + " standingCollisions=" + collisions
+            + " intersectsMount=" + (playerBox != null && mountBox != null && playerBox.intersectsWith(mountBox)));
     }
 
     private void combatives$selectPose(Pose pose) {

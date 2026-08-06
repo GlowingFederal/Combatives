@@ -367,3 +367,9 @@
 - Added visual-only landing camera feedback with fall-transition detection, step/jitter filtering, severity scaling, and hard-clamped translation, pitch, and roll in the existing Combatives camera transform pipeline.
 - Added visual-only explosion camera feedback from the client explosion packet path with distance falloff, low-frequency shake, strength scaling, and hard-clamped camera translation/rotation.
 - Registered the new client mixins through both the GTNHMixins early-loader list and the client mixin config so the generated `mixins.combatives.refmap.json` covers the new production targets without relying on disabled refmaps or MCP-only runtime names.
+## (618fb79 Fix generic mount dismount pose handoff)
+
+- Restored the standing player pose unconditionally while riding instead of treating expected rider/vehicle overlap as a reason to preserve Combatives' crawl-sized collision box.
+- Added a generic, state-based dismount handoff that preserves vanilla's full player dimensions until standing clearance exists, leaving exit placement and collision resolution to vanilla or the custom mount without fixed delays or mod-specific class checks.
+- Cleared stale crawl and swim requests on mount and added throttled verbose lifecycle diagnostics with side, tick, entity identity, pose, dimensions, AABBs, collision count, and intersection state.
+- Documented the MCHELI bytecode flow, the generalized root cause, vanilla lifecycle comparison, and compatibility contract for arbitrary rideable entities.

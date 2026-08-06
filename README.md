@@ -1,5 +1,27 @@
 # Combatives
 
+## Mount and dismount compatibility
+
+Combatives treats riding as a vanilla-owned lifecycle for every entity type. While a player is riding, the crawl request and swimming flag are cleared and the normal `0.6 x 1.8` player pose is restored without asking whether that box intersects the mount; overlap with a rider is expected and is not evidence that the player must crawl.
+
+After any change from a non-null `ridingEntity` to no riding entity, Combatives keeps the standing pose until the standing box is collision-free. It does not teleport the player, select an exit side, push the player, or inspect the mount's class. Vanilla or the rideable entity therefore remains responsible for exit placement and collision resolution. This state-based handoff covers direct `mountEntity(null)` calls as well as custom rideable implementations observed on the following player tick, without an entity-specific dependency or a fixed tick delay.
+
+With verbose movement diagnostics enabled, mount changes and throttled pending-dismount reports include the logical side, tick, player and mount IDs, mount class, position, pose/crawl state, dimensions, both AABBs, standing collision count, and base-box intersection state.
+
+### MCHELI investigation
+
+The attached MCHELI implementation uses ordinary `Entity.mountEntity(null)` (`func_70078_a(null)`) to break the relationship on the server and then calls its own `setUnmountPosition` using the configured seat position. Passenger seats likewise call `mountEntity(null)`. It does not override the player's pose or Combatives sizing. MCHELI exposes the bug because its large/custom vehicle collision can still overlap the chosen exit area: the former Combatives controller interpreted that expected entity overlap as failed standing clearance, retained or re-selected the `0.6`-high swimming/crawl pose, and allowed that smaller box to occupy space beneath the vehicle.
+
+Vanilla horses, pigs, boats, and minecarts use the same `ridingEntity`/`riddenByEntity` relationship and `mountEntity` lifecycle. Their smaller, conventional exit geometry made the ordering defect less visible; the compatibility guarantee is intentionally based only on the generic riding relationship, so custom seats, aircraft, rideable mobs, and future mounts receive the same behavior.
+
+### Compatibility guarantee
+
+* Combatives never chooses or alters a dismount coordinate.
+* A mounted player cannot retain a Combatives crawl/swim collision box.
+* A dismount never causes Combatives to shrink a standing player merely to fit unresolved collision.
+* Pose handling resumes only when the standing box is clear; there is no hard-coded delay and no mod-class check.
+* Mount implementations must eventually clear the player's generic `ridingEntity` reference and remain responsible for producing a valid exit position, matching the vanilla entity contract.
+
 Combatives is a Battlefield-inspired movement and camera overhaul foundation for Minecraft Forge 1.7.10.
 
 ## Aqua Acrobatics Legacy port foundation

@@ -46,5 +46,14 @@ final class EntityCameraBehaviorDiagnostics {
             provider,m.getVelocityX(),m.getVelocityY(),m.getVelocityZ(),m.getForwardVelocity(),m.getLateralVelocity(),m.getVerticalVelocity(),
             m.getAccelerationX(),m.getAccelerationY(),m.getAccelerationZ(),m.getForwardAcceleration(),m.getLateralAcceleration(),m.getVerticalAcceleration(),m.getHorizontalSpeed(),m.getYawRate(),m.isDiscontinuity());
     }
+    static void crawl(boolean detected, boolean swimFlag, boolean inWater, Object pose, float blend, float speed, float phase, float wave, float strength, boolean submitted) {
+        if (!CombativesConfig.verboseCameraDebug) return;
+        Combatives.logger.info("Crawl camera pipeline detected={} swimFlag={} inWater={} pose={} transitionWeight={} speed={} phase={} wave={} frameStrength={} sinkSubmitted={}",
+            detected,swimFlag,inWater,pose,blend,speed,phase,wave,strength,submitted);
+    }
+    static void horse(float speed,float acceleration,float stride,float amplitude,float cadence,float loading,float roll) {
+        if (!CombativesConfig.verboseCameraDebug) return;
+        Combatives.logger.info("Horse camera pipeline speed={} acceleration={} stridePhase={} amplitude={} cadence={} loading={} roll={}",speed,acceleration,stride,amplitude,cadence,loading,roll);
+    }
     private static String mount(Entity entity){if(entity==null)return "none";String id=EntityList.getEntityString(entity);return (id==null?entity.getClass().getName():id)+"#"+entity.getEntityId();}
 }

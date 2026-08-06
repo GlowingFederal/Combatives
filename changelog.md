@@ -1,3 +1,11 @@
+## (f43b036 Fix crawl activation and horse stride feel)
+
+- Fixed the invisible crawl camera root cause: `isActuallySwimming()` describes every prone swimming-pose animation in this port, including land crawling, so using it as a water-state exclusion made the crawl predicate impossible. Detection now follows the authoritative movement distinction of `Pose.SWIMMING`, no swim flag, and no water.
+- Added an end-to-end verbose crawl trace covering pose detection, transition weight, motion phase, generated strength, sink acceptance, provider lifecycle/execution, shared accumulation, and final rendering.
+- Made crawl cycles stop with horizontal movement while retaining the posture transition, and preserved monotonic enter/exit cleanup and shared pull-impulse composition.
+- Replaced the horse's independent perfect oscillator with render-interpolated horse limb swing, asymmetric heavier loading, a subtle second harmonic, nonlinear speed weight, and filtered acceleration/deceleration inertia. Cadence and amplitude remain continuous with no discrete gait switches.
+- Retained cached frame intents, event-only impulse allocation, generic mount registration, terrain/landing impulses, stable two-degree turning roll, and the existing sink, accumulator, saturation, clamps, controller, and render transform.
+
 ## (6d80182 Add immersive horse riding and crawling camera effects)
 
 - Added an assignable horse entity camera provider with smoothly filtered idle/walk/trot/gallop motion, restrained vertical/pitch/fore-aft oscillation, damped two-degree turning roll, subtle terrain compression, and energy-scaled landing impulses.

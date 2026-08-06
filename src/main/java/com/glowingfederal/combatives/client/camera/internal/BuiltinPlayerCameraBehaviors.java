@@ -45,17 +45,36 @@ public final class BuiltinPlayerCameraBehaviors {
         private static final CameraImpulse CYCLE_NEG=CameraImpulse.builder("combatives:crawl_cycle_neg").rotation(-0.34F,0,0).translation(0,-0.014F,0.018F).duration(0.1F).priority(CameraPriority.BACKGROUND).build();
         private static final CameraImpulse POSTURE=CameraImpulse.builder("combatives:crawl_posture").rotation(0.65F,0,0).translation(0,-0.035F,-0.012F).duration(0.1F).priority(CameraPriority.BACKGROUND).build();
         private static final CameraImpulse PULL=CameraImpulse.builder("combatives:crawl_pull").translation(0,-0.012F,-0.018F).duration(0.16F).attackTime(0.035F).priority(CameraPriority.BACKGROUND).build();
-        private float blend,phase; private int cycle;
-        void reset(){blend=phase=0;cycle=0;}
+        private float blend,phase,motionWeight; private int cycle;
+        void reset(){blend=phase=motionWeight=0;cycle=0;}
         public void onTick(MountCameraContext c,CameraEffectSink sink){
             EntityPlayerSP p=player(c);EntityMotionSample m=c.getMotion();if(p==null||m.isDiscontinuity()){reset();return;}
-            boolean crawling=false;if(p instanceof ICombativesPlayerPose){ICombativesPlayerPose pose=(ICombativesPlayerPose)p;crawling=!pose.isSwimming()&&!pose.isActuallySwimming()&&pose.getPose()==Pose.SWIMMING;}
+            boolean crawling=false;
+            ICombativesPlayerPose pose=null;
+            if(p instanceof ICombativesPlayerPose){
+                pose=(ICombativesPlayerPose)p;
+                // isActuallySwimming() means "uses the prone pose" in this port and is true for
+                // land crawling too.  The authoritative swim flag plus water state distinguish it.
+                crawling=pose.getPose()==Pose.SWIMMING&&!pose.isSwimming()&&!p.isInWater();
+            }
             float ticks=Math.max(3F,CombativesConfig.crawlTransitionMillis/50F),target=crawling&&CombativesConfig.enableCrawlCamera?1F:0F;
             blend=approach(blend,target,1F/ticks);
-            float speed=clamp(m.getHorizontalSpeed()/0.16D,0,1);phase+=(0.09F+0.34F*speed)*blend;
-            int now=(int)(phase/(float)Math.PI);if(now!=cycle&&blend>0.8F&&speed>0.12F){sink.emitImpulse(PULL);cycle=now;}
+            float speed=clamp(m.getHorizontalSpeed()/0.16D,0,1);
+            motionWeight+=(speed-motionWeight)*(speed>motionWeight?0.32F:0.22F);
+            phase+=0.43F*motionWeight*blend;
+            int now=(int)(phase/(float)Math.PI);
+            if(now!=cycle&&blend>0.8F&&motionWeight>0.12F){sink.emitImpulse(PULL);cycle=now;}
+            EntityCameraBehaviorDiagnostics.crawl(crawling,pose!=null&&pose.isSwimming(),p.isInWater(),pose==null?"unavailable":pose.getPose(),blend,motionWeight,phase,0,0,false);
         }
-        public void onRender(MountCameraContext c,CameraEffectSink sink){if(blend<=0.001F)return;float amp=clamp(blend*CombativesConfig.crawlCameraAmplitude,0,1);sink.emitFrame(POSTURE,amp);float wave=(float)Math.sin(phase+c.getPartialTicks()*0.2F);sink.emitFrame(wave>=0?CYCLE_POS:CYCLE_NEG,Math.abs(wave)*amp);}
+        public void onRender(MountCameraContext c,CameraEffectSink sink){
+            if(blend<=0.001F)return;
+            float amp=clamp(blend*CombativesConfig.crawlCameraAmplitude,0,1);
+            boolean postureAccepted=sink.emitFrame(POSTURE,amp);
+            float wave=(float)Math.sin(phase+c.getPartialTicks()*0.43F*motionWeight);
+            float cycleStrength=Math.abs(wave)*amp*motionWeight;
+            boolean cycleAccepted=cycleStrength>0.001F&&sink.emitFrame(wave>=0?CYCLE_POS:CYCLE_NEG,cycleStrength);
+            EntityCameraBehaviorDiagnostics.crawl(true,false,false,Pose.SWIMMING,blend,motionWeight,phase,wave,cycleStrength,postureAccepted||cycleAccepted);
+        }
         private static float approach(float v,float target,float step){return v<target?Math.min(target,v+step):Math.max(target,v-step);}
     }
 

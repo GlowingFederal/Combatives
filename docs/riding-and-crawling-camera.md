@@ -4,7 +4,7 @@ Both features are entity camera behaviors, not standalone animations. `EntityCam
 
 ## Horse
 
-The built-in registration matches `EntityHorse` assignably. A continuous normalized speed curve drives smoothly filtered amplitude and frequency: idle is nearly still, walk is gentle, trot reaches the quickest cadence, and gallop grows larger while its cadence eases. A phase oscillator emits vertical, pitch, and fore/aft frames without yaw. Sampled turn rate is low-pass filtered and emitted as roll only, with a two-degree template limit. Supported vertical acceleration may emit a tiny terrain impulse; an air-to-ground transition derives energy from preserved descent and fall distance and submits a shared landing-style compression impulse.
+The built-in registration matches `EntityHorse` assignably. A continuous normalized speed curve drives smoothly filtered weight and cadence: idle is nearly still, walking is gentle, and faster strides become progressively heavier without gait thresholds. Render-interpolated limb swing drives asymmetric vertical, pitch, and fore/aft loading without yaw; acceleration and deceleration add restrained head inertia. Sampled turn rate is low-pass filtered and emitted as roll only, with a two-degree template limit. Supported vertical acceleration may emit a tiny terrain impulse; an air-to-ground transition derives energy from preserved descent and fall distance and submits a shared landing-style compression impulse.
 
 ## Crawl
 
@@ -13,3 +13,9 @@ The player pose provider distinguishes crawling from swimming. Enter and exit mo
 ## Lifecycle and performance
 
 Attach, detach, disabled state, and motion discontinuities reset all cached values. Thus mounting, dismounting, teleporting, dimension/player changes, death/respawn camera reset, and camera disabling cannot retain stale contributions. Fixed render-frame intents are cached statically; only infrequent terrain, landing, and crawl-cycle impulses enter the allocating impulse path. All final damping, stacking, nonlinear saturation, and hard clamps remain centralized.
+
+## Diagnostic trace
+
+With `verboseCameraDebug`, a crawl trace now reports the authoritative pose, swim flag, water state, transition weight, speed envelope, phase, generated wave/strength, and whether the frame sink accepted output. Existing provider matching/lifecycle/execution logs establish registration and sampling; sink logs establish submission; `CameraEffectManager` active/final-output logs establish accumulation; and `CameraController`'s final-transform log establishes rendering. This end-to-end trace found that crawl detection incorrectly rejected `isActuallySwimming()`, although that method deliberately returns true for every prone `SWIMMING` pose, including land crawling. Crawl detection now follows the movement system's authoritative distinction: prone pose, no swim flag, and not in water.
+
+Horse stride output uses the mount's render-interpolated `limbSwing` and `limbSwingAmount` when available instead of advancing an unrelated perfect oscillator. Speed continuously shapes cadence and quadratically shapes weight, forward acceleration adds restrained head inertia, and an asymmetric loading curve plus second harmonic makes compression deeper than recovery. There are still no named gait switches or speed thresholds between gait states.

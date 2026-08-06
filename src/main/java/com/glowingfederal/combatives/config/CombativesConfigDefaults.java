@@ -25,7 +25,7 @@ public final class CombativesConfigDefaults {
     public static final double HORSE_TERRAIN_IMPULSE = 1.0D;
     public static final double HORSE_LANDING = 1.0D;
     public static final double HORSE_TURNING_ROLL = 1.0D;
-    public static final boolean ENABLE_CRAWL_CAMERA = true;
+    public static final boolean ENABLE_CRAWL_CAMERA = false;
     public static final double CRAWL_CAMERA_AMPLITUDE = 1.0D;
     public static final int CRAWL_TRANSITION_MILLIS = 200;
     public static final boolean DEBUG = false;

@@ -1,4 +1,12 @@
 # Changelog
+## (ba694be Restore impactful impulse-driven landings)
+
+- Separated landing impact detection from presentation by capturing the final unsupported downward velocity, vertical momentum loss, peak descent, and accumulated fall distance at the support transition.
+- Added a continuous impact-energy response that keeps small jumps soft, gives running jumps slightly more weight, and progressively strengthens compression, pitch, displacement, and recovery for taller falls.
+- Deepened and slightly lengthened the landing load phase, then switched recovery to a monotonic over-damped response for one clean rebound without camera shake or repeated oscillation.
+- Preserved the existing takeoff-only inertia filtering so stronger landings do not reintroduce sprint-jump jitter, ascent spikes, or horizontal acceleration noise.
+- Updated the entity camera behavior documentation to describe raw impulse capture and its isolation from presentation and takeoff filtering.
+
 ## (02d182a Combatives Camera Motion Polish Pass)
 
 - Removed sprint-jump camera jitter at its source by preserving grounded inertia across takeoff and slew-limiting only the short ballistic transition instead of reacting to position-derived acceleration spikes.

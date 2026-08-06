@@ -20,6 +20,14 @@ public final class CombativesConfigDefaults {
     public static final double PLAYER_COLLISION_CAMERA_STRENGTH = 1.0D;
     public static final boolean ENABLE_EXPLOSION_CAMERA_FEEDBACK = true;
     public static final double EXPLOSION_FEEDBACK_STRENGTH = 1.0D;
+    public static final boolean ENABLE_HORSE_CAMERA = true;
+    public static final double HORSE_CAMERA_AMPLITUDE = 1.0D;
+    public static final double HORSE_TERRAIN_IMPULSE = 1.0D;
+    public static final double HORSE_LANDING = 1.0D;
+    public static final double HORSE_TURNING_ROLL = 1.0D;
+    public static final boolean ENABLE_CRAWL_CAMERA = true;
+    public static final double CRAWL_CAMERA_AMPLITUDE = 1.0D;
+    public static final int CRAWL_TRANSITION_MILLIS = 200;
     public static final boolean DEBUG = false;
     public static final boolean VERBOSE_DEBUG = false;
 

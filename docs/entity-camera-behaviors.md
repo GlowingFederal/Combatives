@@ -100,3 +100,7 @@ Horse gait/rocking, boats, vehicle inertia/impacts/suspension, aircraft/engine/r
 ## Compatibility guarantee
 
 The built-in providers apply only to the local unmounted player. Explosion effects, movement lean, procedural bob, public Camera API submissions, continuous effects, mounted-entity compatibility, and the render pipeline retain their existing paths. On mounting, the player providers detach and the same generic manager immediately samples and matches the mount for future integrations.
+
+## Built-in rideable example
+
+The horse camera is an example of the intended mount extension model: one assignable-class registry entry creates fresh lifecycle-owned state, reads generic motion samples, and emits frame/impulse intent into the common sink. Supporting another rideable should add a matcher/provider registration rather than an `EntityHorse` branch in the controller, sampler, accumulator, or renderer. Providers must reset cached phase/filter/support state on discontinuity and detach, and should cache fixed `CameraImpulse` templates so render updates do not allocate.

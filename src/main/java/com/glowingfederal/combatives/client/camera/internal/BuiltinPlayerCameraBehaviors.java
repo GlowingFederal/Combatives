@@ -49,49 +49,59 @@ public final class BuiltinPlayerCameraBehaviors {
     private static final class Landing extends Base {
         private boolean grounded = true;
         private double fastestDescent; private float greatestFallDistance;
-        private float compression, compressionVelocity, compressionTarget, rollBias;
+        private float compression, compressionVelocity, compressionTarget, rollBias, impactEnergy, presentationStrength;
         private int compressionHold;
-        void reset() { grounded = true; fastestDescent = 0; greatestFallDistance = 0; compression=compressionVelocity=compressionTarget=rollBias=0;compressionHold=0; }
+        void reset() { grounded = true; fastestDescent = 0; greatestFallDistance = 0; compression=compressionVelocity=compressionTarget=rollBias=impactEnergy=presentationStrength=0;compressionHold=0; }
         public void onTick(MountCameraContext c, CameraEffectSink sink) {
             EntityPlayerSP player=player(c); EntityMotionSample m=c.getMotion();
             if(player==null || m.isDiscontinuity()){reset();grounded=player==null||player.onGround;return;}
             if(!player.onGround) { fastestDescent=Math.min(fastestDescent,m.getVerticalVelocity()); greatestFallDistance=Math.max(greatestFallDistance,player.fallDistance); }
             if(CombativesConfig.enableLandingCameraFeedback && player.onGround && !grounded) {
-                double speed=Math.max(0,-fastestDescent);
-                double arrest=Math.max(0,m.getVerticalAcceleration());
-                double fall=Math.max(0,greatestFallDistance-1.5D);
-                float severity=clamp((speed-0.24D)*1.15D + arrest*0.55D + fall*0.035D,0,1);
-                severity=severity*severity*(3F-2F*severity);
-                if(severity>0.012F) {
-                    float strength=clamp(severity*CombativesConfig.landingFeedbackStrength,0,1);
-                    // Impact and recovery are intentionally separate.  A finite triangular impulse used
-                    // to begin recovering on the very next sample, which read as an upward slap.
-                    compressionTarget=Math.max(compressionTarget,strength);
-                    compressionHold=2;
+                // Preserve the last unsupported sample before presentation filtering can erase it.
+                // previousVelocityY is especially important on the support tick, where sampled motionY
+                // has commonly already become zero.
+                double preImpactVelocity=Math.min(fastestDescent,m.getPreviousVelocityY());
+                double impactSpeed=Math.max(0,-preImpactVelocity);
+                double momentumLoss=Math.max(0,m.getVerticalVelocity()-preImpactVelocity);
+                double fall=Math.max(0,greatestFallDistance);
+                double speedEnergy=clamp((impactSpeed-0.12D)/0.82D,0,1);
+                double impulseEnergy=clamp(momentumLoss/0.82D,0,1);
+                double distanceEnergy=1D-Math.exp(-Math.max(0,fall-1D)/7D);
+                double runningWeight=clamp((m.getHorizontalSpeed()-0.12D)/0.34D,0,1)*0.08D;
+                impactEnergy=clamp(speedEnergy*0.55D+impulseEnergy*0.27D+distanceEnergy*0.18D+runningWeight,0,1);
+                if(impactEnergy>0.01F) {
+                    // Raw impact energy is captured above; only this presentation value is shaped.
+                    presentationStrength=clamp(Math.pow(impactEnergy,1.22D)*CombativesConfig.landingFeedbackStrength,0,1);
+                    compressionTarget=Math.max(compressionTarget,presentationStrength);
+                    compressionHold=2+(int)(presentationStrength*2.5F);
                     rollBias=clamp(m.getLateralAcceleration()*0.28D,-0.18D,0.18D);
-                    EntityCameraBehaviorDiagnostics.motionEvent("landing", "phase=impact severity="+severity+" speed="+speed+" arrest="+arrest+" fallDistance="+fall+" target="+compressionTarget);
+                    EntityCameraBehaviorDiagnostics.motionEvent("landing", "phase=impact energy="+impactEnergy+" presentation="+presentationStrength+" preImpactVelocity="+preImpactVelocity+" momentumLoss="+momentumLoss+" fallDistance="+fall+" target="+compressionTarget);
                 }
                 fastestDescent=0; greatestFallDistance=0;
             }
             if(compressionHold>0) {
                 compressionHold--;
-                compression+=(compressionTarget-compression)*0.58F;
-                compressionVelocity=0;
+                // Drive into the compression rather than snapping to it, then briefly load there.
+                compressionVelocity+=(compressionTarget-compression)*0.46F;
+                compressionVelocity*=0.42F;
+                compression+=compressionVelocity;
             } else {
                 compressionTarget=0;
-                // Critically damped recovery permits only a tiny, slow overshoot and no bounce train.
-                compressionVelocity+=(-0.22F*compression-0.78F*compressionVelocity);
+                // Severity lengthens an over-damped, monotonic recovery without adding a bounce train.
+                float recovery=0.13F-0.035F*presentationStrength;
+                compressionVelocity+=(-recovery*compression-0.72F*compressionVelocity);
                 compression+=compressionVelocity;
+                if(compression<0)compression=compressionVelocity=0;
                 if(Math.abs(compression)<0.0005F&&Math.abs(compressionVelocity)<0.0005F)compression=compressionVelocity=0;
             }
-            compression=clamp(compression,-0.045D,1D);
+            compression=clamp(compression,0D,1D);
             grounded=player.onGround;
             EntityCameraBehaviorDiagnostics.landing(compressionHold>0?"compression":"recovery",compression,compressionTarget,compressionVelocity,rollBias);
             EntityCameraBehaviorDiagnostics.motionSample("landing",m);
         }
         public void onRender(MountCameraContext c,CameraEffectSink sink){
             if(Math.abs(compression)>0.001F&&CombativesConfig.enableLandingCameraFeedback)sink.emitFrame(CameraImpulse.builder("combatives:player_landing")
-                .rotation(3.1F,0,rollBias).translation(0,-0.115F,-0.014F).duration(0.1F)
+                .rotation(5.2F,0,rollBias*1.35F).translation(0,-0.17F,-0.024F).duration(0.1F)
                 .priority(CameraPriority.NORMAL).build(),clamp(compression,0,1));
         }
     }

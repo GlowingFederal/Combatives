@@ -31,3 +31,42 @@ Advanced integrations may submit `CameraImpulse` descriptions. Every custom impu
 ## Networking helpers
 
 `CameraNetworkAPI` is present as a dedicated server-safe facade for future server-originated camera-effect packets. API version 1 keeps packet payloads as effect descriptions and does not expose client renderer classes.
+
+## Entity camera behavior framework
+
+Entity-driven camera intent is registered through `EntityCameraBehaviorRegistry`. Registrations pair an extensible `EntityMatcher` with a factory; every matching registration is activated, and the factory creates a separate stateful `EntityCameraBehavior` for each mount lifecycle. Built-in matchers cover exact classes, assignable classes, entity registry identifiers, and arbitrary matcher predicates. Registration objects can be retained and unregistered at runtime.
+
+Providers receive immutable `MountCameraContext` values in `onAttach`, once-per-client-tick `onTick`, per-camera-update `onRender`, and `onDetach`. The context contains only the rider, current/previous mount, transition, client tick, partial ticks, and a generic `EntityMotionSample`. A provider must keep its interpretation state in its own instance and must not change player rotation or issue render calls.
+
+`EntityMotionSampler` observes any `Entity` independently of `MovementSnapshot`. Its sample exposes render-interpolated position/orientation, current and previous velocity and acceleration, angular velocity, tick timestamp, and discontinuity status. A first sample, skipped tick, entity replacement, or movement over the teleport threshold is a discontinuity and resets derivatives.
+
+Providers send intent only through `CameraEffectSink`:
+
+* `contribute` adds a frame contribution;
+* `submitImpulse` enters the existing impulse lifecycle;
+* `startContinuous` enters the existing continuous-effect lifecycle.
+
+The client sink delegates to `CameraEffectManager`, which still validates channels, applies positional falloff and priority, accumulates effects, and performs saturation clamps. `CameraController` still owns the final camera state and render mixins remain the only render integration. An empty registry therefore produces exactly the previous visual output.
+
+### Integration sketch
+
+```java
+EntityBehaviorRegistration registration = EntityCameraBehaviorRegistry.register(
+    "example:rideable_camera",
+    EntityMatchers.registryId("ExampleRideable"),
+    new EntityCameraBehaviorFactory() {
+        public EntityCameraBehavior create() {
+            return new ExampleRideableBehavior();
+        }
+    });
+```
+
+The external mod supplies the provider and may use a custom `EntityMatcher` when class or registry matching is insufficient. Multiple mods and multiple registrations may match the same mount; their contributions compose in registration order through the manager. Providers should stop any continuous handles they own during `onDetach`. No optional-mod class needs to be referenced by Combatives.
+
+### Extension points
+
+* `EntityMatcher` for arbitrary selection policies.
+* `EntityCameraBehaviorFactory` for fresh per-mount provider state.
+* `EntityCameraBehavior` lifecycle callbacks for interpretation.
+* `CameraEffectSink` for frame, impulse, and continuous intent.
+* `EntityMotionSampler` and immutable samples for reusable physical observation.

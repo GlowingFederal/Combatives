@@ -390,3 +390,10 @@
 - Added independent arbitrary-entity motion sampling with derivative history, angular velocity, discontinuity detection, timestamps, and render interpolation.
 - Added a provider-facing camera effect sink that routes frame contributions, impulses, and continuous effects through the existing `CameraEffectManager` validation, accumulation, saturation, controller, and render pipeline.
 - Documented architecture ownership, external-mod integration, lifecycle expectations, and new extension points without registering or implementing any entity-specific effects.
+
+## (8ce1377 Implement generic player motion camera behaviors)
+
+- Registered generic local-player landing, freefall, inertia, and collision providers as the first built-in Entity Camera Behavior Framework consumers.
+- Routed all four behaviors through one shared `EntityMotionSample` and `CameraEffectSink`, with conservative finite impulses or render-frame contributions that retain existing composition and clamps.
+- Replaced player-only landing interpretation with sampled landing velocity, vertical acceleration, and secondary fall-severity scaling; added sustained-fall filtering, acceleration/turn inertia, and meaningful momentum-loss impact detection.
+- Added enable switches, strength controls, guarded event/contribution/motion diagnostics, and expanded entity camera behavior architecture documentation.

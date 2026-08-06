@@ -2,6 +2,7 @@ package com.glowingfederal.combatives.client.camera.internal;
 
 import com.combatives.api.camera.CameraImpulse;
 import com.combatives.api.camera.entity.EntityBehaviorRegistration;
+import com.combatives.api.camera.entity.EntityMotionSample;
 import com.glowingfederal.combatives.Combatives;
 import com.glowingfederal.combatives.config.CombativesConfig;
 import net.minecraft.entity.Entity;
@@ -26,6 +27,20 @@ final class EntityCameraBehaviorDiagnostics {
     static void effect(EntityBehaviorRegistration r,String kind,CameraImpulse effect,boolean accepted) {
         if (!CombativesConfig.verboseCameraDebug) return;
         Combatives.logger.info("Entity camera provider emitted id={} owner={} kind={} effect={} accepted={}",r.getId(),r.getMetadata().getOwningMod(),kind,effect==null?"null":effect.getEffectId(),accepted);
+    }
+    static void motionEvent(String provider,String values) {
+        if (!CombativesConfig.debugCamera) return;
+        Combatives.logger.info("Player motion camera event provider={} {}",provider,values);
+    }
+    static void inertia(double forward,double lateral,double turn,float contribution) {
+        if (!CombativesConfig.verboseCameraDebug || contribution <= 0.008F) return;
+        Combatives.logger.info("Player inertia contribution={} forwardAcceleration={} lateralAcceleration={} turnLag={}",contribution,forward,lateral,turn);
+    }
+    static void motionSample(String provider,EntityMotionSample m) {
+        if (!CombativesConfig.verboseCameraDebug) return;
+        Combatives.logger.info("Player motion sample provider={} velocity=({},{},{}) local=({},{},{}) acceleration=({},{},{}) localAcceleration=({},{},{}) horizontalSpeed={} yawRate={} discontinuity={}",
+            provider,m.getVelocityX(),m.getVelocityY(),m.getVelocityZ(),m.getForwardVelocity(),m.getLateralVelocity(),m.getVerticalVelocity(),
+            m.getAccelerationX(),m.getAccelerationY(),m.getAccelerationZ(),m.getForwardAcceleration(),m.getLateralAcceleration(),m.getVerticalAcceleration(),m.getHorizontalSpeed(),m.getYawRate(),m.isDiscontinuity());
     }
     private static String mount(Entity entity){if(entity==null)return "none";String id=EntityList.getEntityString(entity);return (id==null?entity.getClass().getName():id)+"#"+entity.getEntityId();}
 }

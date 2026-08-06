@@ -21,6 +21,14 @@ public final class CombativesConfig {
     public static int maxMouseDelta = CombativesConfigDefaults.MAX_MOUSE_DELTA;
     public static boolean enableLandingCameraFeedback = CombativesConfigDefaults.ENABLE_LANDING_CAMERA_FEEDBACK;
     public static double landingFeedbackStrength = CombativesConfigDefaults.LANDING_FEEDBACK_STRENGTH;
+    public static boolean enablePlayerLandingCamera = CombativesConfigDefaults.ENABLE_PLAYER_LANDING_CAMERA;
+    public static double playerLandingCameraStrength = CombativesConfigDefaults.PLAYER_LANDING_CAMERA_STRENGTH;
+    public static boolean enablePlayerFreefallCamera = CombativesConfigDefaults.ENABLE_PLAYER_FREEFALL_CAMERA;
+    public static double playerFreefallCameraStrength = CombativesConfigDefaults.PLAYER_FREEFALL_CAMERA_STRENGTH;
+    public static boolean enablePlayerInertiaCamera = CombativesConfigDefaults.ENABLE_PLAYER_INERTIA_CAMERA;
+    public static double playerInertiaCameraStrength = CombativesConfigDefaults.PLAYER_INERTIA_CAMERA_STRENGTH;
+    public static boolean enablePlayerCollisionCamera = CombativesConfigDefaults.ENABLE_PLAYER_COLLISION_CAMERA;
+    public static double playerCollisionCameraStrength = CombativesConfigDefaults.PLAYER_COLLISION_CAMERA_STRENGTH;
     public static boolean enableExplosionCameraFeedback = CombativesConfigDefaults.ENABLE_EXPLOSION_CAMERA_FEEDBACK;
     public static double explosionFeedbackStrength = CombativesConfigDefaults.EXPLOSION_FEEDBACK_STRENGTH;
     public static boolean debugMovement = CombativesConfigDefaults.DEBUG;
@@ -43,6 +51,14 @@ public final class CombativesConfig {
         maxMouseDelta = CombativesConfigDefaults.MAX_MOUSE_DELTA;
         enableLandingCameraFeedback = CombativesConfigDefaults.ENABLE_LANDING_CAMERA_FEEDBACK;
         landingFeedbackStrength = CombativesConfigDefaults.LANDING_FEEDBACK_STRENGTH;
+        enablePlayerLandingCamera = CombativesConfigDefaults.ENABLE_PLAYER_LANDING_CAMERA;
+        playerLandingCameraStrength = CombativesConfigDefaults.PLAYER_LANDING_CAMERA_STRENGTH;
+        enablePlayerFreefallCamera = CombativesConfigDefaults.ENABLE_PLAYER_FREEFALL_CAMERA;
+        playerFreefallCameraStrength = CombativesConfigDefaults.PLAYER_FREEFALL_CAMERA_STRENGTH;
+        enablePlayerInertiaCamera = CombativesConfigDefaults.ENABLE_PLAYER_INERTIA_CAMERA;
+        playerInertiaCameraStrength = CombativesConfigDefaults.PLAYER_INERTIA_CAMERA_STRENGTH;
+        enablePlayerCollisionCamera = CombativesConfigDefaults.ENABLE_PLAYER_COLLISION_CAMERA;
+        playerCollisionCameraStrength = CombativesConfigDefaults.PLAYER_COLLISION_CAMERA_STRENGTH;
         enableExplosionCameraFeedback = CombativesConfigDefaults.ENABLE_EXPLOSION_CAMERA_FEEDBACK;
         explosionFeedbackStrength = CombativesConfigDefaults.EXPLOSION_FEEDBACK_STRENGTH;
     }
@@ -88,6 +104,14 @@ public final class CombativesConfig {
         maxMouseDelta = config.getInt("maxMouseDelta", CATEGORY_CAMERA, maxMouseDelta, 1, 10000, "Maximum absolute raw mouse delta accepted from LWJGL per mouseXYChange call.");
         enableLandingCameraFeedback = config.getBoolean("enableLandingCameraFeedback", CATEGORY_CAMERA, enableLandingCameraFeedback, "Enable visual-only landing camera dip and recovery impulses.");
         landingFeedbackStrength = config.getFloat("landingFeedbackStrength", CATEGORY_CAMERA, (float) landingFeedbackStrength, 0.0F, 4.0F, "Multiplier for visual-only landing camera feedback strength.");
+        enablePlayerLandingCamera = config.getBoolean("enablePlayerLandingCamera", CATEGORY_CAMERA, enablePlayerLandingCamera, "Enable motion-sampled player landing camera feedback.");
+        playerLandingCameraStrength = config.getFloat("playerLandingCameraStrength", CATEGORY_CAMERA, (float)playerLandingCameraStrength, 0F, 4F, "Strength of motion-sampled player landing feedback.");
+        enablePlayerFreefallCamera = config.getBoolean("enablePlayerFreefallCamera", CATEGORY_CAMERA, enablePlayerFreefallCamera, "Enable subtle sustained player freefall anticipation.");
+        playerFreefallCameraStrength = config.getFloat("playerFreefallCameraStrength", CATEGORY_CAMERA, (float)playerFreefallCameraStrength, 0F, 4F, "Strength of player freefall feedback.");
+        enablePlayerInertiaCamera = config.getBoolean("enablePlayerInertiaCamera", CATEGORY_CAMERA, enablePlayerInertiaCamera, "Enable conservative motion-sampled player inertia.");
+        playerInertiaCameraStrength = config.getFloat("playerInertiaCameraStrength", CATEGORY_CAMERA, (float)playerInertiaCameraStrength, 0F, 4F, "Strength of player inertia feedback.");
+        enablePlayerCollisionCamera = config.getBoolean("enablePlayerCollisionCamera", CATEGORY_CAMERA, enablePlayerCollisionCamera, "Enable meaningful player momentum-loss impacts.");
+        playerCollisionCameraStrength = config.getFloat("playerCollisionCameraStrength", CATEGORY_CAMERA, (float)playerCollisionCameraStrength, 0F, 4F, "Strength of player collision feedback.");
         enableExplosionCameraFeedback = config.getBoolean("enableExplosionCameraFeedback", CATEGORY_CAMERA, enableExplosionCameraFeedback, "Enable visual-only low-frequency explosion camera feedback near client explosions.");
         explosionFeedbackStrength = config.getFloat("explosionFeedbackStrength", CATEGORY_CAMERA, (float) explosionFeedbackStrength, 0.0F, 4.0F, "Multiplier for visual-only explosion camera feedback strength.");
         debugMovement = config.getBoolean(
@@ -132,6 +156,7 @@ public final class CombativesConfig {
         logger.info("Combatives config: maxMouseDelta={}", maxMouseDelta);
         logger.info("Combatives config: enableLandingCameraFeedback={}", enableLandingCameraFeedback);
         logger.info("Combatives config: landingFeedbackStrength={}", landingFeedbackStrength);
+        logger.info("Combatives config: player motion camera landing={}/{}, freefall={}/{}, inertia={}/{}, collision={}/{}", enablePlayerLandingCamera, playerLandingCameraStrength, enablePlayerFreefallCamera, playerFreefallCameraStrength, enablePlayerInertiaCamera, playerInertiaCameraStrength, enablePlayerCollisionCamera, playerCollisionCameraStrength);
         logger.info("Combatives config: enableExplosionCameraFeedback={}", enableExplosionCameraFeedback);
         logger.info("Combatives config: explosionFeedbackStrength={}", explosionFeedbackStrength);
         logger.info("Combatives config: debugMovement={}", debugMovement);

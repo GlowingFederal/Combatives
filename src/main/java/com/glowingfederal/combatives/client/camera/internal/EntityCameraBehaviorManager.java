@@ -21,7 +21,9 @@ public final class EntityCameraBehaviorManager {
     private EntityCameraBehaviorManager() {}
 
     public void update(EntityPlayerSP rider, float partialTicks) {
-        Entity current=rider==null?null:rider.ridingEntity; long tick=rider==null?0:rider.ticksExisted; Entity previous=mount;
+        // The observed camera entity is the local player while unmounted and the mount while
+        // mounted. This keeps the sampler/provider path generic without running two samplers.
+        Entity current=rider==null?null:(rider.ridingEntity==null?rider:rider.ridingEntity); long tick=rider==null?0:rider.ticksExisted; Entity previous=mount;
         MountTransition transition=transition(previous,current);
         if(current!=mount){previousMount=previous;MountCameraContext detach=context(rider,previous,previous,null,transition,tick,partialTicks);detachAll(detach);sampler.reset();mount=current;lastTick=Long.MIN_VALUE;environment=current==null?null:environment(rider);}
         if(mount==null)return;

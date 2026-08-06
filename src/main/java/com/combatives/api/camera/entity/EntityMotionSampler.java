@@ -30,7 +30,12 @@ public final class EntityMotionSampler {
         double rx=entity.prevPosX+(entity.posX-entity.prevPosX)*p, ry=entity.prevPosY+(entity.posY-entity.prevPosY)*p, rz=entity.prevPosZ+(entity.posZ-entity.prevPosZ)*p;
         float ryaw=entity.prevRotationYaw+MathHelper.wrapAngleTo180_float(entity.rotationYaw-entity.prevRotationYaw)*p;
         float rpitch=entity.prevRotationPitch+(entity.rotationPitch-entity.prevRotationPitch)*p;
-        return new EntityMotionSample(tick,rx,ry,rz,vx,vy,vz,previousVx,previousVy,previousVz,ax,ay,az,previousAx,previousAy,previousAz,ryaw,rpitch,angularYaw,angularPitch,discontinuity);
+        double radians=Math.toRadians(ryaw), sin=Math.sin(radians), cos=Math.cos(radians);
+        double forward=-sin*vx+cos*vz, lateral=cos*vx+sin*vz;
+        double forwardAcceleration=-sin*ax+cos*az, lateralAcceleration=cos*ax+sin*az;
+        return new EntityMotionSample(tick,rx,ry,rz,vx,vy,vz,previousVx,previousVy,previousVz,ax,ay,az,previousAx,previousAy,previousAz,
+            ryaw,rpitch,angularYaw,angularPitch,discontinuity,forward,lateral,vy,forwardAcceleration,lateralAcceleration,ay,
+            Math.sqrt(vx*vx+vz*vz),Math.sqrt(vx*vx+vy*vy+vz*vz));
     }
     public void reset() { entity=null; tick=Long.MIN_VALUE; discontinuity=true; }
 }

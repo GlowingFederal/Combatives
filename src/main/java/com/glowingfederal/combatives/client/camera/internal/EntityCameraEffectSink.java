@@ -9,7 +9,10 @@ import com.combatives.api.camera.entity.CameraEffectSink;
 public final class EntityCameraEffectSink implements CameraEffectSink {
     public static final EntityCameraEffectSink INSTANCE = new EntityCameraEffectSink();
     private EntityCameraEffectSink() {}
-    public boolean contribute(CameraImpulse contribution, float strength) { return CameraEffectManager.submitFrameContribution(contribution, strength); }
-    public boolean submitImpulse(CameraImpulse impulse) { return CameraEffectManager.submitImpulse(impulse); }
-    public CameraEffectHandle startContinuous(ContinuousCameraEffect effect) { return CameraEffectManager.startContinuousEffect(effect); }
+    public boolean emitFrame(CameraImpulse intent, float strength) { return CameraEffectManager.submitFrameContribution(intent, strength); }
+    public boolean emitImpulse(CameraImpulse intent) { return CameraEffectManager.submitImpulse(intent); }
+    public CameraEffectHandle beginContinuous(ContinuousCameraEffect intent) { return CameraEffectManager.startContinuousEffect(intent); }
+    public boolean contribute(CameraImpulse contribution, float strength) { return emitFrame(contribution, strength); }
+    public boolean submitImpulse(CameraImpulse impulse) { return emitImpulse(impulse); }
+    public CameraEffectHandle startContinuous(ContinuousCameraEffect effect) { return beginContinuous(effect); }
 }

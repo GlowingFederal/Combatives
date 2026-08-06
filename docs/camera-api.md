@@ -34,17 +34,17 @@ Advanced integrations may submit `CameraImpulse` descriptions. Every custom impu
 
 ## Entity camera behavior framework
 
-Entity-driven camera intent is registered through `EntityCameraBehaviorRegistry`. Registrations pair an extensible `EntityMatcher` with a factory; every matching registration is activated, and the factory creates a separate stateful `EntityCameraBehavior` for each mount lifecycle. Built-in matchers cover exact classes, assignable classes, entity registry identifiers, and arbitrary matcher predicates. Registration objects can be retained and unregistered at runtime.
+Entity-driven camera intent is registered through `EntityCameraBehaviorRegistry`. Registrations pair an extensible `EntityMatcher` with a factory; every matching registration is activated, and the factory creates a separate stateful `EntityCameraBehavior` for each mount lifecycle. Matches execute deterministically by descending priority, lexical registration ID, and registration sequence. Built-in matchers cover exact classes, assignable classes, entity registry identifiers, and arbitrary matcher predicates. Registration objects can be retained and unregistered at runtime.
 
 Providers receive immutable `MountCameraContext` values in `onAttach`, once-per-client-tick `onTick`, per-camera-update `onRender`, and `onDetach`. The context contains only the rider, current/previous mount, transition, client tick, partial ticks, and a generic `EntityMotionSample`. A provider must keep its interpretation state in its own instance and must not change player rotation or issue render calls.
 
-`EntityMotionSampler` observes any `Entity` independently of `MovementSnapshot`. Its sample exposes render-interpolated position/orientation, current and previous velocity and acceleration, angular velocity, tick timestamp, and discontinuity status. A first sample, skipped tick, entity replacement, or movement over the teleport threshold is a discontinuity and resets derivatives.
+`EntityMotionSampler` observes any `Entity` independently of `MovementSnapshot`. Its sample exposes render-interpolated position/orientation; current and previous world velocity and acceleration; forward/lateral/vertical velocity and acceleration; horizontal/total speed; yaw/pitch rates; tick timestamp; and discontinuity status. A first sample, skipped tick, entity replacement, or movement over the teleport threshold is a discontinuity and resets derivatives.
 
-Providers send intent only through `CameraEffectSink`:
+Providers send intent only through `CameraEffectSink` (`emitFrame`, `emitImpulse`, and `beginContinuous`; the original names remain aliases). Contextual factories additionally receive immutable `EntityBehaviorEnvironment` resources and `EntityBehaviorProviderInfo` identity. Full lifecycle, ordering, units, diagnostics, and extension contracts are documented in [Entity camera behaviors](entity-camera-behaviors.md).
 
-* `contribute` adds a frame contribution;
-* `submitImpulse` enters the existing impulse lifecycle;
-* `startContinuous` enters the existing continuous-effect lifecycle.
+* `emitFrame` adds a frame contribution;
+* `emitImpulse` enters the existing impulse lifecycle;
+* `beginContinuous` enters the existing continuous-effect lifecycle.
 
 The client sink delegates to `CameraEffectManager`, which still validates channels, applies positional falloff and priority, accumulates effects, and performs saturation clamps. `CameraController` still owns the final camera state and render mixins remain the only render integration. An empty registry therefore produces exactly the previous visual output.
 
@@ -61,12 +61,13 @@ EntityBehaviorRegistration registration = EntityCameraBehaviorRegistry.register(
     });
 ```
 
-The external mod supplies the provider and may use a custom `EntityMatcher` when class or registry matching is insufficient. Multiple mods and multiple registrations may match the same mount; their contributions compose in registration order through the manager. Providers should stop any continuous handles they own during `onDetach`. No optional-mod class needs to be referenced by Combatives.
+The external mod supplies the provider and may use a custom `EntityMatcher` when class or registry matching is insufficient. Multiple mods and multiple registrations may match the same mount; their contributions compose in deterministic priority/ID/sequence order through the manager. Providers should stop any continuous handles they own during `onDetach`. No optional-mod class needs to be referenced by Combatives.
 
 ### Extension points
 
 * `EntityMatcher` for arbitrary selection policies.
 * `EntityCameraBehaviorFactory` for fresh per-mount provider state.
+* `ContextualEntityCameraBehaviorFactory` for provider identity and immutable shared resources.
 * `EntityCameraBehavior` lifecycle callbacks for interpretation.
 * `CameraEffectSink` for frame, impulse, and continuous intent.
 * `EntityMotionSampler` and immutable samples for reusable physical observation.

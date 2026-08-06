@@ -1,4 +1,13 @@
 # Changelog
+## (dafcd44 Expand Entity Camera Behavior Framework)
+
+- Added deterministic multi-provider ordering by descending priority, lexical registration ID, and registration sequence without introducing exclusive behavior ownership.
+- Expanded entity motion samples with sampler-computed mount-local velocity and acceleration, horizontal and total speed, and named yaw/pitch rates while retaining discontinuity resets.
+- Added immutable provider metadata, direct provider identity, contextual factories, and a shared immutable behavior environment with configuration, logging, helpers, API version, world, and deterministic random-stream access.
+- Refined the provider-facing effect sink into explicit frame, impulse, and continuous camera-intent operations while retaining compatibility aliases and keeping accumulation and validation in `CameraEffectManager`.
+- Added opt-in lifecycle, matching/order, execution-time, ownership, mount, and emitted-effect diagnostics with guarded hot-path work.
+- Documented provider lifecycle, motion units and projections, registration ordering, compatibility guarantees, and updated extension points; no camera behavior or visual effect was added.
+
 ## Fix pose-driven crawl camera origin
 
 - Fixed the crawl first-person base camera origin by making `EntityRenderer#orientCamera` consume the current client pose every render frame and return the computed low-pose camera offset directly instead of relying on stale cached eye-height interpolation or collision-height timing.

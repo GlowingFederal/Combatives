@@ -49,7 +49,9 @@ public final class BuiltinPlayerCameraBehaviors {
     private static final class Landing extends Base {
         private boolean grounded = true;
         private double fastestDescent; private float greatestFallDistance;
-        void reset() { grounded = true; fastestDescent = 0; greatestFallDistance = 0; }
+        private float compression, compressionVelocity, compressionTarget, rollBias;
+        private int compressionHold;
+        void reset() { grounded = true; fastestDescent = 0; greatestFallDistance = 0; compression=compressionVelocity=compressionTarget=rollBias=0;compressionHold=0; }
         public void onTick(MountCameraContext c, CameraEffectSink sink) {
             EntityPlayerSP player=player(c); EntityMotionSample m=c.getMotion();
             if(player==null || m.isDiscontinuity()){reset();grounded=player==null||player.onGround;return;}
@@ -62,17 +64,35 @@ public final class BuiltinPlayerCameraBehaviors {
                 severity=severity*severity*(3F-2F*severity);
                 if(severity>0.012F) {
                     float strength=clamp(severity*CombativesConfig.landingFeedbackStrength,0,1);
-                    float uneven=clamp(m.getLateralAcceleration()*0.35D,-0.22D,0.22D);
-                    sink.emitImpulse(CameraImpulse.builder("combatives:player_landing")
-                        .sourceEntity(player).rotation(3.6F*strength,0,uneven*strength)
-                        .translation(0,-0.105F*strength,-0.018F*strength).duration(0.34F).attackTime(0.035F)
-                        .decayType(CameraDecayType.SPRING).priority(CameraPriority.NORMAL).stackingMode(CameraStackingMode.ADD).build());
-                    EntityCameraBehaviorDiagnostics.motionEvent("landing", "severity="+severity+" speed="+speed+" arrest="+arrest+" fallDistance="+fall);
+                    // Impact and recovery are intentionally separate.  A finite triangular impulse used
+                    // to begin recovering on the very next sample, which read as an upward slap.
+                    compressionTarget=Math.max(compressionTarget,strength);
+                    compressionHold=2;
+                    rollBias=clamp(m.getLateralAcceleration()*0.28D,-0.18D,0.18D);
+                    EntityCameraBehaviorDiagnostics.motionEvent("landing", "phase=impact severity="+severity+" speed="+speed+" arrest="+arrest+" fallDistance="+fall+" target="+compressionTarget);
                 }
                 fastestDescent=0; greatestFallDistance=0;
             }
+            if(compressionHold>0) {
+                compressionHold--;
+                compression+=(compressionTarget-compression)*0.58F;
+                compressionVelocity=0;
+            } else {
+                compressionTarget=0;
+                // Critically damped recovery permits only a tiny, slow overshoot and no bounce train.
+                compressionVelocity+=(-0.22F*compression-0.78F*compressionVelocity);
+                compression+=compressionVelocity;
+                if(Math.abs(compression)<0.0005F&&Math.abs(compressionVelocity)<0.0005F)compression=compressionVelocity=0;
+            }
+            compression=clamp(compression,-0.045D,1D);
             grounded=player.onGround;
+            EntityCameraBehaviorDiagnostics.landing(compressionHold>0?"compression":"recovery",compression,compressionTarget,compressionVelocity,rollBias);
             EntityCameraBehaviorDiagnostics.motionSample("landing",m);
+        }
+        public void onRender(MountCameraContext c,CameraEffectSink sink){
+            if(Math.abs(compression)>0.001F&&CombativesConfig.enableLandingCameraFeedback)sink.emitFrame(CameraImpulse.builder("combatives:player_landing")
+                .rotation(3.1F,0,rollBias).translation(0,-0.115F,-0.014F).duration(0.1F)
+                .priority(CameraPriority.NORMAL).build(),clamp(compression,0,1));
         }
     }
 
@@ -83,32 +103,49 @@ public final class BuiltinPlayerCameraBehaviors {
             EntityPlayerSP p=player(c);EntityMotionSample m=c.getMotion();if(p==null||m.isDiscontinuity()){reset();return;}
             boolean unsupported=!p.onGround && m.getVerticalVelocity() < -0.27D && m.getVerticalAcceleration() < 0.08D;
             fallingTicks=unsupported?fallingTicks+1:0;
-            float target=fallingTicks>=4?clamp((-m.getVerticalVelocity()-0.27D)*1.35D,0,1):0;
-            intensity+=(target-intensity)*(target>intensity?0.22F:0.42F);
-            if(CombativesConfig.debugCamera&&((fallingTicks==4)||(fallingTicks==0&&intensity>0.01F)))EntityCameraBehaviorDiagnostics.motionEvent("freefall","active="+(fallingTicks>=4)+" intensity="+intensity);
+            float speedEnvelope=clamp((-m.getVerticalVelocity()-0.24D)*1.55D,0,1);
+            float timeEnvelope=fallingTicks<3?0:clamp((fallingTicks-2)/18D,0,1);
+            float target=speedEnvelope*timeEnvelope;
+            intensity+=(target-intensity)*(target>intensity?0.14F:0.24F);
+            if(CombativesConfig.debugCamera&&((fallingTicks==3)||(fallingTicks==0&&intensity>0.01F)))EntityCameraBehaviorDiagnostics.motionEvent("freefall","active="+(fallingTicks>=3)+" intensity="+intensity+" speedEnvelope="+speedEnvelope+" timeEnvelope="+timeEnvelope);
             EntityCameraBehaviorDiagnostics.motionSample("freefall",m);
         }
         public void onRender(MountCameraContext c,CameraEffectSink sink){
             if(intensity>0.01F&&CombativesConfig.enablePlayerFreefallCamera) sink.emitFrame(CameraImpulse.builder("combatives:player_freefall")
-                .rotation(-0.42F,0,0).translation(0,-0.018F,0.006F).duration(0.1F).priority(CameraPriority.BACKGROUND).build(),clamp(intensity*CombativesConfig.playerFreefallCameraStrength,0,1));
+                .rotation(0.72F,0,0).translation(0,-0.052F,0.011F).duration(0.1F).priority(CameraPriority.BACKGROUND).build(),clamp(intensity*CombativesConfig.playerFreefallCameraStrength,0,1));
         }
     }
 
     private static final class Inertia extends Base {
-        private double forward,lateral,turnLag; private float contribution;
-        void reset(){forward=lateral=turnLag=contribution=0;}
+        private double forward,lateral,turnLag; private float contribution,compositionWeight;
+        private boolean grounded=true; private int takeoffBlend,landingBlend;
+        void reset(){forward=lateral=turnLag=contribution=0;compositionWeight=1;grounded=true;takeoffBlend=landingBlend=0;}
         public void onTick(MountCameraContext c,CameraEffectSink sink){
             EntityMotionSample m=c.getMotion();if(m.isDiscontinuity()||!CombativesConfig.enablePlayerInertiaCamera){reset();return;}
-            forward=m.getForwardAcceleration(); lateral=m.getLateralAcceleration();
+            EntityPlayerSP p=player(c);boolean onGround=p==null||p.onGround;boolean ascending=!onGround&&m.getVerticalVelocity()>0.04D;
+            if(grounded&&ascending)takeoffBlend=4;
+            if(!grounded&&onGround)landingBlend=3;
+            double rawForward=m.getForwardAcceleration(),rawLateral=m.getLateralAcceleration();
+            if(takeoffBlend>0){
+                // A jump impulse changes the position-derived horizontal acceleration for one or two
+                // samples.  Preserve the pre-jump momentum and slew toward airborne input instead of
+                // interpreting that sampling transient as a camera impulse.
+                forward=slew(forward,rawForward,0.045D,0.22D);
+                lateral=slew(lateral,rawLateral,0.045D,0.22D);
+                takeoffBlend--;
+            } else {forward=rawForward;lateral=rawLateral;}
             turnLag=m.getYawRate()*m.getHorizontalSpeed()/18D;
-            contribution=clamp(Math.max(Math.abs(forward)*2.8D,Math.max(Math.abs(lateral)*2.2D,Math.abs(turnLag))),0,1);
-            EntityCameraBehaviorDiagnostics.inertia(forward,lateral,turnLag,contribution);
+            compositionWeight=landingBlend>0?0.35F+(3-landingBlend)*0.325F:1F;if(landingBlend>0)landingBlend--;
+            contribution=clamp(Math.max(Math.abs(forward)*2.8D,Math.max(Math.abs(lateral)*2.2D,Math.abs(turnLag)))*compositionWeight,0,1);
+            grounded=onGround;
+            EntityCameraBehaviorDiagnostics.inertia(rawForward,rawLateral,forward,lateral,turnLag,contribution,ascending,takeoffBlend,compositionWeight);
             EntityCameraBehaviorDiagnostics.motionSample("inertia",m);
         }
+        private static double slew(double filtered,double raw,double limit,double alpha){double delta=(raw-filtered)*alpha;return filtered+(delta<-limit?-limit:delta>limit?limit:delta);}
         public void onRender(MountCameraContext c,CameraEffectSink sink){
             if(contribution>0.008F)sink.emitFrame(CameraImpulse.builder("combatives:player_inertia")
                 .rotation(clamp(-forward*4.2D,-1.05D,1.05D),clamp(-turnLag*0.24D,-0.28D,0.28D),clamp(-lateral*2.0D-turnLag*0.22D,-0.65D,0.65D))
-                .translation(clamp(-lateral*0.012D,-0.012D,0.012D),0,clamp(forward*0.018D,-0.018D,0.018D)).duration(0.1F).priority(CameraPriority.BACKGROUND).build(),clamp(CombativesConfig.playerInertiaCameraStrength,0,1));
+                .translation(clamp(-lateral*0.012D,-0.012D,0.012D),0,clamp(forward*0.018D,-0.018D,0.018D)).duration(0.1F).priority(CameraPriority.BACKGROUND).build(),clamp(CombativesConfig.playerInertiaCameraStrength*compositionWeight,0,1));
         }
     }
 

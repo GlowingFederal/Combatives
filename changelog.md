@@ -373,3 +373,11 @@
 - Added a generic, state-based dismount handoff that preserves vanilla's full player dimensions until standing clearance exists, leaving exit placement and collision resolution to vanilla or the custom mount without fixed delays or mod-specific class checks.
 - Cleared stale crawl and swim requests on mount and added throttled verbose lifecycle diagnostics with side, tick, entity identity, pose, dimensions, AABBs, collision count, and intersection state.
 - Documented the MCHELI bytecode flow, the generalized root cause, vanilla lifecycle comparison, and compatibility contract for arbitrary rideable entities.
+
+## (f129d46 Build entity camera behavior framework)
+
+- Added a runtime multi-registration entity camera behavior registry with exact-class, assignable-class, entity-identifier, and extensible predicate matching.
+- Added per-mount provider factories and attach, tick, render, and detach lifecycle management using immutable generic mount contexts.
+- Added independent arbitrary-entity motion sampling with derivative history, angular velocity, discontinuity detection, timestamps, and render interpolation.
+- Added a provider-facing camera effect sink that routes frame contributions, impulses, and continuous effects through the existing `CameraEffectManager` validation, accumulation, saturation, controller, and render pipeline.
+- Documented architecture ownership, external-mod integration, lifecycle expectations, and new extension points without registering or implementing any entity-specific effects.

@@ -1,3 +1,10 @@
+## (6d80182 Add immersive horse riding and crawling camera effects)
+
+- Added an assignable horse entity camera provider with smoothly filtered idle/walk/trot/gallop motion, restrained vertical/pitch/fore-aft oscillation, damped two-degree turning roll, subtle terrain compression, and energy-scaled landing impulses.
+- Added a pose-aware crawl provider with monotonic configurable enter/exit blending, speed-scaled restrained crawl cycles, and tiny pull/compression impulses.
+- Routed both continuous states exclusively through the existing entity behavior sink, camera effect accumulator, impulse lifecycle, saturation/clamping, controller, and render transform, with lifecycle/discontinuity cleanup and cached frame intent templates.
+- Added eight client camera configuration controls and documented registration extensibility, lifecycle safety, performance, tuning, and architecture in the README and camera/developer guides.
+
 # Changelog
 ## (ba694be Restore impactful impulse-driven landings)
 

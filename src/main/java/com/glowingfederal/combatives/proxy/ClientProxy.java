@@ -4,6 +4,7 @@ import com.glowingfederal.combatives.Combatives;
 import com.glowingfederal.combatives.client.ClientMovementInputHandler;
 import com.glowingfederal.combatives.client.CombativesKeyBindings;
 import com.glowingfederal.combatives.client.camera.internal.BuiltinPlayerCameraBehaviors;
+import com.glowingfederal.combatives.client.camera.internal.BuiltinHorseCameraBehavior;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
@@ -20,6 +21,7 @@ public class ClientProxy extends CommonProxy {
         super.init(event);
         CombativesKeyBindings.register();
         BuiltinPlayerCameraBehaviors.register();
+        BuiltinHorseCameraBehavior.register();
         FMLCommonHandler.instance().bus().register(new ClientMovementInputHandler());
         Combatives.logger.info("Combatives ClientProxy initialized");
     }

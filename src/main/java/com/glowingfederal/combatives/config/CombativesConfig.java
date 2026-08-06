@@ -29,6 +29,14 @@ public final class CombativesConfig {
     public static double playerCollisionCameraStrength = CombativesConfigDefaults.PLAYER_COLLISION_CAMERA_STRENGTH;
     public static boolean enableExplosionCameraFeedback = CombativesConfigDefaults.ENABLE_EXPLOSION_CAMERA_FEEDBACK;
     public static double explosionFeedbackStrength = CombativesConfigDefaults.EXPLOSION_FEEDBACK_STRENGTH;
+    public static boolean enableHorseCamera = CombativesConfigDefaults.ENABLE_HORSE_CAMERA;
+    public static double horseCameraAmplitude = CombativesConfigDefaults.HORSE_CAMERA_AMPLITUDE;
+    public static double horseTerrainImpulse = CombativesConfigDefaults.HORSE_TERRAIN_IMPULSE;
+    public static double horseLanding = CombativesConfigDefaults.HORSE_LANDING;
+    public static double horseTurningRoll = CombativesConfigDefaults.HORSE_TURNING_ROLL;
+    public static boolean enableCrawlCamera = CombativesConfigDefaults.ENABLE_CRAWL_CAMERA;
+    public static double crawlCameraAmplitude = CombativesConfigDefaults.CRAWL_CAMERA_AMPLITUDE;
+    public static int crawlTransitionMillis = CombativesConfigDefaults.CRAWL_TRANSITION_MILLIS;
     public static boolean debugMovement = CombativesConfigDefaults.DEBUG;
     public static boolean verboseMovementDebug = CombativesConfigDefaults.VERBOSE_DEBUG;
     public static boolean debugCamera = CombativesConfigDefaults.DEBUG;
@@ -57,6 +65,14 @@ public final class CombativesConfig {
         playerCollisionCameraStrength = CombativesConfigDefaults.PLAYER_COLLISION_CAMERA_STRENGTH;
         enableExplosionCameraFeedback = CombativesConfigDefaults.ENABLE_EXPLOSION_CAMERA_FEEDBACK;
         explosionFeedbackStrength = CombativesConfigDefaults.EXPLOSION_FEEDBACK_STRENGTH;
+        enableHorseCamera = CombativesConfigDefaults.ENABLE_HORSE_CAMERA;
+        horseCameraAmplitude = CombativesConfigDefaults.HORSE_CAMERA_AMPLITUDE;
+        horseTerrainImpulse = CombativesConfigDefaults.HORSE_TERRAIN_IMPULSE;
+        horseLanding = CombativesConfigDefaults.HORSE_LANDING;
+        horseTurningRoll = CombativesConfigDefaults.HORSE_TURNING_ROLL;
+        enableCrawlCamera = CombativesConfigDefaults.ENABLE_CRAWL_CAMERA;
+        crawlCameraAmplitude = CombativesConfigDefaults.CRAWL_CAMERA_AMPLITUDE;
+        crawlTransitionMillis = CombativesConfigDefaults.CRAWL_TRANSITION_MILLIS;
     }
 
     private static File fairplayConfigFile(File suggestedConfigFile) {
@@ -108,6 +124,14 @@ public final class CombativesConfig {
         playerCollisionCameraStrength = config.getFloat("playerCollisionCameraStrength", CATEGORY_CAMERA, (float)playerCollisionCameraStrength, 0F, 4F, "Strength of player collision feedback.");
         enableExplosionCameraFeedback = config.getBoolean("enableExplosionCameraFeedback", CATEGORY_CAMERA, enableExplosionCameraFeedback, "Enable visual-only low-frequency explosion camera feedback near client explosions.");
         explosionFeedbackStrength = config.getFloat("explosionFeedbackStrength", CATEGORY_CAMERA, (float) explosionFeedbackStrength, 0.0F, 4.0F, "Multiplier for visual-only explosion camera feedback strength.");
+        enableHorseCamera = config.getBoolean("enableHorseCamera", CATEGORY_CAMERA, enableHorseCamera, "Enable continuous, motion-sampled first-person riding feedback for registered horse mounts.");
+        horseCameraAmplitude = config.getFloat("horseCameraAmplitude", CATEGORY_CAMERA, (float)horseCameraAmplitude, 0F, 3F, "Multiplier for horse gait bob, pitch, and fore/aft travel.");
+        horseTerrainImpulse = config.getFloat("horseTerrainImpulse", CATEGORY_CAMERA, (float)horseTerrainImpulse, 0F, 3F, "Multiplier for subtle horse terrain-compression impulses.");
+        horseLanding = config.getFloat("horseLanding", CATEGORY_CAMERA, (float)horseLanding, 0F, 3F, "Multiplier for horse jump landing compression through the shared impulse pipeline.");
+        horseTurningRoll = config.getFloat("horseTurningRoll", CATEGORY_CAMERA, (float)horseTurningRoll, 0F, 3F, "Multiplier for damped horse turning roll (hard-limited to two degrees before shared saturation).");
+        enableCrawlCamera = config.getBoolean("enableCrawlCamera", CATEGORY_CAMERA, enableCrawlCamera, "Enable restrained continuous crawling motion and crawl transitions.");
+        crawlCameraAmplitude = config.getFloat("crawlCameraAmplitude", CATEGORY_CAMERA, (float)crawlCameraAmplitude, 0F, 3F, "Multiplier for crawl-cycle movement and pull impulses.");
+        crawlTransitionMillis = config.getInt("crawlTransitionMillis", CATEGORY_CAMERA, crawlTransitionMillis, 150, 250, "Monotonic crawl enter/exit camera blend duration in milliseconds.");
         debugMovement = config.getBoolean(
             "debugMovement",
             CATEGORY_DEBUG,
@@ -153,6 +177,8 @@ public final class CombativesConfig {
         logger.info("Combatives config: player motion camera freefall={}/{}, inertia={}/{}, collision={}/{}", enablePlayerFreefallCamera, playerFreefallCameraStrength, enablePlayerInertiaCamera, playerInertiaCameraStrength, enablePlayerCollisionCamera, playerCollisionCameraStrength);
         logger.info("Combatives config: enableExplosionCameraFeedback={}", enableExplosionCameraFeedback);
         logger.info("Combatives config: explosionFeedbackStrength={}", explosionFeedbackStrength);
+        logger.info("Combatives config: horse camera={}/{}, terrain={}, landing={}, turning={}", enableHorseCamera, horseCameraAmplitude, horseTerrainImpulse, horseLanding, horseTurningRoll);
+        logger.info("Combatives config: crawl camera={}/{}, transitionMillis={}", enableCrawlCamera, crawlCameraAmplitude, crawlTransitionMillis);
         logger.info("Combatives config: debugMovement={}", debugMovement);
         logger.info("Combatives config: verboseMovementDebug={}", verboseMovementDebug);
         logger.info("Combatives config: debugCamera={}", debugCamera);

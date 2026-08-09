@@ -2,6 +2,7 @@ package com.glowingfederal.combatives.mixin.compat.mpm.client;
 
 import com.glowingfederal.combatives.Combatives;
 import com.glowingfederal.combatives.config.CombativesConfig;
+import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.EffectivePlayerGeometry;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import net.minecraft.client.Minecraft;
@@ -25,7 +26,7 @@ public abstract class EntityRendererAltMixin {
     @Inject(method = "getMouseOver(F)V", at = @At("HEAD"), require = 0)
     private void combatives$captureTargetPosition(float partialTicks, CallbackInfo ci) {
         EntityPlayer player = Minecraft.getMinecraft().thePlayer;
-        this.combatives$ownsTargetGeometry = player instanceof ICombativesPlayerPose;
+        this.combatives$ownsTargetGeometry = this.combatives$isPhysicalLowPose(player);
         if (this.combatives$ownsTargetGeometry) {
             this.combatives$targetPosY = player.posY;
             this.combatives$targetPrevPosY = player.prevPosY;
@@ -33,7 +34,11 @@ public abstract class EntityRendererAltMixin {
         }
     }
 
-    @Inject(method = "getMouseOver(F)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/EntityRenderer;getMouseOver(F)V"), require = 0)
+    @Inject(method = "getMouseOver(F)V", at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/EntityRenderer;getMouseOver(F)V",
+            remap = true
+    ), require = 0)
     private void combatives$restoreBeforeVanillaTargeting(float partialTicks, CallbackInfo ci) {
         this.combatives$restoreTargetPosition();
         EntityPlayer player = Minecraft.getMinecraft().thePlayer;
@@ -62,5 +67,17 @@ public abstract class EntityRendererAltMixin {
             player.prevPosY = this.combatives$targetPrevPosY;
             player.lastTickPosY = this.combatives$targetLastTickPosY;
         }
+    }
+
+    @Unique
+    private boolean combatives$isPhysicalLowPose(EntityPlayer player) {
+        if (!(player instanceof ICombativesPlayerPose)) {
+            return false;
+        }
+        ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
+        return pose.getPose() == Pose.SWIMMING
+                || pose.isSwimming()
+                || pose.isCrawlKeyDown()
+                || pose.isActuallySwimming();
     }
 }

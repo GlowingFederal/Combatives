@@ -1,5 +1,23 @@
 # Authoritative player geometry and MPM+ compatibility
 
+## Optional MPM+ mixin loading
+
+The `EntityRendererAlt` integration is a **late**, client-only GTNHMixins
+integration. `CombativesLateMixins` offers it only after FML reports the
+`moreplayermodels` mod id. The mixin uses a string target plus `@Pseudo`, so no
+common or dedicated-server class has a symbolic dependency on MPM's client
+renderer. Its injector is optional: an MPM revision without the audited
+`public void getMouseOver(float)` wrapper keeps loading, but falls back to MPM's
+own targeting offset.
+
+The audited MPM+ source declares `public void getMouseOver(float)` on
+`EntityRendererAlt`, overriding `EntityRenderer#getMouseOver(float)`. The MPM
+method name is deliberately not remapped, while the invocation of the vanilla
+super method is remapped through the Combatives refmap for an SRG production
+jar. Compatibility restores MPM's temporary `posY`, `prevPosY`, and
+`lastTickPosY` changes immediately before that call only during a Combatives
+physical crawl/swim pose. Standing and ordinary MPM POV behavior are unchanged.
+
 Combatives gameplay geometry is owned by `PlayerGeometryResolver`.  Its immutable
 `EffectivePlayerGeometry` values contain the physical width, height, pose, eye
 height above the bounding-box minimum, and the operation which constructs a

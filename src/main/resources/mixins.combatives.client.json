@@ -16,8 +16,7 @@
     "RenderPlayerMixin",
     "RenderMixin",
     "RendererLivingEntityMixin",
-    "PlayerControllerMPMixin",
-    "compat.mpm.client.EntityRendererAltMixin"
+    "PlayerControllerMPMixin"
   ],
   "server": []
 }

@@ -16,3 +16,13 @@
   value to the normal sneaking eye height.
 - MorePlayerModels+ model size and body-part scaling remain visual and do not
   alter Combatives gameplay hitboxes.
+
+(f80c83f Fix MPM renderer compatibility loading)
+
+- Moved the optional MorePlayerModels+ renderer integration from the early
+  vanilla mixin phase to a client-only, mod-gated GTNHMixins late configuration.
+- Corrected production remapping for the vanilla `EntityRenderer#getMouseOver`
+  call while retaining the exact MPM+ 4.2 `getMouseOver(float)` target.
+- Limited MPM targeting-offset suppression to Combatives crawl/swim geometry;
+  unsupported MPM method revisions now retain native MPM targeting instead of
+  making the optional injector mandatory.

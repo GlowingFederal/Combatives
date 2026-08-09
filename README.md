@@ -122,3 +122,9 @@ First-person horse riding and crawling now participate in the same entity-provid
 Crawling adds restrained phase-driven vertical/forward motion plus a monotonic configurable 150–250 ms posture blend. Crawl pulls submit small impulses to the shared accumulator. Neither feature changes player/mount rotations, adds a renderer hook, or bypasses shared saturation and hard clamps. See `docs/camera-api.md` for provider integration and configuration details.
 
 Riding cadence is synchronized to the horse's actual limb animation and uses asymmetric stride loading, nonlinear speed weight, and acceleration inertia rather than a free-running sine wave. Crawl camera troubleshooting is available through `verboseCameraDebug`, which traces pose detection through sink acceptance, accumulation, and final rendering.
+
+MorePlayerModels+ compatibility is registered as a GTNHMixins late mixin only
+on the client and only when FML discovers the `moreplayermodels` mod id. If its
+optional `EntityRendererAlt#getMouseOver(float)` hook cannot match a changed MPM
+build, MPM remains loadable and retains its native targeting behavior; see the
+[player geometry compatibility notes](docs/player-geometry-and-mpm-compatibility.md).

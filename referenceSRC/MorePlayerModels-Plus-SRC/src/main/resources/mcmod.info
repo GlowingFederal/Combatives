@@ -1,0 +1,16 @@
+[
+{
+  "modid": "moreplayermodels",
+  "name": "MorePlayerModels+",
+  "description": "More player models lets you edit your player model to your hearts content",
+  "version": "4.1",
+  "mcversion": "1.7.10",
+  "url": "https://github.com/KAMKEEL/MorePlayerModels-Plus",
+  "updateUrl": "",
+  "authorList": ["Kamkeel","Noppes"],
+  "credits": "Louis XIV",
+  "logoFile": "assets/moreplayermodels/textures/gui/new_logo.png",
+  "screenshots": [],
+  "dependencies": []
+}
+]

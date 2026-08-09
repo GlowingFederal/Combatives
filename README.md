@@ -85,6 +85,11 @@ For production validation, build a reobfuscated jar and run it in a real Forge 1
 
 See `docs/aqua-port-map.md` for the inspected Aqua source map and port/skipped-class rationale. Do not compile anything inside the reference folder. Do not compile or add generated binary files to commits or pull requests. Common and client Combatives movement mixins are loaded through `com.glowingfederal.combatives.loading.CombativesCorePlugin`, with the client render/input/model mixins added only on the physical client side. Do not port unrelated Aqua Acrobatics systems unless they are required for Combatives swimming/crawling behavior to function.
 
+The source-based MorePlayerModels+ compatibility investigation is documented in
+`docs/more-player-models-plus-compatibility-audit.md`. The audit separates MPM+
+visual scale from gameplay geometry, traces its renderer replacement and
+targeting wrapper, and records the proposed integration order and test matrix.
+
 ## Build outputs
 
 A production `assemble` or `build` now creates both supported distribution jars from the same source tree:

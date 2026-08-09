@@ -5,6 +5,7 @@ import com.glowingfederal.combatives.client.camera.CameraController;
 import com.glowingfederal.combatives.config.CombativesConfig;
 import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
+import com.glowingfederal.combatives.entity.player.EffectivePlayerGeometry;
 import com.glowingfederal.combatives.util.math.MathHelperNew;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -91,10 +92,10 @@ public abstract class EntityRendererMixin {
         this.combatives$entityEyeHeight = poseCameraOffset;
 
         if (this.combatives$isVanillaBaselinePose(player)) {
-            this.combatives$eyeHeight = eyeHeight;
-            this.combatives$previousEyeHeight = eyeHeight;
-            this.combatives$logCameraOrigin(player, eyeHeight, eyeHeight);
-            return eyeHeight;
+            this.combatives$eyeHeight = poseCameraOffset;
+            this.combatives$previousEyeHeight = poseCameraOffset;
+            this.combatives$logCameraOrigin(player, eyeHeight, poseCameraOffset);
+            return poseCameraOffset;
         }
 
         if (this.combatives$isLowPose(player)) {
@@ -122,12 +123,10 @@ public abstract class EntityRendererMixin {
         if (!(player instanceof ICombativesPlayerPose)) {
             return vanillaCameraOffset;
         }
-        if (this.combatives$isLowPose(player)) {
-            double interpolatedPosY = player.prevPosY + (player.posY - player.prevPosY) * (double) this.combatives$partialTicks;
-            double crawlBaseCameraY = player.boundingBox.minY + 0.28D;
-            return (float) (interpolatedPosY - crawlBaseCameraY);
-        }
-        return vanillaCameraOffset;
+        EffectivePlayerGeometry geometry = ((ICombativesPlayerPose) player).getEffectiveGeometry();
+        double interpolatedPosY = player.prevPosY + (player.posY - player.prevPosY) * (double) this.combatives$partialTicks;
+        double interpolatedMinY = interpolatedPosY + (player.boundingBox.minY - player.posY);
+        return (float) (interpolatedPosY - (interpolatedMinY + geometry.eyeAboveMinY));
     }
 
     private float combatives$getLowPoseCameraEyeHeight(EntityPlayer player, float vanillaEyeHeight) {

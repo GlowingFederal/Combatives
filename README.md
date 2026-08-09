@@ -1,5 +1,8 @@
 # Combatives
 
+Development documentation includes the [authoritative player geometry and
+MorePlayerModels+ compatibility boundary](docs/player-geometry-and-mpm-compatibility.md).
+
 ## Mount and dismount compatibility
 
 Combatives treats riding as a vanilla-owned lifecycle for every entity type. While a player is riding, the crawl request and swimming flag are cleared and the normal `0.6 x 1.8` player pose is restored without asking whether that box intersects the mount; overlap with a rider is expected and is not evidence that the player must crawl.

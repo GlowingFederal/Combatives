@@ -13,6 +13,8 @@ public interface ICombativesPlayerPose {
     float getWaterVision();
     float getPoseWidth();
     float getPoseHeight();
+    EffectivePlayerGeometry getEffectiveGeometry();
+    EffectivePlayerGeometry getEffectiveGeometry(Pose pose);
     EntitySize getSize(Pose pose);
     void recalculateSize();
     boolean isResizingAllowed();

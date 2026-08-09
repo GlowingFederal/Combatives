@@ -1,11 +1,10 @@
 package com.glowingfederal.combatives.mixin;
 
-import java.util.EnumMap;
-import java.util.Map;
-
 import com.glowingfederal.combatives.entity.EntitySize;
 import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
+import com.glowingfederal.combatives.entity.player.EffectivePlayerGeometry;
+import com.glowingfederal.combatives.entity.player.PlayerGeometryResolver;
 import com.glowingfederal.combatives.entity.player.PlayerStepHeight;
 import com.glowingfederal.combatives.movement.ICombativesMovementState;
 import com.glowingfederal.combatives.movement.MovementController;
@@ -39,17 +38,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class EntityPlayerMixin extends EntityLivingBase implements ICombativesPlayerPose, ICombativesMovementState {
     private static final int POSE_WATCHER_ID = 28;
     private static final EntitySize STANDING_SIZE = EntitySize.flexible(0.6F, 1.8F);
-    private static final Map<Pose, EntitySize> SIZE_BY_POSE = new EnumMap<Pose, EntitySize>(Pose.class);
-
-    static {
-        SIZE_BY_POSE.put(Pose.STANDING, STANDING_SIZE);
-        SIZE_BY_POSE.put(Pose.SLEEPING, EntitySize.fixed(0.2F, 0.2F));
-        SIZE_BY_POSE.put(Pose.FALL_FLYING, EntitySize.flexible(0.6F, 0.6F));
-        SIZE_BY_POSE.put(Pose.SWIMMING, EntitySize.flexible(0.6F, 0.6F));
-        SIZE_BY_POSE.put(Pose.SPIN_ATTACK, EntitySize.flexible(0.6F, 0.6F));
-        SIZE_BY_POSE.put(Pose.CROUCHING, EntitySize.flexible(0.6F, 1.5F));
-        SIZE_BY_POSE.put(Pose.DYING, EntitySize.fixed(0.2F, 0.2F));
-    }
 
     @Shadow public PlayerCapabilities capabilities;
     @Shadow(remap = false) public float eyeHeight;
@@ -67,6 +55,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     private boolean lastLoggedSwimming;
     private boolean crawlKeyDown;
     private Pose combativesPose = Pose.STANDING;
+    private Pose combativesAppliedPose = Pose.STANDING;
     private boolean combativesPoseWatcherReady;
     private int combativesLastStepHeightWarningTick = -200;
     private MovementSnapshot combativesMovementSnapshot = MovementSnapshot.EMPTY;
@@ -104,7 +93,6 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     public void func_145781_i(int key) {
         if (key == POSE_WATCHER_ID && this.worldObj.isRemote && !this.isRiding()) {
             MovementDiagnostics.verbose(this.getPlayer(), "DataWatcher pose changed on client: " + this.getPose());
-            this.recalculateEyeHeight();
             this.recalculateSize();
         }
         super.func_145781_i(key);
@@ -152,13 +140,19 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
 
     @Override public float getPoseWidth() { return this.combativesSize.width; }
     @Override public float getPoseHeight() { return this.combativesSize.height; }
-    @Override public EntitySize getSize(Pose pose) { return SIZE_BY_POSE.containsKey(pose) ? SIZE_BY_POSE.get(pose) : STANDING_SIZE; }
+    @Override public EffectivePlayerGeometry getEffectiveGeometry() { return PlayerGeometryResolver.resolve(this.combativesAppliedPose); }
+    @Override public EffectivePlayerGeometry getEffectiveGeometry(Pose pose) { return PlayerGeometryResolver.resolve(pose); }
+    @Override public EntitySize getSize(Pose pose) {
+        EffectivePlayerGeometry geometry = this.getEffectiveGeometry(pose);
+        return new EntitySize(geometry.width, geometry.height, pose == Pose.SLEEPING || pose == Pose.DYING);
+    }
 
     @Override
     public void recalculateSize() {
         EntitySize oldSize = this.combativesSize == null ? STANDING_SIZE : this.combativesSize;
         EntitySize newSize = this.getSize(this.getPose());
-        if (this.isResizingAllowed()) {
+        boolean accepted = this.isResizingAllowed();
+        if (accepted) {
             boolean changed = oldSize.width != newSize.width || oldSize.height != newSize.height || this.width != newSize.width || this.height != newSize.height;
             this.recalculateSize(oldSize, newSize);
             this.width = newSize.width;
@@ -166,8 +160,15 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
             if (changed) {
                 MovementDiagnostics.verbose(this.getPlayer(), "bounding box recalculated for " + this.getPose() + " size=" + newSize.width + "x" + newSize.height);
             }
+            this.combativesSize = newSize;
+            this.combativesAppliedPose = this.getPose();
+            this.recalculateEyeHeight();
+        } else {
+            MovementDiagnostics.verbose(this.getPlayer(), "resize rejected for " + this.getPose()
+                    + " requested=" + newSize.width + "x" + newSize.height
+                    + " actual=" + this.width + "x" + this.height + " box=" + this.boundingBox
+                    + "; retaining applied geometry=" + oldSize.width + "x" + oldSize.height);
         }
-        this.combativesSize = newSize;
         this.combatives$warnUnexpectedStepHeight("recalculateSize");
     }
 
@@ -186,8 +187,9 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     }
 
     private void recalculateEyeHeight() {
-        Pose pose = this.getPose();
-        this.combativesEyeHeight = this.getEyeHeight(pose, this.getSize(pose));
+        EffectivePlayerGeometry geometry = this.getEffectiveGeometry();
+        Pose pose = geometry.pose;
+        this.combativesEyeHeight = geometry.eyeAboveMinY;
         this.previousEyeHeight = this.eyeHeight;
         MovementDiagnostics.verbose(this.getPlayer(), "eye height recalculated for " + pose + ": " + this.combativesEyeHeight);
     }
@@ -204,10 +206,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     private float getEyeHeight(Pose pose, EntitySize size) { return pose == Pose.SLEEPING || pose == Pose.DYING ? 0.2F : this.getStandingEyeHeight(pose, size); }
     @Override public boolean isActuallySneaking() { return this.isSneaking(); }
     @Override public float getStandingEyeHeight(Pose pose, EntitySize size) {
-        if (pose == Pose.SWIMMING) return 0.28F;
-        if (pose == Pose.FALL_FLYING || pose == Pose.SPIN_ATTACK) return this.eyeHeight;
-        if (pose == Pose.CROUCHING) return 0.35F;
-        return this.eyeHeight;
+        return this.getEffectiveGeometry(pose).eyeAboveMinY;
     }
 
     @Override public void setPose(Pose pose) {
@@ -216,14 +215,8 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
             MovementDiagnostics.verbose(this.getPlayer(), "setPose " + old + " -> " + pose + " via " + this.combatives$getPoseCaller());
         }
         this.combativesPose = pose;
-        if (this.worldObj != null && this.worldObj.isRemote) {
-            this.yOffset = pose == Pose.SWIMMING ? 0.28F : 1.62F;
-        }
         if (this.combativesPoseWatcherReady) {
             this.getDataWatcher().updateObject(POSE_WATCHER_ID, pose.ordinal());
-        }
-        if (old != pose) {
-            this.recalculateEyeHeight();
         }
     }
 
@@ -377,23 +370,14 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
 
         if (swimActive || crawlActive) {
             pose = Pose.SWIMMING;
-            if (this.worldObj.isRemote) {
-                this.yOffset = 0.28F;
-            }
         } else if (this.isActuallySneaking() && !this.capabilities.isFlying && (this.onGround || !this.isInWater()) && !this.isOnLadder()) {
             pose = Pose.CROUCHING;
-            if (this.worldObj.isRemote) {
-                this.yOffset = 1.62F;
-            }
         } else if (this.isPoseClear(Pose.STANDING)) {
             if (!this.worldObj.isRemote) {
                 this.removePotionEffect(Potion.moveSlowdown.id);
                 this.removePotionEffect(Potion.digSlowdown.id);
             }
             pose = Pose.STANDING;
-            if (this.worldObj.isRemote) {
-                this.yOffset = 1.62F;
-            }
         }
 
         Pose finalPose;
@@ -466,9 +450,6 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         }
         this.lastLoggedSwimming = swimActive;
         this.setPose(pose);
-        if (this.worldObj.isRemote) {
-            this.yOffset = pose == Pose.SWIMMING ? 0.28F : 1.62F;
-        }
         if (poseChanged) {
             MovementDiagnostics.verbose(this.getPlayer(), "pose selected " + (this.worldObj.isRemote ? "client" : "server") + ": " + pose);
             if (!this.worldObj.isRemote && this.getPlayer() instanceof EntityPlayerMP) {
@@ -491,9 +472,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     }
 
     private AxisAlignedBB getBoundingBox(Pose pose) {
-        EntitySize size = this.getSize(pose);
-        float half = size.width / 2.0F;
-        return AxisAlignedBB.getBoundingBox(this.posX - half, this.posY - this.yOffset + this.ySize, this.posZ - half, this.posX + half, this.posY - this.yOffset + this.ySize + size.height, this.posZ + half);
+        return this.getEffectiveGeometry(pose).clearanceBox(this.posX, this.boundingBox.minY, this.posZ);
     }
 
     @Inject(method = "moveEntityWithHeading", at = @At("HEAD"), cancellable = true)

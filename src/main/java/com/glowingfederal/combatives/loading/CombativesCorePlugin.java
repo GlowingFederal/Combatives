@@ -75,6 +75,7 @@ public class CombativesCorePlugin implements IFMLLoadingPlugin, IEarlyMixinLoade
                 "EntityOtherPlayerMPMixin",
                 "PlayerControllerMPMixin"
             ));
+            mixins.add("compat.mpm.client.EntityRendererAltMixin");
         }
 
         if (CombativesConfig.debugMovement || CombativesConfig.verboseMovementDebug) {

@@ -26,3 +26,14 @@
 - Limited MPM targeting-offset suppression to Combatives crawl/swim geometry;
   unsupported MPM method revisions now retain native MPM targeting instead of
   making the optional injector mandatory.
+
+(c6a0472 Fix MPM+ Targeting Origin — Current Compatibility Hook Does Not Apply)
+
+- Corrected the optional MPM+ 4.2 pseudo-mixin to target the production SRG
+  `func_78473_a(F)V` wrapper and its exact SRG vanilla super invocation.
+- Scoped genuine-position restoration to the vanilla targeting call, then
+  returned MPM's mutated samples so MPM remains the sole owner of its cleanup.
+- Added throttled camera/target-origin, ray, reach, hit, and MPM mutation
+  diagnostics for numerical manual verification.
+- Documented the verified mapping failure, default-size targeting math,
+  authoritative geometry invariant, and revised compatibility lifecycle.

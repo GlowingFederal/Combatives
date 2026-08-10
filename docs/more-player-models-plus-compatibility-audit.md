@@ -328,7 +328,8 @@ head/arm/body axes form a collision body. Prefer:
    isolated behind this adapter so dedicated servers never load client classes.
 4. `TargetOriginProvider` (client): returns the same interpolated world-space
    eye origin derived from `EffectivePlayerGeometry`. A compatibility injection
-   into `EntityRendererAlt#getMouseOver` should prevent its temporary player
+   into production `EntityRendererAlt#func_78473_a(F)V`, around the exact SRG
+   super invocation, prevents its temporary player
    mutation when Combatives owns an active pose (ideally for all Combatives
    geometry), or redirect its offset query to this origin. Both block and entity
    targeting then remain in the vanilla superclass.

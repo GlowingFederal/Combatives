@@ -2,6 +2,7 @@ package com.glowingfederal.combatives.mixin;
 
 import com.glowingfederal.combatives.Combatives;
 import com.glowingfederal.combatives.client.camera.CameraController;
+import com.glowingfederal.combatives.client.camera.TargetingDiagnostics;
 import com.glowingfederal.combatives.config.CombativesConfig;
 import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
@@ -28,6 +29,16 @@ public abstract class EntityRendererMixin {
     private Pose combatives$lastLoggedPose;
     private boolean combatives$lastLoggedLowPose;
     private double combatives$lastBaseCameraY = Double.NaN;
+
+    @Inject(method = "getMouseOver", at = @At("HEAD"))
+    private void combatives$diagnoseTargetingOrigin(float partialTicks, CallbackInfo ci) {
+        TargetingDiagnostics.beforeTargeting(this, partialTicks);
+    }
+
+    @Inject(method = "getMouseOver", at = @At("RETURN"))
+    private void combatives$diagnoseTargetingResult(float partialTicks, CallbackInfo ci) {
+        TargetingDiagnostics.afterTargeting();
+    }
 
     @Inject(method = "orientCamera", at = @At("HEAD"))
     private void combatives$capturePartialTicks(float partialTicks, CallbackInfo ci) {

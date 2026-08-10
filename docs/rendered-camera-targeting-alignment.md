@@ -12,6 +12,25 @@ yaw     = lerp(prevRotationYaw, rotationYaw, partialTicks)
 pitch   = lerp(prevRotationPitch, rotationPitch, partialTicks)
 ```
 
+The targeting origin is the `Vec3` returned directly by
+`renderViewEntity.getPosition(partialTicks)`. In this legacy coordinate system
+the interpolated entity position is already offset from the AABB floor, and
+`getPosition` adds `getEyeHeight()` to it. For the observed ordinary standing
+state this gives:
+
+```text
+minY                         = 72.0
+posY                         = 73.62000000476837
+desired eye above minY       = 1.62
+legacy getEyeHeight          = minY + 1.62 - posY ~= 0.0
+vanilla target origin Y      = interpolated posY + legacy getEyeHeight ~= 73.62
+vanilla camera local         = yOffset - 1.62 = 0.0
+vanilla camera origin Y      = interpolated posY - camera local ~= 73.62
+```
+
+Thus `1.62` is the AABB-relative gameplay eye, not the correct value to return
+unchanged from this version's position-relative `getEyeHeight()` API.
+
 Sleeping and third-person branches add their own vanilla transforms. View bobbing is applied later in camera setup and changes the model-view matrix but not `Entity#getLook`. The projection is symmetric; FOV changes its scale, not its optical center. The GUI crosshair is centered, so absent later model-view rotations its direction is the camera forward direction.
 
 ## MPM renderer
@@ -46,6 +65,22 @@ samples both move down by that amount. Restoring target samples in standing
 while relying on an AABB-derived camera base was therefore the wrong ownership
 boundary, not evidence that either path needed a numeric compensation.
 
+The subsequent runtime trace exposed a second interaction. Combatives was
+recomputing the legacy eye offset from **live** `posY` every time
+`getEyeHeight()` was called. During MPM targeting, raw `posY` was temporarily
+`73.58` while the AABB remained at `72`; the calculation therefore returned
+`72 + 1.62 - 73.58 ~= 0.04`. Vanilla `getPosition` then added that `0.04` back,
+turning MPM's raw `73.58` sample into an actual `73.62` ray origin. This is why
+the old diagnostic could truthfully show `targetingMutated=73.58` while its
+reconstructed target was `73.62`: the first number was a raw entity-position
+sample, not the consumed ray-origin vector.
+
+The legacy conversion is now cached when physical pose geometry is recalculated,
+instead of being derived from compatibility renderers' temporary position
+mutations. For ordinary standing it remains approximately zero. MPM can then
+move the actual target vector by its paired transformation without that movement
+being silently canceled by `getEyeHeight()`.
+
 The compatibility boundary is pose-specific:
 
 * standing retains vanilla/MPM camera and targeting semantics;
@@ -62,10 +97,13 @@ remain unchanged.
 
 ## Diagnostics and manual checks
 
-Set `debugMpmPov=true` for one coherent sample every five seconds. `MPM POV
-SAMPLE` records pose and legacy coordinates, reflected MPM `size`/`offsetY`, the
-derived `A`, unmodified/MPM/Combatives camera and target origins, all three MPM
-sample triplets, both ownership decisions, and the shared partial tick. This is
-separate from verbose provider lifecycle diagnostics.
+Set `debugMpmPov=true` for focused samples every five seconds. `MPM POV
+MUTATION` now labels its position triplets explicitly as raw mutation state; it
+does not claim that those values are ray origins. `BASE POV TRACE` works with or
+without MPM and intercepts the exact `Entity#getPosition` and `Entity#getLook`
+return values consumed by vanilla `getMouseOver`. The camera sample is emitted
+from the modified `orientCamera` local before procedural tail transforms. Target
+and camera records share a monotonically increasing frame ID, and only the
+camera record reports a same-frame difference.
 
 Runtime testing is intentionally left to the tester. Compare horizontal/up/down and near/five-block targets while standing, sneaking, crawling, and entity targeting; repeat with MPM POV on/off and default/small/large sizes; then repeat with Combatives effects and vanilla/procedural bobbing toggled. A zero-effects pass should show zero base position and angular deltas. Nonzero procedural or vanilla bob values are visual-only and should be evaluated separately.

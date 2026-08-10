@@ -17,6 +17,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -38,6 +39,20 @@ public abstract class EntityRendererMixin {
     @Inject(method = "getMouseOver", at = @At("RETURN"))
     private void combatives$diagnoseTargetingResult(float partialTicks, CallbackInfo ci) {
         TargetingDiagnostics.afterTargeting();
+    }
+
+    @Redirect(method = "getMouseOver", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/Entity;getPosition(F)Lnet/minecraft/util/Vec3;"))
+    private net.minecraft.util.Vec3 combatives$captureConsumedTargetOrigin(Entity entity, float partialTicks) {
+        net.minecraft.util.Vec3 origin = entity.getPosition(partialTicks);
+        TargetingDiagnostics.captureActualTargetOrigin(entity, partialTicks, origin);
+        return origin;
+    }
+
+    @Redirect(method = "getMouseOver", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/Entity;getLook(F)Lnet/minecraft/util/Vec3;"))
+    private net.minecraft.util.Vec3 combatives$captureConsumedTargetLook(Entity entity, float partialTicks) {
+        net.minecraft.util.Vec3 look = entity.getLook(partialTicks);
+        TargetingDiagnostics.captureActualTargetLook(look);
+        return look;
     }
 
     @Inject(method = "orientCamera", at = @At("HEAD"))
@@ -114,6 +129,7 @@ public abstract class EntityRendererMixin {
             this.combatives$eyeHeight = eyeHeight;
             this.combatives$previousEyeHeight = eyeHeight;
             this.combatives$logCameraOrigin(player, eyeHeight, eyeHeight);
+            TargetingDiagnostics.captureActualCameraOrigin(player, this.combatives$partialTicks, eyeHeight);
             return eyeHeight;
         }
 
@@ -124,6 +140,7 @@ public abstract class EntityRendererMixin {
             this.combatives$eyeHeight = poseCameraOffset;
             this.combatives$previousEyeHeight = poseCameraOffset;
             this.combatives$logCameraOrigin(player, eyeHeight, poseCameraOffset);
+            TargetingDiagnostics.captureActualCameraOrigin(player, this.combatives$partialTicks, poseCameraOffset);
             return poseCameraOffset;
         }
 
@@ -138,6 +155,7 @@ public abstract class EntityRendererMixin {
                 this.combatives$eyeHeight
         );
         this.combatives$logCameraOrigin(player, eyeHeight, interpolatedOffset);
+        TargetingDiagnostics.captureActualCameraOrigin(player, this.combatives$partialTicks, interpolatedOffset);
         return interpolatedOffset;
     }
 

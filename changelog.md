@@ -64,3 +64,12 @@
   Combatives-owned physical geometry (resized sneak, crawl, and swim).
 - Added a focused, heavily throttled MPM POV diagnostic with model inputs,
   paired camera/target calculations, mutation samples, and ownership decisions.
+
+(4cddc90 Trace vanilla-consumed camera and ray origins)
+
+- Captured the exact target origin and look vectors returned to vanilla
+  `getMouseOver`, correlated with the base `orientCamera` origin by frame ID.
+- Corrected the standing legacy eye conversion so MPM's temporary targeting
+  position no longer changes `getEyeHeight()` and cancels MPM's ray movement.
+- Replaced inferred MPM camera/target comparisons with explicitly labeled raw
+  mutation diagnostics and added a non-MPM vanilla control trace.

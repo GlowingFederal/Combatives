@@ -72,10 +72,13 @@ public final class TargetingDiagnostics {
     public static void captureActualTargetOrigin(Entity entity, float partialTicks, Vec3 actual) {
         actualTargetOrigin = actual;
         if (!focused(entity) || entity.ticksExisted % 100 != 0) return;
-        Combatives.logger.info("BASE POV TRACE frame={} phase=TARGET ACTUAL_TARGET_ORIGIN=[{},{},{}] partialTicks={} pos=[{},{},{}] prevPos=[{},{},{}] lastTickPos=[{},{},{}] getEyeHeight={}",
+        double interpolatedY = entity.prevPosY
+                + (entity.posY - entity.prevPosY) * (double) partialTicks;
+        Combatives.logger.info("BASE POV TRACE frame={} phase=TARGET ACTUAL_TARGET_ORIGIN=[{},{},{}] partialTicks={} pos=[{},{},{}] prevPos=[{},{},{}] lastTickPos=[{},{},{}] vanillaPrevPosInterpolationY={} currentPosMinusInterpolationY={} actualMinusInterpolationY={} getEyeHeight={}",
                 frameId, actual.xCoord, actual.yCoord, actual.zCoord, partialTicks,
                 entity.posX, entity.posY, entity.posZ, entity.prevPosX, entity.prevPosY, entity.prevPosZ,
-                entity.lastTickPosX, entity.lastTickPosY, entity.lastTickPosZ, entity.getEyeHeight());
+                entity.lastTickPosX, entity.lastTickPosY, entity.lastTickPosZ, interpolatedY,
+                entity.posY - interpolatedY, actual.yCoord - interpolatedY, entity.getEyeHeight());
     }
 
     /** Called by a redirect around the exact look-vector expression consumed by getMouseOver. */
@@ -92,8 +95,11 @@ public final class TargetingDiagnostics {
         if (!targetingPassActive || entity != Minecraft.getMinecraft().renderViewEntity) return;
         actualBlockRayOrigin = actual;
         if (!focused(entity) || entity.ticksExisted % 100 != 0) return;
-        Combatives.logger.info("BASE POV TRACE frame={} phase=BLOCK_RAY ACTUAL_BLOCK_RAY_ORIGIN=[{},{},{}] partialTicks={}",
-                frameId, actual.xCoord, actual.yCoord, actual.zCoord, partialTicks);
+        double interpolatedY = entity.prevPosY
+                + (entity.posY - entity.prevPosY) * (double) partialTicks;
+        Combatives.logger.info("BASE POV TRACE frame={} phase=BLOCK_RAY ACTUAL_BLOCK_RAY_ORIGIN=[{},{},{}] partialTicks={} vanillaPrevPosInterpolationY={} currentPosMinusInterpolationY={} actualMinusInterpolationY={}",
+                frameId, actual.xCoord, actual.yCoord, actual.zCoord, partialTicks, interpolatedY,
+                entity.posY - interpolatedY, actual.yCoord - interpolatedY);
     }
 
     public static void captureActualBlockRayLook(EntityLivingBase entity, Vec3 actual) {

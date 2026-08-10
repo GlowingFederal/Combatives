@@ -82,3 +82,15 @@
   `EntityLivingBase#rayTrace` for block targeting.
 - Preserved frame-correlated entity-ray, block-ray, and base-camera diagnostics
   without changing the cached legacy-eye coordinate fix.
+
+(701f9c0 Trace vanilla targeting interpolation offset)
+
+- Identified the reported `-0.12` as the difference between MPM's current
+  `posY` sample and Minecraft 1.7.10's `prevPosY`/`posY` partial-tick
+  interpolation, common to both block and entity targeting origins.
+- Added direct interpolation-term diagnostics at both vanilla targeting call
+  sites without changing ray behavior, camera behavior, player geometry, or
+  the cached legacy `getEyeHeight()` conversion.
+- Corrected the targeting audit's source-level account of
+  `EntityLivingBase#getPosition` and documented every Y operation through both
+  ray paths.

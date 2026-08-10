@@ -6,10 +6,12 @@ import com.glowingfederal.combatives.movement.ICombativesMovementState;
 import com.glowingfederal.combatives.movement.MovementController;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.movement.MovementProfile;
+import com.glowingfederal.combatives.client.camera.TargetingDiagnostics;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.world.World;
+import net.minecraft.util.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -20,6 +22,23 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(EntityLivingBase.class)
 public abstract class EntityLivingBaseMixin extends Entity {
+
+    /* 1.7.10 EntityLivingBase#rayTrace constructs the block ray independently
+     * from EntityRenderer's entity-intersection ray. Capture those exact return
+     * values too; Entity does not declare either method in this version. */
+    @Redirect(method = "rayTrace", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/EntityLivingBase;getPosition(F)Lnet/minecraft/util/Vec3;"))
+    private Vec3 combatives$captureBlockRayOrigin(EntityLivingBase entity, float partialTicks) {
+        Vec3 origin = entity.getPosition(partialTicks);
+        TargetingDiagnostics.captureActualBlockRayOrigin(entity, partialTicks, origin);
+        return origin;
+    }
+
+    @Redirect(method = "rayTrace", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/EntityLivingBase;getLook(F)Lnet/minecraft/util/Vec3;"))
+    private Vec3 combatives$captureBlockRayLook(EntityLivingBase entity, float partialTicks) {
+        Vec3 look = entity.getLook(partialTicks);
+        TargetingDiagnostics.captureActualBlockRayLook(entity, look);
+        return look;
+    }
 
     @Shadow
     protected boolean isJumping;

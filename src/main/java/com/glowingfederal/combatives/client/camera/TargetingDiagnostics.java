@@ -7,6 +7,7 @@ import com.glowingfederal.combatives.entity.player.EffectivePlayerGeometry;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
@@ -18,10 +19,22 @@ public final class TargetingDiagnostics {
     private static double physicalCameraBaseY;
     private static double originX, originZ;
     private static float targetYaw, targetPitch;
+    private static long frameId;
+    private static Vec3 actualTargetOrigin;
+    private static Vec3 actualTargetLook;
+    private static Vec3 actualBlockRayOrigin;
+    private static Vec3 actualBlockRayLook;
+    private static boolean targetingPassActive;
 
     private TargetingDiagnostics() { }
 
     public static void beforeTargeting(Object renderer, float partialTicks) {
+        frameId++;
+        actualTargetOrigin = null;
+        actualTargetLook = null;
+        actualBlockRayOrigin = null;
+        actualBlockRayLook = null;
+        targetingPassActive = true;
         loggingPass = false;
         Minecraft mc = Minecraft.getMinecraft();
         Entity view = mc.renderViewEntity;
@@ -55,6 +68,64 @@ public final class TargetingDiagnostics {
         loggingPass = true;
     }
 
+    /** Called by redirects at the exact vanilla expression consumed by getMouseOver. */
+    public static void captureActualTargetOrigin(Entity entity, float partialTicks, Vec3 actual) {
+        actualTargetOrigin = actual;
+        if (!focused(entity) || entity.ticksExisted % 100 != 0) return;
+        Combatives.logger.info("BASE POV TRACE frame={} phase=TARGET ACTUAL_TARGET_ORIGIN=[{},{},{}] partialTicks={} pos=[{},{},{}] prevPos=[{},{},{}] lastTickPos=[{},{},{}] getEyeHeight={}",
+                frameId, actual.xCoord, actual.yCoord, actual.zCoord, partialTicks,
+                entity.posX, entity.posY, entity.posZ, entity.prevPosX, entity.prevPosY, entity.prevPosZ,
+                entity.lastTickPosX, entity.lastTickPosY, entity.lastTickPosZ, entity.getEyeHeight());
+    }
+
+    /** Called by a redirect around the exact look-vector expression consumed by getMouseOver. */
+    public static void captureActualTargetLook(Vec3 actual) {
+        actualTargetLook = actual;
+        Entity entity = Minecraft.getMinecraft().renderViewEntity;
+        if (!focused(entity) || entity.ticksExisted % 100 != 0) return;
+        Combatives.logger.info("BASE POV TRACE frame={} phase=TARGET_LOOK ACTUAL_TARGET_LOOK=[{},{},{}]",
+                frameId, actual.xCoord, actual.yCoord, actual.zCoord);
+    }
+
+    /** Exact vectors produced inside EntityLivingBase#rayTrace for the block ray. */
+    public static void captureActualBlockRayOrigin(EntityLivingBase entity, float partialTicks, Vec3 actual) {
+        if (!targetingPassActive || entity != Minecraft.getMinecraft().renderViewEntity) return;
+        actualBlockRayOrigin = actual;
+        if (!focused(entity) || entity.ticksExisted % 100 != 0) return;
+        Combatives.logger.info("BASE POV TRACE frame={} phase=BLOCK_RAY ACTUAL_BLOCK_RAY_ORIGIN=[{},{},{}] partialTicks={}",
+                frameId, actual.xCoord, actual.yCoord, actual.zCoord, partialTicks);
+    }
+
+    public static void captureActualBlockRayLook(EntityLivingBase entity, Vec3 actual) {
+        if (!targetingPassActive || entity != Minecraft.getMinecraft().renderViewEntity) return;
+        actualBlockRayLook = actual;
+        if (!focused(entity) || entity.ticksExisted % 100 != 0) return;
+        Combatives.logger.info("BASE POV TRACE frame={} phase=BLOCK_RAY_LOOK ACTUAL_BLOCK_RAY_LOOK=[{},{},{}]",
+                frameId, actual.xCoord, actual.yCoord, actual.zCoord);
+    }
+
+    /** Called from orientCamera's modified local, before procedural tail transforms. */
+    public static void captureActualCameraOrigin(EntityPlayer player, float partialTicks, float consumedCameraOffset) {
+        if (!focused(player) || player.ticksExisted % 100 != 0) return;
+        double x = player.prevPosX + (player.posX - player.prevPosX) * partialTicks;
+        double interpolatedY = player.prevPosY + (player.posY - player.prevPosY) * partialTicks;
+        double y = interpolatedY - consumedCameraOffset;
+        double z = player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks;
+        Double delta = actualTargetOrigin == null ? null : y - actualTargetOrigin.yCoord;
+        Combatives.logger.info("BASE POV TRACE frame={} phase=CAMERA ACTUAL_CAMERA_ORIGIN=[{},{},{}] partialTicks={} activeYOffset={} activeInterpolatedPosY={} consumedCameraOffset={} sameFrameEntityRayOrigin={} sameFrameCameraMinusEntityRayY={} entityRayLook={} blockRayOrigin={} blockRayLook={}",
+                frameId, x, y, z, partialTicks, player.yOffset, interpolatedY, consumedCameraOffset,
+                vector(actualTargetOrigin), delta, vector(actualTargetLook), vector(actualBlockRayOrigin), vector(actualBlockRayLook));
+    }
+
+    private static boolean focused(Entity entity) {
+        return Combatives.logger != null && entity instanceof EntityPlayer
+                && (CombativesConfig.debugCamera || CombativesConfig.debugMpmPov);
+    }
+
+    private static String vector(Vec3 value) {
+        return value == null ? "unavailable" : "[" + value.xCoord + "," + value.yCoord + "," + value.zCoord + "]";
+    }
+
     public static void logRenderedCamera(EntityPlayer player, float partialTicks, double renderedBaseY) {
         if ((!CombativesConfig.debugCamera && !CombativesConfig.debugMovement) || Combatives.logger == null
                 || player == null || player.ticksExisted % 20 != 0) return;
@@ -75,6 +146,7 @@ public final class TargetingDiagnostics {
     }
 
     public static void afterTargeting() {
+        targetingPassActive = false;
         if (!loggingPass || Combatives.logger == null) {
             return;
         }

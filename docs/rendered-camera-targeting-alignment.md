@@ -13,17 +13,26 @@ pitch   = lerp(prevRotationPitch, rotationPitch, partialTicks)
 ```
 
 The targeting origin is the `Vec3` returned directly by
-`renderViewEntity.getPosition(partialTicks)`. In this legacy coordinate system
-the interpolated entity position is already offset from the AABB floor, and
-`getPosition` adds `getEyeHeight()` to it. For the observed ordinary standing
-state this gives:
+`renderViewEntity.getPosition(partialTicks)`. Minecraft 1.7.10's
+`EntityLivingBase#getPosition` is only a position interpolator. Its non-unit
+partial-tick branch computes each coordinate from `prevPos` and `pos`; in Y the
+source expression is:
+
+```text
+rayOriginY = prevPosY + (posY - prevPosY) * partialTicks
+```
+
+The `partialTicks == 1.0F` branch returns current `posY`. Neither branch reads
+`yOffset`, `ySize`, the bounding box, or `getEyeHeight()`. In this legacy
+coordinate system the entity position is already offset from the AABB floor.
+For the observed ordinary standing state this gives:
 
 ```text
 minY                         = 72.0
 posY                         = 73.62000000476837
 desired eye above minY       = 1.62
-legacy getEyeHeight          = minY + 1.62 - posY ~= 0.0
-vanilla target origin Y      = interpolated posY + legacy getEyeHeight ~= 73.62
+legacy getEyeHeight          = minY + 1.62 - posY ~= 0.0 (not read here)
+vanilla target origin Y      = lerp(prevPosY, posY, partialTicks) ~= 73.62
 vanilla camera local         = yOffset - 1.62 = 0.0
 vanilla camera origin Y      = interpolated posY - camera local ~= 73.62
 ```
@@ -69,11 +78,9 @@ The subsequent runtime trace exposed a second interaction. Combatives was
 recomputing the legacy eye offset from **live** `posY` every time
 `getEyeHeight()` was called. During MPM targeting, raw `posY` was temporarily
 `73.58` while the AABB remained at `72`; the calculation therefore returned
-`72 + 1.62 - 73.58 ~= 0.04`. Vanilla `getPosition` then added that `0.04` back,
-turning MPM's raw `73.58` sample into an actual `73.62` ray origin. This is why
-the old diagnostic could truthfully show `targetingMutated=73.58` while its
-reconstructed target was `73.62`: the first number was a raw entity-position
-sample, not the consumed ray-origin vector.
+`72 + 1.62 - 73.58 ~= 0.04`. That live derivation was invalid because it made
+the legacy API vary during MPM's temporary mutation. The actual 1.7.10
+`getPosition` ray expression itself does not call that API.
 
 The legacy conversion is now cached when physical pose geometry is recalculated,
 instead of being derived from compatibility renderers' temporary position
@@ -94,6 +101,38 @@ The compatibility boundary is pose-specific:
 No literal `0.04` compensation was added. The corrected legacy
 `boundingBox.minY + eyeAboveMinY - posY` conversion and bounding-box resizing
 remain unchanged.
+
+## Source of the reported `-0.12`
+
+The reported pair `posY=78.4531575` and
+`ACTUAL_TARGET_ORIGIN.y=78.3331575` compares unlike values: MPM's diagnostic
+presents the **current** `posY`, whereas both vanilla rays consume the
+partial-tick result of `EntityLivingBase#getPosition`. There is no Y adjustment
+after that return value in either ray construction. `EntityRenderer#getMouseOver`
+uses it unchanged as the entity-intersection segment start, and
+`EntityLivingBase#rayTrace` uses it unchanged as the block-ray segment start.
+
+Consequently the complete Y accounting between the MPM-mutated samples and
+both recorded origins is exactly one operation:
+
+```text
+MPM: prevPosY += A; posY += A
+vanilla: originY = mutatedPrevPosY
+                 + (mutatedPosY - mutatedPrevPosY) * partialTicks
+later Y adjustments: none
+```
+
+The measured difference therefore equals
+`(1 - partialTicks) * (posY - prevPosY)` (with the sign implied by that
+subtraction). A stable `0.12` means that interpolation term was stable; stability
+alone cannot rule interpolation out. MPM owns the common `A` translation, but
+because it applies `A` to both endpoints it cancels out of the interpolation
+gap. Combatives does not introduce this value. The trace now prints
+`vanillaPrevPosInterpolationY`, `currentPosMinusInterpolationY`, and
+`actualMinusInterpolationY` at both call sites. For this case the first must
+equal the actual origin, the second must be approximately `+0.12`, and the last
+must be zero. This directly distinguishes the vanilla interpolation term from
+any downstream adjustment without changing targeting behavior.
 
 ## Diagnostics and manual checks
 

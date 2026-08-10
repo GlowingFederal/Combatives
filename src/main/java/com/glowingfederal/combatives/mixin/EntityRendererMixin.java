@@ -55,6 +55,12 @@ public abstract class EntityRendererMixin {
     @Inject(method = "orientCamera", at = @At("TAIL"))
     private void combatives$applyCameraTransforms(float partialTicks, CallbackInfo ci) {
         CameraController.INSTANCE.applyTransforms(partialTicks);
+        Entity entity = Minecraft.getMinecraft().renderViewEntity;
+        if (entity instanceof EntityPlayer) {
+            EntityPlayer player = (EntityPlayer) entity;
+            double interpolatedPosY = player.prevPosY + (player.posY - player.prevPosY) * (double) partialTicks;
+            TargetingDiagnostics.logRenderedCamera(player, partialTicks, interpolatedPosY - this.combatives$entityEyeHeight);
+        }
     }
 
     @Inject(

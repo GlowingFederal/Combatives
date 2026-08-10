@@ -28,7 +28,8 @@ public final class CameraController {
     private static final float MAX_IMPACT_Z_OFFSET = 0.16F;
 
     private float leanRoll, leanPitch, bobVertical, bobSway, bobPitch, bobRoll, shakeVertical, shakeForward, shakeLateral, shakePitch, shakeRoll, fovModifier;
-    private float lastTranslationY;
+    private float lastTranslationX, lastTranslationY, lastTranslationZ;
+    private float lastPitch, lastYaw, lastRoll;
 
     private CameraController() {}
 
@@ -59,7 +60,9 @@ public final class CameraController {
         float yOffset = ambientY + impactY;
         this.lastTranslationY = yOffset;
         float zOffset = impactZ;
+        this.lastTranslationX = xOffset;
         GL11.glTranslatef(xOffset, yOffset, zOffset);
+        this.lastTranslationZ = zOffset;
 
         float pitch = 0.0F;
         float yaw = 0.0F;
@@ -74,6 +77,9 @@ public final class CameraController {
             GL11.glRotatef(yaw, 0.0F, 1.0F, 0.0F);
             GL11.glRotatef(roll, 0.0F, 0.0F, 1.0F);
         }
+        this.lastPitch = pitch;
+        this.lastYaw = yaw;
+        this.lastRoll = roll;
         if (Combatives.logger != null && CombativesConfig.verboseCameraDebug) Combatives.logger.info("Combatives camera final render transform pitch={} yaw={} roll={} translation=({},{},{}) fov={}", pitch, yaw, roll, xOffset, yOffset, zOffset, getFovModifier());
     }
 
@@ -98,7 +104,7 @@ public final class CameraController {
         return value < min ? min : value > max ? max : value;
     }
 
-    public void reset() { EntityCameraBehaviorManager.INSTANCE.reset(Minecraft.getMinecraft() == null ? null : Minecraft.getMinecraft().thePlayer); lean.reset(); bob.reset(); fov.reset(); shake.reset(); CameraEffectManager.reset(); leanRoll = leanPitch = bobVertical = bobSway = bobPitch = bobRoll = shakeVertical = shakeForward = shakeLateral = shakePitch = shakeRoll = fovModifier = lastTranslationY = 0.0F; }
+    public void reset() { EntityCameraBehaviorManager.INSTANCE.reset(Minecraft.getMinecraft() == null ? null : Minecraft.getMinecraft().thePlayer); lean.reset(); bob.reset(); fov.reset(); shake.reset(); CameraEffectManager.reset(); leanRoll = leanPitch = bobVertical = bobSway = bobPitch = bobRoll = shakeVertical = shakeForward = shakeLateral = shakePitch = shakeRoll = fovModifier = lastTranslationX = lastTranslationY = lastTranslationZ = lastPitch = lastYaw = lastRoll = 0.0F; }
 
     public void addExplosionFeedback(EntityPlayerSP player, double x, double y, double z, float strength) {
         if (!CombativesConfig.enableCombativesCamera || !CombativesConfig.enableCameraShake || !CombativesConfig.enableExplosionCameraFeedback || player == null) {
@@ -132,5 +138,10 @@ public final class CameraController {
         shake.addExplosionImpulse(response, localForward, localRight, localVertical);
     }
     public float getFovModifier() { return fovModifier + CameraEffectManager.getFov() * 0.01F; }
+    public float getLastTranslationX() { return lastTranslationX; }
     public float getLastTranslationY() { return lastTranslationY; }
+    public float getLastTranslationZ() { return lastTranslationZ; }
+    public float getLastPitch() { return lastPitch; }
+    public float getLastYaw() { return lastYaw; }
+    public float getLastRoll() { return lastRoll; }
 }

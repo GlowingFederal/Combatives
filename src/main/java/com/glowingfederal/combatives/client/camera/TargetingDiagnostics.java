@@ -16,6 +16,8 @@ public final class TargetingDiagnostics {
     private static boolean loggingPass;
     private static double originY;
     private static double physicalCameraBaseY;
+    private static double originX, originZ;
+    private static float targetYaw, targetPitch;
 
     private TargetingDiagnostics() { }
 
@@ -40,13 +42,36 @@ public final class TargetingDiagnostics {
         physicalCameraBaseY = interpolatedMinY + geometry.eyeAboveMinY;
         originY = interpolatedY + player.getEyeHeight();
         Vec3 look = player.getLook(partialTicks);
+        originX = player.lastTickPosX + (player.posX - player.lastTickPosX) * partialTicks;
+        originZ = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * partialTicks;
+        targetYaw = (float) Math.toDegrees(Math.atan2(-look.xCoord, look.zCoord));
+        targetPitch = (float) Math.toDegrees(Math.asin(-look.yCoord));
         float reach = mc.playerController == null ? Float.NaN : mc.playerController.getBlockReachDistance();
-        Combatives.logger.info("Combatives targeting enter: renderer={} pose={} geometry={}x{} eyeAboveMinY={} boundingBox=[{},{}] getEyeHeight={} posY={} prevPosY={} lastTickPosY={} yOffset={} ySize={} entityHeight={} partialTicks={} interpolatedPositionY={} expectedTargetOriginY={} actualVanillaOriginY={} physicalCameraBaseY={} originDelta={} MPMMutationAmount=reported-by-compat-hook look=[{},{},{}] reach={}",
+        Combatives.logger.info("Combatives targeting enter: renderer={} pose={} geometry={}x{} eyeAboveMinY={} boundingBox=[{},{}] getEyeHeight={} posY={} prevPosY={} lastTickPosY={} yOffset={} ySize={} entityHeight={} partialTicks={} targetOrigin=[{},{},{}] expectedTargetOriginY={} actualVanillaOriginY={} physicalCameraBaseY={} originDelta={} targetLook=[{},{},{}] targetYaw={} targetPitch={} reach={}",
                 renderer.getClass().getName(), pose, geometry.width, geometry.height, geometry.eyeAboveMinY,
                 player.boundingBox.minY, player.boundingBox.maxY, player.getEyeHeight(), player.posY, player.prevPosY,
-                player.lastTickPosY, player.yOffset, player.ySize, player.height, partialTicks, interpolatedY, physicalCameraBaseY, originY,
-                physicalCameraBaseY, originY - physicalCameraBaseY, look.xCoord, look.yCoord, look.zCoord, reach);
+                player.lastTickPosY, player.yOffset, player.ySize, player.height, partialTicks, originX, originY, originZ, physicalCameraBaseY, originY,
+                physicalCameraBaseY, originY - physicalCameraBaseY, look.xCoord, look.yCoord, look.zCoord, targetYaw, targetPitch, reach);
         loggingPass = true;
+    }
+
+    public static void logRenderedCamera(EntityPlayer player, float partialTicks, double renderedBaseY) {
+        if ((!CombativesConfig.debugCamera && !CombativesConfig.debugMovement) || Combatives.logger == null
+                || player == null || player.ticksExisted % 20 != 0) return;
+        double x = player.prevPosX + (player.posX - player.prevPosX) * partialTicks;
+        double z = player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks;
+        float renderYaw = player.prevRotationYaw + (player.rotationYaw - player.prevRotationYaw) * partialTicks;
+        float renderPitch = player.prevRotationPitch + (player.rotationPitch - player.prevRotationPitch) * partialTicks;
+        CameraController c = CameraController.INSTANCE;
+        Combatives.logger.info("Combatives rendered camera: baseOrigin=[{},{},{}] authoritativePhysicalEyeY={} targetOrigin=[{},{},{}] basePositionDelta=[{},{},{}] renderYaw={} renderPitch={} visualYaw={} visualPitch={} visualRoll={} targetYaw={} targetPitch={} baseYawDelta={} basePitchDelta={} visualTranslation=[{},{},{}] fovModifier={}",
+                x, renderedBaseY, z, physicalCameraBaseY, originX, originY, originZ, x-originX, renderedBaseY-originY, z-originZ,
+                renderYaw, renderPitch, c.getLastYaw(), c.getLastPitch(), c.getLastRoll(), targetYaw, targetPitch,
+                wrapDegrees(renderYaw-targetYaw), renderPitch-targetPitch, c.getLastTranslationX(), c.getLastTranslationY(), c.getLastTranslationZ(), c.getFovModifier());
+    }
+
+    private static float wrapDegrees(float value) {
+        value %= 360.0F;
+        return value >= 180.0F ? value - 360.0F : value < -180.0F ? value + 360.0F : value;
     }
 
     public static void afterTargeting() {

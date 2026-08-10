@@ -43,22 +43,17 @@ can clean up normally. No RETURN restoration remains: restoring originals there
 would be redundant/stale, while leaving originals installed before MPM cleanup
 would cause MPM to subtract its mutation twice.
 
-## Targeting math
+## Targeting and rendered-camera ownership
 
-For default size (`size = 1`, zero model offset), MPM computes
-`offset = -0 - (-1.615 + 1 * 0.315) = 1.30`, then adds `-offset = -1.30` to all
-three samples. MPM crawling/sleeping forces `offset = 1.18`, a `-1.18` mutation.
-Before repair, origins relative to genuine interpolated Y were consequently:
-
-* standing: `-1.30 + 1.62 = 0.32`;
-* sneaking: `-1.30 + 1.54 = 0.24`;
-* MPM crawling: `-1.18 + 0.28 = -0.90`;
-* Combatives swimming without MPM's crawling animation: `-1.30 + 0.28 = -1.02`.
-
-MPM's blocked-camera clamp can alter standing/sneaking. The repaired physical
-low-pose pass removes the MPM term instead of compensating for it, yielding
-`interpolated boundingBox.minY + 0.28`. Standing/default MPM behavior is left
-unchanged.
+MPM derives one model-dependent displacement and applies the same displacement
+to the legacy render camera through `yOffset` and to targeting through the three
+position samples. Combatives already replaces the render-camera local with its
+authoritative physical eye for every Combatives player pose. The compatibility
+hook therefore removes MPM's paired targeting displacement for every
+`ICombativesPlayerPose`, not merely low poses. It restores MPM's mutated samples
+after the vanilla call so MPM cleanup remains balanced. See the
+[rendered-camera alignment audit](rendered-camera-targeting-alignment.md) for the
+complete formula and the `1.62`/`1.66` trace.
 
 ## Diagnostics and manual verification
 

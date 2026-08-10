@@ -100,10 +100,30 @@ remain unchanged.
 Set `debugMpmPov=true` for focused samples every five seconds. `MPM POV
 MUTATION` now labels its position triplets explicitly as raw mutation state; it
 does not claim that those values are ray origins. `BASE POV TRACE` works with or
-without MPM and intercepts the exact `Entity#getPosition` and `Entity#getLook`
+without MPM and intercepts the exact `EntityLivingBase#getPosition` and `EntityLivingBase#getLook`
 return values consumed by vanilla `getMouseOver`. The camera sample is emitted
 from the modified `orientCamera` local before procedural tail transforms. Target
 and camera records share a monotonically increasing frame ID, and only the
 camera record reports a same-frame difference.
+
+### Verified 1.7.10 targeting call owners
+
+The methods used by this project's 1.7.10 `EntityRenderer#getMouseOver` are
+declared on `EntityLivingBase`, not `Entity`:
+
+| Purpose | MCP call and descriptor | SRG name |
+| --- | --- | --- |
+| Entity-ray origin | `EntityLivingBase#getPosition(F)Lnet/minecraft/util/Vec3;` | `func_70666_h` |
+| Entity-ray direction | `EntityLivingBase#getLook(F)Lnet/minecraft/util/Vec3;` | `func_70676_i` |
+| Block ray | `EntityLivingBase#rayTrace(DF)Lnet/minecraft/util/MovingObjectPosition;` | `func_70614_a` |
+
+`getMouseOver` obtains the entity-intersection start from `getPosition`, obtains
+the direction from `getLook`, constructs its reach endpoint with
+`Vec3#addVector`, and passes that segment to each candidate bounding box's
+`calculateIntercept`. The block hit is obtained through `rayTrace`; that method
+independently calls the same `EntityLivingBase#getPosition` and `getLook`
+methods. The diagnostics therefore intercept the two direct calls in
+`getMouseOver` and the two calls inside `rayTrace`. Every interceptor returns the
+original `Vec3` object unchanged.
 
 Runtime testing is intentionally left to the tester. Compare horizontal/up/down and near/five-block targets while standing, sneaking, crawling, and entity targeting; repeat with MPM POV on/off and default/small/large sizes; then repeat with Combatives effects and vanilla/procedural bobbing toggled. A zero-effects pass should show zero base position and angular deltas. Nonzero procedural or vanilla bob values are visual-only and should be evaluated separately.

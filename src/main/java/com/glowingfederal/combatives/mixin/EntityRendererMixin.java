@@ -12,6 +12,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.renderer.EntityRenderer;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -41,15 +42,15 @@ public abstract class EntityRendererMixin {
         TargetingDiagnostics.afterTargeting();
     }
 
-    @Redirect(method = "getMouseOver", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/Entity;getPosition(F)Lnet/minecraft/util/Vec3;"))
-    private net.minecraft.util.Vec3 combatives$captureConsumedTargetOrigin(Entity entity, float partialTicks) {
+    @Redirect(method = "getMouseOver", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/EntityLivingBase;getPosition(F)Lnet/minecraft/util/Vec3;"))
+    private net.minecraft.util.Vec3 combatives$captureConsumedTargetOrigin(EntityLivingBase entity, float partialTicks) {
         net.minecraft.util.Vec3 origin = entity.getPosition(partialTicks);
         TargetingDiagnostics.captureActualTargetOrigin(entity, partialTicks, origin);
         return origin;
     }
 
-    @Redirect(method = "getMouseOver", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/Entity;getLook(F)Lnet/minecraft/util/Vec3;"))
-    private net.minecraft.util.Vec3 combatives$captureConsumedTargetLook(Entity entity, float partialTicks) {
+    @Redirect(method = "getMouseOver", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/EntityLivingBase;getLook(F)Lnet/minecraft/util/Vec3;"))
+    private net.minecraft.util.Vec3 combatives$captureConsumedTargetLook(EntityLivingBase entity, float partialTicks) {
         net.minecraft.util.Vec3 look = entity.getLook(partialTicks);
         TargetingDiagnostics.captureActualTargetLook(look);
         return look;

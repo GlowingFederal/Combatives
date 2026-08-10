@@ -73,3 +73,12 @@
   position no longer changes `getEyeHeight()` and cancels MPM's ray movement.
 - Replaced inferred MPM camera/target comparisons with explicitly labeled raw
   mutation diagnostics and added a non-MPM vanilla control trace.
+
+(e9733fa Correct 1.7.10 targeting diagnostic mappings)
+
+- Corrected target-origin and look-vector redirects to the verified
+  `EntityLivingBase` owner used by Minecraft 1.7.10.
+- Added direct capture of the independent origin and look vectors consumed by
+  `EntityLivingBase#rayTrace` for block targeting.
+- Preserved frame-correlated entity-ray, block-ray, and base-camera diagnostics
+  without changing the cached legacy-eye coordinate fix.

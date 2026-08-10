@@ -7,6 +7,7 @@ import com.glowingfederal.combatives.entity.player.EffectivePlayerGeometry;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
@@ -21,6 +22,9 @@ public final class TargetingDiagnostics {
     private static long frameId;
     private static Vec3 actualTargetOrigin;
     private static Vec3 actualTargetLook;
+    private static Vec3 actualBlockRayOrigin;
+    private static Vec3 actualBlockRayLook;
+    private static boolean targetingPassActive;
 
     private TargetingDiagnostics() { }
 
@@ -28,6 +32,9 @@ public final class TargetingDiagnostics {
         frameId++;
         actualTargetOrigin = null;
         actualTargetLook = null;
+        actualBlockRayOrigin = null;
+        actualBlockRayLook = null;
+        targetingPassActive = true;
         loggingPass = false;
         Minecraft mc = Minecraft.getMinecraft();
         Entity view = mc.renderViewEntity;
@@ -80,6 +87,23 @@ public final class TargetingDiagnostics {
                 frameId, actual.xCoord, actual.yCoord, actual.zCoord);
     }
 
+    /** Exact vectors produced inside EntityLivingBase#rayTrace for the block ray. */
+    public static void captureActualBlockRayOrigin(EntityLivingBase entity, float partialTicks, Vec3 actual) {
+        if (!targetingPassActive || entity != Minecraft.getMinecraft().renderViewEntity) return;
+        actualBlockRayOrigin = actual;
+        if (!focused(entity) || entity.ticksExisted % 100 != 0) return;
+        Combatives.logger.info("BASE POV TRACE frame={} phase=BLOCK_RAY ACTUAL_BLOCK_RAY_ORIGIN=[{},{},{}] partialTicks={}",
+                frameId, actual.xCoord, actual.yCoord, actual.zCoord, partialTicks);
+    }
+
+    public static void captureActualBlockRayLook(EntityLivingBase entity, Vec3 actual) {
+        if (!targetingPassActive || entity != Minecraft.getMinecraft().renderViewEntity) return;
+        actualBlockRayLook = actual;
+        if (!focused(entity) || entity.ticksExisted % 100 != 0) return;
+        Combatives.logger.info("BASE POV TRACE frame={} phase=BLOCK_RAY_LOOK ACTUAL_BLOCK_RAY_LOOK=[{},{},{}]",
+                frameId, actual.xCoord, actual.yCoord, actual.zCoord);
+    }
+
     /** Called from orientCamera's modified local, before procedural tail transforms. */
     public static void captureActualCameraOrigin(EntityPlayer player, float partialTicks, float consumedCameraOffset) {
         if (!focused(player) || player.ticksExisted % 100 != 0) return;
@@ -88,9 +112,9 @@ public final class TargetingDiagnostics {
         double y = interpolatedY - consumedCameraOffset;
         double z = player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks;
         Double delta = actualTargetOrigin == null ? null : y - actualTargetOrigin.yCoord;
-        Combatives.logger.info("BASE POV TRACE frame={} phase=CAMERA ACTUAL_CAMERA_ORIGIN=[{},{},{}] partialTicks={} activeYOffset={} activeInterpolatedPosY={} consumedCameraOffset={} sameFrameTargetOrigin={} sameFrameCameraMinusTargetY={} targetLook={}",
+        Combatives.logger.info("BASE POV TRACE frame={} phase=CAMERA ACTUAL_CAMERA_ORIGIN=[{},{},{}] partialTicks={} activeYOffset={} activeInterpolatedPosY={} consumedCameraOffset={} sameFrameEntityRayOrigin={} sameFrameCameraMinusEntityRayY={} entityRayLook={} blockRayOrigin={} blockRayLook={}",
                 frameId, x, y, z, partialTicks, player.yOffset, interpolatedY, consumedCameraOffset,
-                vector(actualTargetOrigin), delta, vector(actualTargetLook));
+                vector(actualTargetOrigin), delta, vector(actualTargetLook), vector(actualBlockRayOrigin), vector(actualBlockRayLook));
     }
 
     private static boolean focused(Entity entity) {
@@ -122,6 +146,7 @@ public final class TargetingDiagnostics {
     }
 
     public static void afterTargeting() {
+        targetingPassActive = false;
         if (!loggingPass || Combatives.logger == null) {
             return;
         }

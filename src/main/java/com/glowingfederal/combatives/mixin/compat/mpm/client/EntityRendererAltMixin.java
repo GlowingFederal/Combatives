@@ -3,6 +3,8 @@ package com.glowingfederal.combatives.mixin.compat.mpm.client;
 import com.glowingfederal.combatives.Combatives;
 import com.glowingfederal.combatives.config.CombativesConfig;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
+import com.glowingfederal.combatives.entity.Pose;
+import com.glowingfederal.combatives.client.camera.MpmPovDiagnostics;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import org.spongepowered.asm.mixin.Mixin;
@@ -12,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** Keeps MPM+'s temporary targeting translation out of Combatives-owned camera geometry. */
+/** Neutralizes MPM+'s paired POV translation only for Combatives-owned low poses. */
 @Pseudo
 @Mixin(targets = "noppes.mpm.client.EntityRendererAlt", remap = false)
 public abstract class EntityRendererAltMixin {
@@ -30,16 +32,11 @@ public abstract class EntityRendererAltMixin {
     @Inject(method = "func_78473_a(F)V", at = @At("HEAD"), require = 0, remap = false)
     private void combatives$captureOriginalPosition(float partialTicks, CallbackInfo ci) {
         EntityPlayer player = Minecraft.getMinecraft().thePlayer;
-        /* EntityRendererMixin already makes Combatives geometry own the physical
-         * first-person camera for every Combatives player pose. Letting MPM move
-         * the ray only in standing created a different POV for rendering and
-         * targeting. Preserve MPM's samples for its cleanup, but use the same
-         * physical origin while vanilla targeting executes. */
-        this.combatives$ownsTargetGeometry = player instanceof ICombativesPlayerPose;
+        this.combatives$ownsTargetGeometry = this.combatives$isPhysicalLowPose(player);
         this.combatives$targetCallActive = false;
-        this.combatives$logTargetPass = this.combatives$ownsTargetGeometry
+        this.combatives$logTargetPass = player != null && this.combatives$ownsTargetGeometry
                 && CombativesConfig.debugCamera && player.ticksExisted % 20 == 0;
-        if (this.combatives$ownsTargetGeometry) {
+        if (player != null) {
             this.combatives$originalPosY = player.posY;
             this.combatives$originalPrevPosY = player.prevPosY;
             this.combatives$originalLastTickPosY = player.lastTickPosY;
@@ -52,9 +49,6 @@ public abstract class EntityRendererAltMixin {
             remap = false
     ), require = 0, remap = false)
     private void combatives$restoreWorldPositionForVanilla(float partialTicks, CallbackInfo ci) {
-        if (!this.combatives$ownsTargetGeometry) {
-            return;
-        }
         EntityPlayer player = Minecraft.getMinecraft().thePlayer;
         if (player == null) {
             return;
@@ -62,6 +56,13 @@ public abstract class EntityRendererAltMixin {
         this.combatives$mpmPosY = player.posY;
         this.combatives$mpmPrevPosY = player.prevPosY;
         this.combatives$mpmLastTickPosY = player.lastTickPosY;
+        MpmPovDiagnostics.logSample(player, partialTicks,
+                this.combatives$originalPosY, this.combatives$originalPrevPosY, this.combatives$originalLastTickPosY,
+                this.combatives$mpmPosY, this.combatives$mpmPrevPosY, this.combatives$mpmLastTickPosY,
+                this.combatives$ownsTargetGeometry);
+        if (!this.combatives$ownsTargetGeometry) {
+            return;
+        }
         player.posY = this.combatives$originalPosY;
         player.prevPosY = this.combatives$originalPrevPosY;
         player.lastTickPosY = this.combatives$originalLastTickPosY;
@@ -96,6 +97,16 @@ public abstract class EntityRendererAltMixin {
             }
         }
         this.combatives$targetCallActive = false;
+    }
+
+    @Unique
+    private boolean combatives$isPhysicalLowPose(EntityPlayer player) {
+        if (!(player instanceof ICombativesPlayerPose)) {
+            return false;
+        }
+        ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
+        return pose.getPose() != Pose.STANDING || pose.isSwimming()
+                || pose.isCrawlKeyDown() || pose.isActuallySwimming();
     }
 
 }

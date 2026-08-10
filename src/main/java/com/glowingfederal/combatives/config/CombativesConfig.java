@@ -41,6 +41,7 @@ public final class CombativesConfig {
     public static boolean verboseMovementDebug = CombativesConfigDefaults.VERBOSE_DEBUG;
     public static boolean debugCamera = CombativesConfigDefaults.DEBUG;
     public static boolean verboseCameraDebug = CombativesConfigDefaults.VERBOSE_DEBUG;
+    public static boolean debugMpmPov = CombativesConfigDefaults.DEBUG;
 
     private CombativesConfig() {
     }
@@ -89,6 +90,7 @@ public final class CombativesConfig {
         boolean verboseDebug = config.getBoolean("verboseDebug", CATEGORY_DEBUG, CombativesConfigDefaults.VERBOSE_DEBUG, "Enable verbose per-frame/per-tick Combatives movement and camera diagnostics. This implies debug output.");
         debugMovement = debug;
         debugCamera = debug;
+        debugMpmPov = debug;
         verboseMovementDebug = verboseDebug;
         verboseCameraDebug = verboseDebug;
 
@@ -156,6 +158,12 @@ public final class CombativesConfig {
             verboseCameraDebug,
             "Enable throttled per-frame Combatives camera diagnostics."
         );
+        debugMpmPov = config.getBoolean(
+            "debugMpmPov",
+            CATEGORY_DEBUG,
+            debugMpmPov,
+            "Enable one focused MPM camera/targeting ownership sample every five seconds."
+        );
 
         if (config.hasChanged()) {
             config.save();
@@ -183,5 +191,6 @@ public final class CombativesConfig {
         logger.info("Combatives config: verboseMovementDebug={}", verboseMovementDebug);
         logger.info("Combatives config: debugCamera={}", debugCamera);
         logger.info("Combatives config: verboseCameraDebug={}", verboseCameraDebug);
+        logger.info("Combatives config: debugMpmPov={}", debugMpmPov);
     }
 }

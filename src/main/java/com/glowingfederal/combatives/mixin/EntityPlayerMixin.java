@@ -47,6 +47,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     private boolean eyesInWaterPlayer;
     private EntitySize combativesSize;
     private float combativesEyeHeight;
+    private float combativesLegacyEyeHeight;
     private float previousEyeHeight;
     private float swimAnimation;
     private float lastSwimAnimation;
@@ -72,6 +73,8 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     private void combatives$constructed(CallbackInfo ci) {
         this.combativesSize = STANDING_SIZE;
         this.combativesEyeHeight = this.getEyeHeight(Pose.STANDING, this.combativesSize);
+        this.combativesLegacyEyeHeight = (float) (this.boundingBox.minY
+                + this.combativesEyeHeight - this.posY);
         this.combativesPose = Pose.STANDING;
         this.getDataWatcher().addObject(POSE_WATCHER_ID, Pose.STANDING.ordinal());
         this.combativesPoseWatcherReady = true;
@@ -191,6 +194,13 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         EffectivePlayerGeometry geometry = this.getEffectiveGeometry();
         Pose pose = geometry.pose;
         this.combativesEyeHeight = geometry.eyeAboveMinY;
+        /* Cache the conversion while the entity is in its genuine physical
+         * coordinate state. Compatibility renderers such as MPM temporarily
+         * mutate posY around ray construction without moving the AABB; deriving
+         * this value from live posY inside getEyeHeight would cancel that ray
+         * transformation. */
+        this.combativesLegacyEyeHeight = (float) (this.boundingBox.minY
+                + this.combativesEyeHeight - this.posY);
         this.previousEyeHeight = this.eyeHeight;
         MovementDiagnostics.verbose(this.getPlayer(), "eye height recalculated for " + pose + ": " + this.combativesEyeHeight);
     }
@@ -300,10 +310,11 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
              * reconstructs posY as minY + yOffset - ySize, and the vanilla
              * targeting path adds getEyeHeight() to that legacy position.
              * Pose geometry stores the modern, useful "above minY" value, so
-             * convert it at this API boundary rather than counting the legacy
-             * position offset a second time.
+             * use the conversion cached with the applied physical pose rather
+             * than counting the legacy position offset a second time or
+             * reacting to a renderer's temporary position mutation.
              */
-            cir.setReturnValue((float) (this.boundingBox.minY + this.combativesEyeHeight - this.posY));
+            cir.setReturnValue(this.combativesLegacyEyeHeight);
         }
     }
 

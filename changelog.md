@@ -55,3 +55,12 @@
   camera ownership instead of retaining a standing-only position disagreement.
 - Added paired camera/target position, direction, procedural transform, and FOV
   diagnostics plus a manual crosshair-alignment verification matrix.
+
+(2e16cbc Preserve paired MPM standing camera and targeting ownership)
+
+- Preserved vanilla/MPM legacy camera and targeting semantics for standing
+  instead of forcing AABB-relative gameplay geometry into every camera.
+- Narrowed Combatives camera and MPM targeting replacement to poses with
+  Combatives-owned physical geometry (resized sneak, crawl, and swim).
+- Added a focused, heavily throttled MPM POV diagnostic with model inputs,
+  paired camera/target calculations, mutation samples, and ownership decisions.

@@ -12,27 +12,31 @@ yaw     = lerp(prevRotationYaw, rotationYaw, partialTicks)
 pitch   = lerp(prevRotationPitch, rotationPitch, partialTicks)
 ```
 
-The targeting origin is the `Vec3` returned directly by
-`renderViewEntity.getPosition(partialTicks)`. Minecraft 1.7.10's
-`EntityLivingBase#getPosition` is only a position interpolator. Its non-unit
-partial-tick branch computes each coordinate from `prevPos` and `pos`; in Y the
-source expression is:
+The targeting origin begins with the `Vec3` returned by the virtual
+`renderViewEntity.getPosition(partialTicks)` call. Although the caller's
+constant-pool method reference is `EntityLivingBase#getPosition`, that inherited
+implementation is also the runtime implementation for a player. It interpolates
+each coordinate, adds the virtual `getEyeHeight()` result to Y, and applies the
+legacy downward eye bias:
 
 ```text
-rayOriginY = prevPosY + (posY - prevPosY) * partialTicks
+rawPlayerRayOriginY = prevPosY + (posY - prevPosY) * partialTicks
+                    + getEyeHeight()
+                    - 0.12
 ```
 
-The `partialTicks == 1.0F` branch returns current `posY`. Neither branch reads
-`yOffset`, `ySize`, the bounding box, or `getEyeHeight()`. In this legacy
-coordinate system the entity position is already offset from the AABB floor.
+At `partialTicks == 1.0F`, the positional term becomes current `posY`, but the
+eye-height and legacy-bias terms remain. The method does not directly read `yOffset`,
+`ySize`, or the bounding box; Combatives' `getEyeHeight()` implementation uses
+the value cached from those legacy coordinates when physical geometry changes.
 For the observed ordinary standing state this gives:
 
 ```text
 minY                         = 72.0
 posY                         = 73.62000000476837
 desired eye above minY       = 1.62
-legacy getEyeHeight          = minY + 1.62 - posY ~= 0.0 (not read here)
-vanilla target origin Y      = lerp(prevPosY, posY, partialTicks) ~= 73.62
+legacy getEyeHeight          = minY + 1.62 - posY ~= 0.0
+raw player target origin Y   = lerp(prevPosY, posY, partialTicks) + legacy eye - 0.12
 vanilla camera local         = yOffset - 1.62 = 0.0
 vanilla camera origin Y      = interpolated posY - camera local ~= 73.62
 ```
@@ -79,8 +83,9 @@ recomputing the legacy eye offset from **live** `posY` every time
 `getEyeHeight()` was called. During MPM targeting, raw `posY` was temporarily
 `73.58` while the AABB remained at `72`; the calculation therefore returned
 `72 + 1.62 - 73.58 ~= 0.04`. That live derivation was invalid because it made
-the legacy API vary during MPM's temporary mutation. The actual 1.7.10
-`getPosition` ray expression itself does not call that API.
+the legacy API vary during MPM's temporary mutation. The actual 1.7.10 player
+`getPosition` expression does call that API virtually, so caching prevents the
+temporary MPM position translation from changing the value it adds.
 
 The legacy conversion is now cached when physical pose geometry is recalculated,
 instead of being derived from compatibility renderers' temporary position
@@ -102,37 +107,50 @@ No literal `0.04` compensation was added. The corrected legacy
 `boundingBox.minY + eyeAboveMinY - posY` conversion and bounding-box resizing
 remain unchanged.
 
-## Source of the reported `-0.12`
+## Source and correction of the reported `-0.12`
 
-The reported pair `posY=78.4531575` and
-`ACTUAL_TARGET_ORIGIN.y=78.3331575` compares unlike values: MPM's diagnostic
-presents the **current** `posY`, whereas both vanilla rays consume the
-partial-tick result of `EntityLivingBase#getPosition`. There is no Y adjustment
-after that return value in either ray construction. `EntityRenderer#getMouseOver`
-uses it unchanged as the entity-intersection segment start, and
-`EntityLivingBase#rayTrace` uses it unchanged as the block-ray segment start.
+The new stationary and `partialTicks=1` runtime trace disproves both the earlier
+interpolation explanation and the attempted eye-height correction. The call
+owner and runtime implementation are `EntityLivingBase#getPosition(F)`;
+`EntityPlayer`, `EntityPlayerSP`, and `EntityClientPlayerMP` do not override it.
+The inherited method constructs the vector from `prevPosX/Y/Z`, `posX/Y/Z`, and
+`partialTicks`, adds the virtual `getEyeHeight()` result to Y, and applies its
+own legacy downward `0.12` bias. It does not directly read `yOffset`, `ySize`,
+or the bounding box. Those fields remain involved indirectly because
+Combatives caches its position-relative eye as
+`boundingBox.minY + eyeAboveMinY - posY`.
 
-Consequently the complete Y accounting between the MPM-mutated samples and
-both recorded origins is exactly one operation:
+The standing trace supplies the decisive equation:
 
 ```text
-MPM: prevPosY += A; posY += A
-vanilla: originY = mutatedPrevPosY
-                 + (mutatedPosY - mutatedPrevPosY) * partialTicks
-later Y adjustments: none
+interpolatedY = 72.58000004291534
+getEyeHeight() = 0.0
+EntityLivingBase#getPosition Y = interpolatedY + getEyeHeight() - 0.12
+                               = 72.46000004559755
 ```
 
-The measured difference therefore equals
-`(1 - partialTicks) * (posY - prevPosY)` (with the sign implied by that
-subtraction). A stable `0.12` means that interpolation term was stable; stability
-alone cannot rule interpolation out. MPM owns the common `A` translation, but
-because it applies `A` to both endpoints it cancels out of the interpolation
-gap. Combatives does not introduce this value. The trace now prints
-`vanillaPrevPosInterpolationY`, `currentPosMinusInterpolationY`, and
-`actualMinusInterpolationY` at both call sites. For this case the first must
-equal the actual origin, the second must be approximately `+0.12`, and the last
-must be zero. This directly distinguishes the vanilla interpolation term from
-any downstream adjustment without changing targeting behavior.
+The swim trace independently shows the same method term:
+
+```text
+interpolatedY = 72.62000000476837
+getEyeHeight() = -1.34
+raw origin Y  = 72.62000000476837 - 1.34 - 0.12
+              = 71.1599999666214
+camera Y      = 72.62000000476837 - 1.34
+              = 71.27999997138977
+```
+
+The redirects really did capture the raw inherited return value. No later
+`Vec3#addVector`, ray endpoint construction, mixin, or coremod is required to
+produce the delta, and the identical delta in the independently intercepted
+block and entity rays rules out a caller-specific mutation.
+
+The redirects now reconstruct player origins from the method inputs:
+interpolated X/Y/Z plus the cached position-relative `getEyeHeight()` on Y. This
+omits the inappropriate legacy method bias rather than adding a literal
+compensation. Standing consequently produces `72.58 + 0.0 = 72.58`, while swim
+produces `72.62 - 1.34 = 71.28`. Temporary MPM translations remain embedded in
+both interpolation endpoints, preserving the paired `-0.04` POV behavior.
 
 ## Diagnostics and manual checks
 
@@ -156,13 +174,15 @@ declared on `EntityLivingBase`, not `Entity`:
 | Entity-ray direction | `EntityLivingBase#getLook(F)Lnet/minecraft/util/Vec3;` | `func_70676_i` |
 | Block ray | `EntityLivingBase#rayTrace(DF)Lnet/minecraft/util/MovingObjectPosition;` | `func_70614_a` |
 
-`getMouseOver` obtains the entity-intersection start from `getPosition`, obtains
+`getMouseOver` obtains the entity-intersection start from the virtual `getPosition`
+call (whose inherited `EntityLivingBase` implementation handles a player), obtains
 the direction from `getLook`, constructs its reach endpoint with
 `Vec3#addVector`, and passes that segment to each candidate bounding box's
 `calculateIntercept`. The block hit is obtained through `rayTrace`; that method
 independently calls the same `EntityLivingBase#getPosition` and `getLook`
 methods. The diagnostics therefore intercept the two direct calls in
 `getMouseOver` and the two calls inside `rayTrace`. Every interceptor returns the
-original `Vec3` object unchanged.
+reconstructed player origin described above. Non-player vectors are returned
+unchanged.
 
 Runtime testing is intentionally left to the tester. Compare horizontal/up/down and near/five-block targets while standing, sneaking, crawling, and entity targeting; repeat with MPM POV on/off and default/small/large sizes; then repeat with Combatives effects and vanilla/procedural bobbing toggled. A zero-effects pass should show zero base position and angular deltas. Nonzero procedural or vanilla bob values are visual-only and should be evaluated separately.

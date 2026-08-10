@@ -94,3 +94,24 @@
 - Corrected the targeting audit's source-level account of
   `EntityLivingBase#getPosition` and documented every Y operation through both
   ray paths.
+
+(b28a11a Align standing targeting with the rendered camera)
+
+- Corrected both player targeting rays after verifying that the runtime
+  `EntityLivingBase#getPosition` invocation dispatches to the
+  `EntityPlayer#getPosition` override, which adds the cached legacy eye height.
+- Removed that dynamic eye-height addition only at Combatives' standing-camera
+  boundary, without adding a literal `0.12` correction or changing low-pose
+  geometry, the cached legacy-eye fix, or MPM's paired targeting translation.
+- Replaced the disproven interpolation explanation with the exact runtime
+  equation and virtual-dispatch audit.
+
+(117e5b0 Remove legacy eye bias from player targeting rays)
+
+- Replaced the ineffective `getEyeHeight()` subtraction with direct player-ray
+  reconstruction from interpolated position plus the cached legacy eye value.
+- Accounted for the authoritative standing and swimming traces, which show that
+  `EntityLivingBase#getPosition` applies the same legacy downward bias even
+  when `getEyeHeight()` is zero.
+- Preserved Combatives low-pose eye geometry and MPM's paired position
+  translation without adding a numeric compensation to the targeting result.

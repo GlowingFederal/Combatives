@@ -3,6 +3,7 @@ package com.glowingfederal.combatives.mixin;
 import com.glowingfederal.combatives.Combatives;
 import com.glowingfederal.combatives.client.camera.CameraController;
 import com.glowingfederal.combatives.client.camera.TargetingDiagnostics;
+import com.glowingfederal.combatives.client.camera.TargetingOriginResolver;
 import com.glowingfederal.combatives.config.CombativesConfig;
 import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
@@ -44,7 +45,8 @@ public abstract class EntityRendererMixin {
 
     @Redirect(method = "getMouseOver", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/EntityLivingBase;getPosition(F)Lnet/minecraft/util/Vec3;"))
     private net.minecraft.util.Vec3 combatives$captureConsumedTargetOrigin(EntityLivingBase entity, float partialTicks) {
-        net.minecraft.util.Vec3 origin = entity.getPosition(partialTicks);
+        net.minecraft.util.Vec3 vanillaOrigin = entity.getPosition(partialTicks);
+        net.minecraft.util.Vec3 origin = TargetingOriginResolver.alignWithRenderedCamera(entity, partialTicks, vanillaOrigin);
         TargetingDiagnostics.captureActualTargetOrigin(entity, partialTicks, origin);
         return origin;
     }

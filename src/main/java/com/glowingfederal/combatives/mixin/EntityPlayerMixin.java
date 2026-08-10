@@ -173,9 +173,10 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     }
 
     private void recalculateSize(EntitySize oldSize, EntitySize newSize) {
+        double floorY = this.boundingBox.minY;
         if (newSize.width < oldSize.width) {
             double half = newSize.width / 2.0D;
-            this.boundingBox.setBB(AxisAlignedBB.getBoundingBox(this.posX - half, this.posY, this.posZ - half, this.posX + half, this.posY + newSize.height, this.posZ + half));
+            this.boundingBox.setBB(AxisAlignedBB.getBoundingBox(this.posX - half, floorY, this.posZ - half, this.posX + half, floorY + newSize.height, this.posZ + half));
         } else {
             AxisAlignedBB box = this.boundingBox;
             this.boundingBox.setBB(AxisAlignedBB.getBoundingBox(box.minX, box.minY, box.minZ, box.minX + newSize.width, box.minY + newSize.height, box.minZ + newSize.width));
@@ -294,7 +295,15 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     @Inject(method = "getEyeHeight", at = @At("HEAD"), cancellable = true)
     private void combatives$getEyeHeight(CallbackInfoReturnable<Float> cir) {
         if (this.combativesEyeHeight > 0.0F) {
-            cir.setReturnValue(this.combativesEyeHeight);
+            /*
+             * 1.7.10 Entity position is not the AABB floor. resetPositionToBB
+             * reconstructs posY as minY + yOffset - ySize, and the vanilla
+             * targeting path adds getEyeHeight() to that legacy position.
+             * Pose geometry stores the modern, useful "above minY" value, so
+             * convert it at this API boundary rather than counting the legacy
+             * position offset a second time.
+             */
+            cir.setReturnValue((float) (this.boundingBox.minY + this.combativesEyeHeight - this.posY));
         }
     }
 

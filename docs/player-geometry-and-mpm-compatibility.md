@@ -27,36 +27,33 @@ refmap remapping.
 `0.6 x 1.8` with eye `1.62`, crouching is `0.6 x 1.5` with eye `1.54`, and
 crawl/swim is `0.6 x 0.6` with eye `0.28`. Eye values are offsets above
 `boundingBox.minY`, never absolute world coordinates. Clearance, collision,
-`getEyeHeight()`, physical camera base, and vanilla targeting use this same
-geometry. Mutable MPM `yOffset`, model size, part scale, and disguise data remain
+physical camera base, and vanilla targeting use this same geometry. The legacy
+1.7.10 `getEyeHeight()` API is converted at the boundary to an offset from
+`posY`; see [the coordinate-contract audit](legacy-player-coordinate-contract.md).
+Mutable MPM `yOffset`, model size, part scale, and disguise data remain
 presentation-only; gameplay scale remains one.
 
 At the SRG wrapper HEAD, Combatives captures genuine world `posY`, `prevPosY`,
 and `lastTickPosY`. The vendored order proves this is before MPM computes and
 adds its POV mutation. Immediately before the exact SRG super invocation,
 Combatives saves the now-mutated values and installs the genuine values. Vanilla
-then consumes Combatives' authoritative `getEyeHeight()`. Immediately after the
+then consumes Combatives' coordinate-converted `getEyeHeight()`. Immediately after the
 super call, Combatives reinstalls the mutated values so MPM's own subtraction
 can clean up normally. No RETURN restoration remains: restoring originals there
 would be redundant/stale, while leaving originals installed before MPM cleanup
 would cause MPM to subtract its mutation twice.
 
-## Targeting math
+## Targeting and rendered-camera ownership
 
-For default size (`size = 1`, zero model offset), MPM computes
-`offset = -0 - (-1.615 + 1 * 0.315) = 1.30`, then adds `-offset = -1.30` to all
-three samples. MPM crawling/sleeping forces `offset = 1.18`, a `-1.18` mutation.
-Before repair, origins relative to genuine interpolated Y were consequently:
-
-* standing: `-1.30 + 1.62 = 0.32`;
-* sneaking: `-1.30 + 1.54 = 0.24`;
-* MPM crawling: `-1.18 + 0.28 = -0.90`;
-* Combatives swimming without MPM's crawling animation: `-1.30 + 0.28 = -1.02`.
-
-MPM's blocked-camera clamp can alter standing/sneaking. The repaired physical
-low-pose pass removes the MPM term instead of compensating for it, yielding
-`interpolated boundingBox.minY + 0.28`. Standing/default MPM behavior is left
-unchanged.
+MPM derives one model-dependent displacement and applies the same displacement
+to the legacy render camera through `yOffset` and to targeting through the three
+position samples. Combatives already replaces the render-camera local with its
+authoritative physical eye for every Combatives player pose. The compatibility
+hook therefore removes MPM's paired targeting displacement for every
+`ICombativesPlayerPose`, not merely low poses. It restores MPM's mutated samples
+after the vanilla call so MPM cleanup remains balanced. See the
+[rendered-camera alignment audit](rendered-camera-targeting-alignment.md) for the
+complete formula and the `1.62`/`1.66` trace.
 
 ## Diagnostics and manual verification
 

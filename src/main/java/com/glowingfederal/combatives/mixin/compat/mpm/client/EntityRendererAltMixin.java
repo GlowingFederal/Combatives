@@ -2,7 +2,6 @@ package com.glowingfederal.combatives.mixin.compat.mpm.client;
 
 import com.glowingfederal.combatives.Combatives;
 import com.glowingfederal.combatives.config.CombativesConfig;
-import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
@@ -13,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** Neutralizes MPM+'s temporary POV translation only while vanilla targeting runs. */
+/** Keeps MPM+'s temporary targeting translation out of Combatives-owned camera geometry. */
 @Pseudo
 @Mixin(targets = "noppes.mpm.client.EntityRendererAlt", remap = false)
 public abstract class EntityRendererAltMixin {
@@ -31,7 +30,12 @@ public abstract class EntityRendererAltMixin {
     @Inject(method = "func_78473_a(F)V", at = @At("HEAD"), require = 0, remap = false)
     private void combatives$captureOriginalPosition(float partialTicks, CallbackInfo ci) {
         EntityPlayer player = Minecraft.getMinecraft().thePlayer;
-        this.combatives$ownsTargetGeometry = this.combatives$isPhysicalLowPose(player);
+        /* EntityRendererMixin already makes Combatives geometry own the physical
+         * first-person camera for every Combatives player pose. Letting MPM move
+         * the ray only in standing created a different POV for rendering and
+         * targeting. Preserve MPM's samples for its cleanup, but use the same
+         * physical origin while vanilla targeting executes. */
+        this.combatives$ownsTargetGeometry = player instanceof ICombativesPlayerPose;
         this.combatives$targetCallActive = false;
         this.combatives$logTargetPass = this.combatives$ownsTargetGeometry
                 && CombativesConfig.debugCamera && player.ticksExisted % 20 == 0;
@@ -94,13 +98,4 @@ public abstract class EntityRendererAltMixin {
         this.combatives$targetCallActive = false;
     }
 
-    @Unique
-    private boolean combatives$isPhysicalLowPose(EntityPlayer player) {
-        if (!(player instanceof ICombativesPlayerPose)) {
-            return false;
-        }
-        ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
-        return pose.getPose() == Pose.SWIMMING || pose.isSwimming()
-                || pose.isCrawlKeyDown() || pose.isActuallySwimming();
-    }
 }

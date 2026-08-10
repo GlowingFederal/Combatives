@@ -105,15 +105,20 @@ public abstract class EntityRendererMixin {
         }
 
         EntityPlayer player = (EntityPlayer) entity;
+        if (this.combatives$isVanillaBaselinePose(player)) {
+            /* Standing is a legacy camera passthrough. In particular, MPM pairs
+             * its yOffset camera adjustment with the same position adjustment
+             * around targeting; replacing this local with AABB-relative gameplay
+             * geometry would discard only the camera half of that pair. */
+            this.combatives$entityEyeHeight = eyeHeight;
+            this.combatives$eyeHeight = eyeHeight;
+            this.combatives$previousEyeHeight = eyeHeight;
+            this.combatives$logCameraOrigin(player, eyeHeight, eyeHeight);
+            return eyeHeight;
+        }
+
         float poseCameraOffset = this.combatives$getPoseCameraOffset(player, eyeHeight);
         this.combatives$entityEyeHeight = poseCameraOffset;
-
-        if (this.combatives$isVanillaBaselinePose(player)) {
-            this.combatives$eyeHeight = poseCameraOffset;
-            this.combatives$previousEyeHeight = poseCameraOffset;
-            this.combatives$logCameraOrigin(player, eyeHeight, poseCameraOffset);
-            return poseCameraOffset;
-        }
 
         if (this.combatives$isLowPose(player)) {
             this.combatives$eyeHeight = poseCameraOffset;

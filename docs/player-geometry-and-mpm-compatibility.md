@@ -27,15 +27,17 @@ refmap remapping.
 `0.6 x 1.8` with eye `1.62`, crouching is `0.6 x 1.5` with eye `1.54`, and
 crawl/swim is `0.6 x 0.6` with eye `0.28`. Eye values are offsets above
 `boundingBox.minY`, never absolute world coordinates. Clearance, collision,
-`getEyeHeight()`, physical camera base, and vanilla targeting use this same
-geometry. Mutable MPM `yOffset`, model size, part scale, and disguise data remain
+physical camera base, and vanilla targeting use this same geometry. The legacy
+1.7.10 `getEyeHeight()` API is converted at the boundary to an offset from
+`posY`; see [the coordinate-contract audit](legacy-player-coordinate-contract.md).
+Mutable MPM `yOffset`, model size, part scale, and disguise data remain
 presentation-only; gameplay scale remains one.
 
 At the SRG wrapper HEAD, Combatives captures genuine world `posY`, `prevPosY`,
 and `lastTickPosY`. The vendored order proves this is before MPM computes and
 adds its POV mutation. Immediately before the exact SRG super invocation,
 Combatives saves the now-mutated values and installs the genuine values. Vanilla
-then consumes Combatives' authoritative `getEyeHeight()`. Immediately after the
+then consumes Combatives' coordinate-converted `getEyeHeight()`. Immediately after the
 super call, Combatives reinstalls the mutated values so MPM's own subtraction
 can clean up normally. No RETURN restoration remains: restoring originals there
 would be redundant/stale, while leaving originals installed before MPM cleanup

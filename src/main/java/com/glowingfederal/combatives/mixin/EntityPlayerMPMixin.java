@@ -39,12 +39,6 @@ public abstract class EntityPlayerMPMixin extends EntityPlayer {
         return pose != null && pose.getPose() == Pose.SWIMMING ? 0.4F : 1.62F;
     }
 
-    @Override
-    public float getEyeHeight() {
-        ICombativesPlayerPose pose = this.combatives$getPoseState();
-        return pose != null && pose.getPose() == Pose.SWIMMING ? 0.4F : super.getEyeHeight();
-    }
-
     private ICombativesPlayerPose combatives$getPoseState() {
         return this instanceof ICombativesPlayerPose ? (ICombativesPlayerPose) this : null;
     }

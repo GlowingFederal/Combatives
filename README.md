@@ -1,5 +1,7 @@
 # Combatives
 
+Developer documentation for the legacy player-origin and targeting invariant is available in [the 1.7.10 coordinate-contract audit](docs/legacy-player-coordinate-contract.md).
+
 Development documentation includes the [authoritative player geometry and
 MorePlayerModels+ compatibility boundary](docs/player-geometry-and-mpm-compatibility.md).
 

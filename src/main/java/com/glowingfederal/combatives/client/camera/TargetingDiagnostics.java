@@ -41,10 +41,10 @@ public final class TargetingDiagnostics {
         originY = interpolatedY + player.getEyeHeight();
         Vec3 look = player.getLook(partialTicks);
         float reach = mc.playerController == null ? Float.NaN : mc.playerController.getBlockReachDistance();
-        Combatives.logger.info("Combatives targeting enter: renderer={} pose={} geometry={}x{} eyeAboveMinY={} boundingBox.minY={} getEyeHeight={} posY={} prevPosY={} lastTickPosY={} partialTicks={} interpolatedPositionY={} expectedTargetOriginY={} actualVanillaOriginY={} physicalCameraBaseY={} originDelta={} MPMMutationAmount=reported-by-compat-hook look=[{},{},{}] reach={}",
+        Combatives.logger.info("Combatives targeting enter: renderer={} pose={} geometry={}x{} eyeAboveMinY={} boundingBox=[{},{}] getEyeHeight={} posY={} prevPosY={} lastTickPosY={} yOffset={} ySize={} entityHeight={} partialTicks={} interpolatedPositionY={} expectedTargetOriginY={} actualVanillaOriginY={} physicalCameraBaseY={} originDelta={} MPMMutationAmount=reported-by-compat-hook look=[{},{},{}] reach={}",
                 renderer.getClass().getName(), pose, geometry.width, geometry.height, geometry.eyeAboveMinY,
-                player.boundingBox.minY, player.getEyeHeight(), player.posY, player.prevPosY,
-                player.lastTickPosY, partialTicks, interpolatedY, physicalCameraBaseY, originY,
+                player.boundingBox.minY, player.boundingBox.maxY, player.getEyeHeight(), player.posY, player.prevPosY,
+                player.lastTickPosY, player.yOffset, player.ySize, player.height, partialTicks, interpolatedY, physicalCameraBaseY, originY,
                 physicalCameraBaseY, originY - physicalCameraBaseY, look.xCoord, look.yCoord, look.zCoord, reach);
         loggingPass = true;
     }

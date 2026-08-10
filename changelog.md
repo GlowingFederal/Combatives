@@ -37,3 +37,12 @@
   diagnostics for numerical manual verification.
 - Documented the verified mapping failure, default-size targeting math,
   authoritative geometry invariant, and revised compatibility lifecycle.
+
+(e351ec1 Restore legacy player ray-origin invariant)
+
+- Restored Minecraft 1.7.10's pos-relative `getEyeHeight()` contract by converting
+  Combatives' box-relative pose eye height at the vanilla API boundary.
+- Kept the bounding-box floor stable during pose shrinking and removed the
+  dedicated-server swimming override that repeated the modern coordinate error.
+- Expanded targeting diagnostics and documented the vanilla coordinate trace,
+  pose-transition verification matrix, and separate MPM compatibility boundary.

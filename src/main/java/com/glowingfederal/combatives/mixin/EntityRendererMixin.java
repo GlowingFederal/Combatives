@@ -2,6 +2,7 @@ package com.glowingfederal.combatives.mixin;
 
 import com.glowingfederal.combatives.Combatives;
 import com.glowingfederal.combatives.client.camera.CameraController;
+import com.glowingfederal.combatives.client.camera.AuthoritativeViewRay;
 import com.glowingfederal.combatives.client.camera.TargetingDiagnostics;
 import com.glowingfederal.combatives.config.CombativesConfig;
 import com.glowingfederal.combatives.entity.Pose;
@@ -35,23 +36,28 @@ public abstract class EntityRendererMixin {
     @Inject(method = "getMouseOver", at = @At("HEAD"))
     private void combatives$diagnoseTargetingOrigin(float partialTicks, CallbackInfo ci) {
         TargetingDiagnostics.beforeTargeting(this, partialTicks);
+        Entity view = Minecraft.getMinecraft().renderViewEntity;
+        if (view instanceof EntityLivingBase) {
+            AuthoritativeViewRay.beginTargeting((EntityLivingBase) view, partialTicks);
+        }
     }
 
     @Inject(method = "getMouseOver", at = @At("RETURN"))
     private void combatives$diagnoseTargetingResult(float partialTicks, CallbackInfo ci) {
         TargetingDiagnostics.afterTargeting();
+        AuthoritativeViewRay.endTargeting();
     }
 
     @Redirect(method = "getMouseOver", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/EntityLivingBase;getPosition(F)Lnet/minecraft/util/Vec3;"))
     private net.minecraft.util.Vec3 combatives$captureConsumedTargetOrigin(EntityLivingBase entity, float partialTicks) {
-        net.minecraft.util.Vec3 origin = entity.getPosition(partialTicks);
+        net.minecraft.util.Vec3 origin = AuthoritativeViewRay.origin(entity, entity.getPosition(partialTicks));
         TargetingDiagnostics.captureActualTargetOrigin(entity, partialTicks, origin);
         return origin;
     }
 
     @Redirect(method = "getMouseOver", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/EntityLivingBase;getLook(F)Lnet/minecraft/util/Vec3;"))
     private net.minecraft.util.Vec3 combatives$captureConsumedTargetLook(EntityLivingBase entity, float partialTicks) {
-        net.minecraft.util.Vec3 look = entity.getLook(partialTicks);
+        net.minecraft.util.Vec3 look = AuthoritativeViewRay.direction(entity, entity.getLook(partialTicks));
         TargetingDiagnostics.captureActualTargetLook(look);
         return look;
     }
@@ -75,7 +81,9 @@ public abstract class EntityRendererMixin {
         if (entity instanceof EntityPlayer) {
             EntityPlayer player = (EntityPlayer) entity;
             double interpolatedPosY = player.prevPosY + (player.posY - player.prevPosY) * (double) partialTicks;
-            TargetingDiagnostics.logRenderedCamera(player, partialTicks, interpolatedPosY - this.combatives$entityEyeHeight);
+            double cameraY = interpolatedPosY - this.combatives$entityEyeHeight;
+            AuthoritativeViewRay.captureCameraBase(player, partialTicks, cameraY);
+            TargetingDiagnostics.logRenderedCamera(player, partialTicks, cameraY);
         }
     }
 

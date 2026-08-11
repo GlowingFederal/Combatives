@@ -63,6 +63,7 @@ The port is intentionally scoped to player pose, collision bounds, eye-height st
   - `verboseMovementDebug = false`
   - `debugCamera = false`
   - `verboseCameraDebug = false`
+  - `enableMpmHitboxScaling = true` (optional common-side MPM+ physical scaling)
 
 ## Production Fairplay jar remapping
 
@@ -130,3 +131,10 @@ on the client and only when FML discovers the `moreplayermodels` mod id. If its
 optional `EntityRendererAlt#getMouseOver(float)` hook cannot match a changed MPM
 build, MPM remains loadable and retains its native targeting behavior; see the
 [player geometry compatibility notes](docs/player-geometry-and-mpm-compatibility.md).
+
+MPM+ whole-model `size` is also consumed independently on both logical sides
+when `enableMpmHitboxScaling` is enabled. Combatives composes the synchronized
+uniform `size / 5` factor with its standing/crouching/crawl/swim dimensions;
+per-part render scales remain cosmetic. Expansion waits for a collision-free
+centered box, while shrinking and accepted expansion preserve the current AABB
+floor.

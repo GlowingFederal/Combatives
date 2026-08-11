@@ -3,7 +3,7 @@ package com.glowingfederal.combatives.entity.player;
 import com.glowingfederal.combatives.entity.Pose;
 import net.minecraft.util.AxisAlignedBB;
 
-/** Immutable gameplay geometry.  Visual model scale is deliberately absent. */
+/** Immutable final gameplay geometry after posture and optional physical scale composition. */
 public final class EffectivePlayerGeometry {
     public final Pose pose;
     public final float width;
@@ -15,6 +15,11 @@ public final class EffectivePlayerGeometry {
         this.width = width;
         this.height = height;
         this.eyeAboveMinY = eyeAboveMinY;
+    }
+
+    public EffectivePlayerGeometry scaled(float scale) {
+        return new EffectivePlayerGeometry(this.pose, this.width * scale, this.height * scale,
+                this.eyeAboveMinY * scale);
     }
 
     public AxisAlignedBB clearanceBox(double centerX, double minY, double centerZ) {

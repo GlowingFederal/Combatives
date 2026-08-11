@@ -161,8 +161,37 @@ the direction from `getLook`, constructs its reach endpoint with
 `Vec3#addVector`, and passes that segment to each candidate bounding box's
 `calculateIntercept`. The block hit is obtained through `rayTrace`; that method
 independently calls the same `EntityLivingBase#getPosition` and `getLook`
-methods. The diagnostics therefore intercept the two direct calls in
-`getMouseOver` and the two calls inside `rayTrace`. Every interceptor returns the
-original `Vec3` object unchanged.
+methods. The hooks therefore intercept the two direct calls in `getMouseOver`
+and the two calls inside `rayTrace`, substituting one shared authoritative pair
+during an active first-person targeting pass.
 
 Runtime testing is intentionally left to the tester. Compare horizontal/up/down and near/five-block targets while standing, sneaking, crawling, and entity targeting; repeat with MPM POV on/off and default/small/large sizes; then repeat with Combatives effects and vanilla/procedural bobbing toggled. A zero-effects pass should show zero base position and angular deltas. Nonzero procedural or vanilla bob values are visual-only and should be evaluated separately.
+
+## Authoritative center-view ray
+
+The interpolation trace explained the `0.12` arithmetic but also confirmed the
+root bug: the interpolated legacy entity position consumed by `getMouseOver` is
+not necessarily the base origin selected by `orientCamera`. Preserving that
+position exactly therefore cannot guarantee crosshair alignment.
+
+Combatives now records the base first-person camera selected by
+`orientCamera`, before `CameraController` applies presentation transforms. The
+height is stored relative to the interpolated bounding-box floor, not `posY`.
+At `getMouseOver`, the origin is reconstructed from the current interpolated
+physical floor. MPM's temporary translation cancels between the interpolated Y
+and the `boundingBox.minY - posY` anchor, requiring neither a model constant nor
+any entity-field mutation by Combatives.
+
+The authoritative direction remains the view entity's interpolated
+`getLook(partialTicks)` vector: the centered symmetric projection adds no
+angular offset. Procedural translation, shake, bob, lean, and presentation
+recoil happen after the captured base and intentionally do not affect gameplay
+aim.
+
+The existing vanilla algorithm remains in charge. Its entity-ray origin/look
+calls and the matching calls inside `EntityLivingBase#rayTrace` receive the
+authoritative pair; reach, block tracing, candidate collection, expanded AABBs,
+intercept calculations, nearest-hit ordering, extended reach, and result fields
+are untouched. Sleeping, third-person, and the initial pass before a camera has
+been sampled fall back to vanilla. Diagnostics report the authoritative camera
+and target pairs, their deltas, and the resulting block/entity selection.

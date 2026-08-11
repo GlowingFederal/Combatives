@@ -7,6 +7,7 @@ import com.glowingfederal.combatives.movement.MovementController;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.movement.MovementProfile;
 import com.glowingfederal.combatives.client.camera.TargetingDiagnostics;
+import com.glowingfederal.combatives.client.camera.AuthoritativeViewRay;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -28,14 +29,14 @@ public abstract class EntityLivingBaseMixin extends Entity {
      * values too; Entity does not declare either method in this version. */
     @Redirect(method = "rayTrace", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/EntityLivingBase;getPosition(F)Lnet/minecraft/util/Vec3;"))
     private Vec3 combatives$captureBlockRayOrigin(EntityLivingBase entity, float partialTicks) {
-        Vec3 origin = entity.getPosition(partialTicks);
+        Vec3 origin = AuthoritativeViewRay.origin(entity, entity.getPosition(partialTicks));
         TargetingDiagnostics.captureActualBlockRayOrigin(entity, partialTicks, origin);
         return origin;
     }
 
     @Redirect(method = "rayTrace", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/EntityLivingBase;getLook(F)Lnet/minecraft/util/Vec3;"))
     private Vec3 combatives$captureBlockRayLook(EntityLivingBase entity, float partialTicks) {
-        Vec3 look = entity.getLook(partialTicks);
+        Vec3 look = AuthoritativeViewRay.direction(entity, entity.getLook(partialTicks));
         TargetingDiagnostics.captureActualBlockRayLook(entity, look);
         return look;
     }

@@ -34,9 +34,7 @@ public final class CombativesLateMixins implements ILateMixinLoader {
             return Collections.emptyList();
         }
 
-        LOGGER.info("MorePlayerModels+ detected; attempting optional SRG targeting hook. "
-                + "Only 'MPM TARGET COMPAT ACTIVE' confirms that the audited wrapper matched; "
-                + "otherwise compatibility is disabled for this MPM revision");
-        return Collections.singletonList("compat.mpm.client.EntityRendererAltMixin");
+        LOGGER.info("MorePlayerModels+ detected; using the renderer-independent authoritative view ray");
+        return Collections.emptyList();
     }
 }

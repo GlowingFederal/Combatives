@@ -158,10 +158,16 @@ public final class TargetingDiagnostics {
         }
         MovingObjectPosition hit = Minecraft.getMinecraft().objectMouseOver;
         Vec3 point = hit == null ? null : hit.hitVec;
-        Combatives.logger.info("Combatives targeting exit: objectMouseOver={} hitPosition={} targetOriginY={} physicalCameraBaseY={} originDelta={}",
+        Vec3 rayOrigin = AuthoritativeViewRay.currentOrigin();
+        Vec3 rayDirection = AuthoritativeViewRay.currentDirection();
+        Combatives.logger.info("Combatives targeting exit: objectMouseOver={} pointedEntity={} hitPosition={} renderedCameraOrigin={} renderedCenterDirection={} targetRayOrigin={} targetRayDirection={} originDelta={} directionDelta={}",
                 hit == null ? "null" : hit.typeOfHit,
+                Minecraft.getMinecraft().pointedEntity == null ? "null" : Minecraft.getMinecraft().pointedEntity.getEntityId(),
                 point == null ? "null" : "[" + point.xCoord + "," + point.yCoord + "," + point.zCoord + "]",
-                originY, physicalCameraBaseY, originY - physicalCameraBaseY);
+                "[" + originX + "," + physicalCameraBaseY + "," + originZ + "]", vector(actualTargetLook),
+                vector(rayOrigin), vector(rayDirection),
+                rayOrigin == null ? "unavailable" : "[" + (rayOrigin.xCoord - originX) + "," + (rayOrigin.yCoord - physicalCameraBaseY) + "," + (rayOrigin.zCoord - originZ) + "]",
+                rayDirection == null || actualTargetLook == null ? "unavailable" : "[" + (rayDirection.xCoord - actualTargetLook.xCoord) + "," + (rayDirection.yCoord - actualTargetLook.yCoord) + "," + (rayDirection.zCoord - actualTargetLook.zCoord) + "]");
         loggingPass = false;
     }
 }

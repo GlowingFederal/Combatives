@@ -94,3 +94,14 @@
 - Corrected the targeting audit's source-level account of
   `EntityLivingBase#getPosition` and documented every Y operation through both
   ray paths.
+
+(c6f294d Align targeting with rendered camera ray)
+
+- Added a Combatives-owned authoritative first-person view ray captured from
+  the pre-presentation `orientCamera` base and anchored to physical geometry.
+- Routed vanilla block and entity ray inputs through that shared origin and
+  direction without replacing reach, intercept, precedence, or result logic.
+- Removed the MPM-specific position-mutation targeting hook and replaced its
+  diagnostic spam with camera/ray delta and selected-intercept tracing.
+- Documented the interpolation root cause, visual/gameplay transform boundary,
+  vanilla fallbacks, and compatibility validation cases.

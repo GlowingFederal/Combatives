@@ -1,6 +1,5 @@
 package com.glowingfederal.combatives.mixin;
 
-import com.glowingfederal.combatives.entity.EntitySize;
 import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
@@ -43,17 +42,4 @@ public abstract class EntityPlayerMPMixin extends EntityPlayer {
         return this instanceof ICombativesPlayerPose ? (ICombativesPlayerPose) this : null;
     }
 
-    @Inject(method = "onUpdate", at = @At("TAIL"))
-    private void combatives$syncServerSize(CallbackInfo ci) {
-        ICombativesPlayerPose pose = this.combatives$getPoseState();
-        if (pose == null) {
-            MovementDiagnostics.warn(this, "server skipped size sync because Combatives player pose interface is unavailable");
-            return;
-        }
-        EntitySize size = pose.getSize(pose.getPose());
-        if (this.width != size.width || this.height != size.height) {
-            this.setSize(size.width, size.height);
-            MovementDiagnostics.verbose(this, "server enforced size for " + pose.getPose() + " size=" + size.width + "x" + size.height);
-        }
-    }
 }

@@ -28,6 +28,7 @@ public final class CombativesConfigDefaults {
     public static final boolean ENABLE_CRAWL_CAMERA = false;
     public static final double CRAWL_CAMERA_AMPLITUDE = 1.0D;
     public static final int CRAWL_TRANSITION_MILLIS = 200;
+    public static final boolean ENABLE_MPM_HITBOX_SCALING = true;
     public static final boolean DEBUG = false;
     public static final boolean VERBOSE_DEBUG = false;
 

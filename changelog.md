@@ -105,3 +105,14 @@
   diagnostic spam with camera/ray delta and selected-intercept tracing.
 - Documented the interpolation root cause, visual/gameplay transform boundary,
   vanilla fallbacks, and compatibility validation cases.
+
+(a1e79e0 Add MorePlayerModels+ hitbox resizing compatibility)
+
+- Derived physical scale from MPM+'s synchronized whole-model `size / 5`
+  renderer transform and kept anisotropic body-part scales visual-only.
+- Composed MPM scale with Combatives posture width, height, and box-relative eye
+  geometry on both logical sides through an optional reflection boundary.
+- Preserved the bounding-box floor, rejected obstructed expansion without
+  moving player coordinates, and added verbose transition diagnostics.
+- Added an independent default-enabled compatibility option and documented
+  fallback behavior, synchronization, ownership, and manual validation cases.

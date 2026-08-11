@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 public final class CombativesConfig {
     private static final String CATEGORY_DEBUG = "debug";
     private static final String CATEGORY_CAMERA = "camera";
+    private static final String CATEGORY_COMPATIBILITY = "compatibility";
 
     public static boolean enableCombativesCamera = CombativesConfigDefaults.ENABLE_COMBATIVES_CAMERA;
     public static boolean enableProceduralBob = CombativesConfigDefaults.ENABLE_PROCEDURAL_BOB;
@@ -42,6 +43,7 @@ public final class CombativesConfig {
     public static boolean debugCamera = CombativesConfigDefaults.DEBUG;
     public static boolean verboseCameraDebug = CombativesConfigDefaults.VERBOSE_DEBUG;
     public static boolean debugMpmPov = CombativesConfigDefaults.DEBUG;
+    public static boolean enableMpmHitboxScaling = CombativesConfigDefaults.ENABLE_MPM_HITBOX_SCALING;
 
     private CombativesConfig() {
     }
@@ -74,6 +76,7 @@ public final class CombativesConfig {
         enableCrawlCamera = CombativesConfigDefaults.ENABLE_CRAWL_CAMERA;
         crawlCameraAmplitude = CombativesConfigDefaults.CRAWL_CAMERA_AMPLITUDE;
         crawlTransitionMillis = CombativesConfigDefaults.CRAWL_TRANSITION_MILLIS;
+        enableMpmHitboxScaling = CombativesConfigDefaults.ENABLE_MPM_HITBOX_SCALING;
     }
 
     private static File fairplayConfigFile(File suggestedConfigFile) {
@@ -134,6 +137,8 @@ public final class CombativesConfig {
         enableCrawlCamera = config.getBoolean("enableCrawlCamera", CATEGORY_CAMERA, enableCrawlCamera, "Enable restrained continuous crawling motion and crawl transitions.");
         crawlCameraAmplitude = config.getFloat("crawlCameraAmplitude", CATEGORY_CAMERA, (float)crawlCameraAmplitude, 0F, 3F, "Multiplier for crawl-cycle movement and pull impulses.");
         crawlTransitionMillis = config.getInt("crawlTransitionMillis", CATEGORY_CAMERA, crawlTransitionMillis, 150, 250, "Monotonic crawl enter/exit camera blend duration in milliseconds.");
+        enableMpmHitboxScaling = config.getBoolean("enableMpmHitboxScaling", CATEGORY_COMPATIBILITY,
+                enableMpmHitboxScaling, "Scale player collision width and height by MorePlayerModels+'s synchronized whole-model size. Independent of camera compatibility.");
         debugMovement = config.getBoolean(
             "debugMovement",
             CATEGORY_DEBUG,
@@ -192,5 +197,6 @@ public final class CombativesConfig {
         logger.info("Combatives config: debugCamera={}", debugCamera);
         logger.info("Combatives config: verboseCameraDebug={}", verboseCameraDebug);
         logger.info("Combatives config: debugMpmPov={}", debugMpmPov);
+        logger.info("Combatives config: enableMpmHitboxScaling={}", enableMpmHitboxScaling);
     }
 }

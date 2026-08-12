@@ -15,6 +15,8 @@ public interface ICombativesPlayerPose {
     float getPoseHeight();
     EffectivePlayerGeometry getEffectiveGeometry();
     EffectivePlayerGeometry getEffectiveGeometry(Pose pose);
+    int getGeometryRevision();
+    void acceptGeometryRevision(int revision);
     EntitySize getSize(Pose pose);
     void recalculateSize();
     void logGeometry(String heading, String reason);

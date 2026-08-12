@@ -5,8 +5,8 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.Vec3;
-import com.glowingfederal.combatives.entity.player.EffectivePlayerGeometry;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
+import com.glowingfederal.combatives.interaction.InteractionRay;
 
 /**
  * The non-presentational, first-person ray represented by the center pixel.
@@ -42,19 +42,19 @@ public final class AuthoritativeViewRay {
             return;
         }
 
+        if (entity instanceof EntityPlayer && entity instanceof ICombativesPlayerPose) {
+            InteractionRay ray = InteractionRay.interpolated((EntityPlayer) entity, partialTicks);
+            targetEntity = entity;
+            targetOrigin = ray.origin;
+            targetDirection = ray.direction;
+            return;
+        }
         double x = interpolate(entity.prevPosX, entity.posX, partialTicks);
         double interpolatedY = interpolate(entity.prevPosY, entity.posY, partialTicks);
         double interpolatedMinY = interpolatedY + entity.boundingBox.minY - entity.posY;
         double z = interpolate(entity.prevPosZ, entity.posZ, partialTicks);
         double aboveMinY;
-        if (entity instanceof EntityPlayer && entity instanceof ICombativesPlayerPose) {
-            /* getMouseOver runs before orientCamera in updateCameraAndRender, so
-             * a captured camera sample belongs to the previous render pass.
-             * Resolve the same accepted physical eye used by orientCamera for
-             * this pass instead of consuming that stale sample. */
-            EffectivePlayerGeometry geometry = ((ICombativesPlayerPose) entity).getEffectiveGeometry();
-            aboveMinY = geometry.eyeAboveMinY;
-        } else if (hasCameraSample && entity == cameraEntity) {
+        if (hasCameraSample && entity == cameraEntity) {
             aboveMinY = cameraAboveMinY;
         } else {
             return;

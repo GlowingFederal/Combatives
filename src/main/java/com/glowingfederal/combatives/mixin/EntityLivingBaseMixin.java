@@ -6,8 +6,7 @@ import com.glowingfederal.combatives.movement.ICombativesMovementState;
 import com.glowingfederal.combatives.movement.MovementController;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.movement.MovementProfile;
-import com.glowingfederal.combatives.client.camera.TargetingDiagnostics;
-import com.glowingfederal.combatives.client.camera.AuthoritativeViewRay;
+import com.glowingfederal.combatives.interaction.InteractionRay;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -24,21 +23,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(EntityLivingBase.class)
 public abstract class EntityLivingBaseMixin extends Entity {
 
-    /* 1.7.10 EntityLivingBase#rayTrace constructs the block ray independently
-     * from EntityRenderer's entity-intersection ray. Capture those exact return
-     * values too; Entity does not declare either method in this version. */
     @Redirect(method = "rayTrace", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/EntityLivingBase;getPosition(F)Lnet/minecraft/util/Vec3;"))
-    private Vec3 combatives$captureBlockRayOrigin(EntityLivingBase entity, float partialTicks) {
-        Vec3 origin = AuthoritativeViewRay.origin(entity, entity.getPosition(partialTicks));
-        TargetingDiagnostics.captureActualBlockRayOrigin(entity, partialTicks, origin);
-        return origin;
+    private Vec3 combatives$interactionRayOrigin(EntityLivingBase entity, float partialTicks) {
+        return entity instanceof EntityPlayer && entity instanceof ICombativesPlayerPose
+                ? InteractionRay.interpolated((EntityPlayer) entity, partialTicks).origin
+                : entity.getPosition(partialTicks);
     }
 
     @Redirect(method = "rayTrace", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/EntityLivingBase;getLook(F)Lnet/minecraft/util/Vec3;"))
-    private Vec3 combatives$captureBlockRayLook(EntityLivingBase entity, float partialTicks) {
-        Vec3 look = AuthoritativeViewRay.direction(entity, entity.getLook(partialTicks));
-        TargetingDiagnostics.captureActualBlockRayLook(entity, look);
-        return look;
+    private Vec3 combatives$interactionRayDirection(EntityLivingBase entity, float partialTicks) {
+        return entity instanceof EntityPlayer && entity instanceof ICombativesPlayerPose
+                ? InteractionRay.interpolated((EntityPlayer) entity, partialTicks).direction
+                : entity.getLook(partialTicks);
     }
 
     @Shadow

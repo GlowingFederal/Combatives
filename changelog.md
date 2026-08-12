@@ -156,3 +156,17 @@
   covering position history, AABB dimensions, eye geometry, MPM data, and pose.
 - Documented the integrated-versus-dedicated ownership error, synchronization
   lifecycle, remote-player behavior, and movement-anchor fix.
+
+(1a4fde4 Establish authoritative interaction geometry ray)
+
+- Added one common-side interaction-ray API derived exclusively from accepted
+  AABB-floor-relative gameplay geometry and player orientation, with a clearly
+  separated interpolated rendering variant.
+- Versioned server-owned geometry transitions and synchronized revisions with
+  MPM scale tuples so dedicated client/server logs can identify stale state.
+- Made server start-digging and block-use handling independently ray trace the
+  authoritative geometry instead of treating client-selected coordinates as
+  authority, while retaining vanilla reach and interaction validation.
+- Removed common-side linkage to client targeting classes and documented the
+  verified 1.7.10 packet pipeline, obsolete calculations, synchronization
+  boundary, and diagnostic comparison procedure.

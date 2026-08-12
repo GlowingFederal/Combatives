@@ -124,3 +124,12 @@
 - Restored the vanilla first-person arm and held-item render pass for MPM entity
   disguises after tracing the absence to MPM's canceled `RenderHandEvent`.
 - Documented compatibility behavior, graceful fallbacks, and ownership.
+
+(cf147ac Align transformed camera and targeting geometry)
+
+- Retained the complete accepted MPM disguise geometry instead of reconstructing
+  height and eye position from the disguise's width ratio.
+- Kept the rendered first-person camera, authoritative block ray, and entity
+  targeting sweep aligned for transformed players with non-uniform proportions.
+- Preserved the prior accepted camera and ray geometry while an enlarged
+  disguise hitbox is obstructed and waiting for clearance.

@@ -140,3 +140,6 @@ per-part render scales remain cosmetic. Expansion waits for a collision-free
 centered box, while shrinking and accepted expansion preserve the current AABB
 floor. For entity disguises, the optional MPM late mixin also restores Forge's
 vanilla first-person arm/held-item pass that MPM otherwise cancels completely.
+The accepted disguise geometry is retained as a complete width/height/eye
+tuple, keeping the rendered center crosshair, block ray, and entity sweep on the
+same origin even for non-uniform entity proportions.

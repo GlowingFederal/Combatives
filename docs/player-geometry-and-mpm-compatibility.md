@@ -68,6 +68,16 @@ the next tick retries. Shrinking is immediate. This also replaces the former
 server-only `setSize` enforcement that could overwrite a separately composed
 dimension.
 
+The accepted result is retained as one complete `EffectivePlayerGeometry`, not
+reconstructed later from collision width. This distinction matters for entity
+disguises: a silverfish or dwarf can have different width, height, and eye
+ratios. Reusing the width ratio for all three values made the physical box
+correct while moving the rendered camera and gameplay ray to a different
+height. Camera selection, legacy `getEyeHeight()`, the block ray, and the entity
+sweep now all consume the exact width/height/eye tuple that was accepted for
+the AABB. If expansion is obstructed, they continue using the previous accepted
+tuple until the complete new box can be installed.
+
 At the SRG wrapper HEAD, Combatives captures genuine world `posY`, `prevPosY`,
 and `lastTickPosY`. The vendored order proves this is before MPM computes and
 adds its POV mutation. Immediately before the exact SRG super invocation,

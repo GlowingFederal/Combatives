@@ -8,7 +8,6 @@ import com.glowingfederal.combatives.config.CombativesConfig;
 import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.entity.player.EffectivePlayerGeometry;
-import com.glowingfederal.combatives.util.math.MathHelperNew;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.renderer.EntityRenderer;
@@ -129,43 +128,14 @@ public abstract class EntityRendererMixin {
         }
 
         EntityPlayer player = (EntityPlayer) entity;
-        if (this.combatives$isVanillaBaselinePose(player)) {
-            /* Standing is a legacy camera passthrough. In particular, MPM pairs
-             * its yOffset camera adjustment with the same position adjustment
-             * around targeting; replacing this local with AABB-relative gameplay
-             * geometry would discard only the camera half of that pair. */
-            this.combatives$entityEyeHeight = eyeHeight;
-            this.combatives$eyeHeight = eyeHeight;
-            this.combatives$previousEyeHeight = eyeHeight;
-            this.combatives$logCameraOrigin(player, eyeHeight, eyeHeight);
-            TargetingDiagnostics.captureActualCameraOrigin(player, this.combatives$partialTicks, eyeHeight);
-            return eyeHeight;
-        }
-
         float poseCameraOffset = this.combatives$getPoseCameraOffset(player, eyeHeight);
         this.combatives$entityEyeHeight = poseCameraOffset;
 
-        if (this.combatives$isLowPose(player)) {
-            this.combatives$eyeHeight = poseCameraOffset;
-            this.combatives$previousEyeHeight = poseCameraOffset;
-            this.combatives$logCameraOrigin(player, eyeHeight, poseCameraOffset);
-            TargetingDiagnostics.captureActualCameraOrigin(player, this.combatives$partialTicks, poseCameraOffset);
-            return poseCameraOffset;
-        }
-
-        if (this.combatives$eyeHeight <= 0.0F || this.combatives$previousEyeHeight <= 0.0F) {
-            this.combatives$eyeHeight = eyeHeight;
-            this.combatives$previousEyeHeight = eyeHeight;
-        }
-
-        float interpolatedOffset = MathHelperNew.lerp(
-                this.combatives$partialTicks,
-                this.combatives$previousEyeHeight,
-                this.combatives$eyeHeight
-        );
-        this.combatives$logCameraOrigin(player, eyeHeight, interpolatedOffset);
-        TargetingDiagnostics.captureActualCameraOrigin(player, this.combatives$partialTicks, interpolatedOffset);
-        return interpolatedOffset;
+        this.combatives$eyeHeight = poseCameraOffset;
+        this.combatives$previousEyeHeight = poseCameraOffset;
+        this.combatives$logCameraOrigin(player, eyeHeight, poseCameraOffset);
+        TargetingDiagnostics.captureActualCameraOrigin(player, this.combatives$partialTicks, poseCameraOffset);
+        return poseCameraOffset;
     }
 
     private float combatives$getPoseCameraOffset(EntityPlayer player, float vanillaCameraOffset) {

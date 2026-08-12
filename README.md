@@ -142,4 +142,6 @@ floor. For entity disguises, the optional MPM late mixin also restores Forge's
 vanilla first-person arm/held-item pass that MPM otherwise cancels completely.
 The accepted disguise geometry is retained as a complete width/height/eye
 tuple, keeping the rendered center crosshair, block ray, and entity sweep on the
-same origin even for non-uniform entity proportions.
+same current-pass origin even for non-uniform entity proportions. Targeting is
+derived from accepted physical geometry rather than a previous-frame camera
+sample; presentation-only bob, lean, shake, and recoil remain excluded.

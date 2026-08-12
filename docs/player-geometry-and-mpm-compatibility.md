@@ -78,6 +78,12 @@ sweep now all consume the exact width/height/eye tuple that was accepted for
 the AABB. If expansion is obstructed, they continue using the previous accepted
 tuple until the complete new box can be installed.
 
+Targeting does not reuse the previous frame's rendered-camera sample. Vanilla
+calls `getMouseOver` before `orientCamera`, so the current ray and current base
+camera independently reconstruct the same origin from the interpolated AABB
+floor and accepted eye offset. MPM's temporary position mutation cancels out of
+the floor calculation, and no MPM offset or entity position is written.
+
 At the SRG wrapper HEAD, Combatives captures genuine world `posY`, `prevPosY`,
 and `lastTickPosY`. The vendored order proves this is before MPM computes and
 adds its POV mutation. Immediately before the exact SRG super invocation,

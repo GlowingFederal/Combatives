@@ -42,22 +42,23 @@ to ordinary player proportions.
 
 MPM's whole-model `ModelData.size` is also a geometry input: when the independent
 `enableMpmHitboxScaling` option is enabled, Combatives resolves its uniform
-render factor (`size / 5`) on both logical sides and multiplies posture width,
-height, and box-relative eye height by that factor. MPM defaults `size` to 5,
+render factor (`size / 5`) on the server, synchronizes its resolved scale tuple,
+and multiplies posture width, height, and box-relative eye height on each client
+from that authoritative tuple. MPM defaults `size` to 5,
 accepts 1 through 10, serializes it in the complete model NBT, and applies the
 same factor to all three GL axes in `RenderMPM#preRenderCallback`. Independent
 head/body/arm/leg X/Y/Z scales are deliberately excluded because they do not
 describe one coherent physical body.
 
 The optional boundary uses FML mod detection and reflection, so no MPM class is
-linked when the mod is absent. `ModelData.getData(player)` selects MPM's client
-cache for local and remote client players and its server model-data controller
-for server players. MPM broadcasts the complete NBT on changes; consequently,
-the same raw value is available for client interception and server-authoritative
-collision. Missing data, reflection failures, values outside MPM's legal 1–10
+linked when the mod is absent. Server-side `ModelData.getData(player)` selects
+MPM's saved model-data controller; Combatives sends the resolved gameplay tuple
+through its own packet rather than trusting MPM's separately timed client
+cache. Missing data, reflection failures, values outside MPM's legal 1–10
 range, and non-finite/non-positive resolved factors fall back to player
-geometry. MPM synchronizes `entityClass` in the same model NBT, so disguise
-geometry resolves on both the logical client and authoritative server.
+geometry. The server resolves the synchronized `entityClass` dimensions and
+sends their numeric proportions, so clients need not instantiate the disguise
+to agree on collision geometry.
 
 Combatives is the sole final-dimension owner. Its player tick resolves posture
 bases first, multiplies by the current MPM factor, and rebuilds a centered box
@@ -116,6 +117,48 @@ reach, and resulting hit position. The MPM boundary logs `MPM TARGET COMPAT
 ACTIVE`, original/mutated/restored/post-target samples, and mutation amount.
 This numerically tests `targetOriginY - physicalCameraBaseY ~= 0` before bob,
 landing, freefall, mount motion, shake, and other visual-only effects.
+
+### Dedicated-server regression and ownership
+
+The dedicated-server failure was not a second ray-selection defect. The first
+MPM hitbox implementation independently called `ModelData.getData(player)` on
+each logical side. On a client that method reads `ClientDataController`; on a
+server it reads the saved `ModelDataController` entry. Those stores are updated
+by different MPM packets and at different lifecycle points. Local integrated
+testing hid that ownership error because both logical sides live in one process
+and normally receive the same model data quickly. A dedicated client could
+therefore construct its `EntityClientPlayerMP` (and remote player targets) from
+client render data while `EntityPlayerMP` was still using another size,
+disguise, or the default geometry. Vanilla movement packets do not synchronize
+entity width, height, AABB bounds, MPM size, or disguise-derived dimensions.
+
+Combatives now resolves MPM model data only on the authoritative server and
+sends the resulting width, height, and eye scale tuple to the owning client and
+tracking clients. The packet is sent on entity construction/login, whenever the
+server-observed MPM tuple changes, and when a player starts tracking the entity.
+Respawn and dimension change construct or retrack an entity and therefore
+repeat the handshake. Client-local MPM transformations remain available to the
+renderer but can no longer replace synchronized gameplay geometry. This also
+makes remote-player target AABBs consume the same tuple as server collision.
+
+The resize path also restores the vanilla 1.7.10 vertical-anchor equation,
+`boundingBox.minY = posY - yOffset + ySize`. It preserves the accepted physical
+AABB floor, then translates `posY`, `prevPosY`, and `lastTickPosY` together to
+the corresponding legacy anchor. Without that step, the next `setPosition`,
+`moveEntity`, server movement correction, or respawn reconstruction could
+rebuild the box at a different floor. Translating all samples by one delta
+preserves interpolation while keeping the movement-packet stance and AABB in
+the same coordinate contract on integrated server, dedicated server, and the
+dedicated client.
+
+With verbose movement diagnostics enabled, a five-second server sample and
+each geometry transition are headed `SERVER PLAYER GEOMETRY`. The ray-time
+client sample is headed `CLIENT TARGET GEOMETRY`. Both include position
+samples, AABB bounds and dimensions, entity dimensions, `yOffset`, `ySize`, eye
+height, physical eye offset, pose/crouch/crawl/swim state, and the server-owned
+MPM scale tuple. The ray sample additionally records interpolated position and
+the final authoritative origin, allowing one dedicated run to identify the
+first differing value and its lifecycle transition.
 
 Runtime testing was intentionally not performed. Test standing, sneaking,
 crawling and swimming targeting in all directions and at maximum reach, with MPM

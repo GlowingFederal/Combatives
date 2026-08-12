@@ -59,9 +59,7 @@ public class CombativesCorePlugin implements IFMLLoadingPlugin, IEarlyMixinLoade
             "EntityPlayerMixin",
             "EntityMixin",
             "EntityLivingBaseMixin",
-            "EntityPlayerMPMixin",
-            "NetHandlerPlayServerMixin",
-            "ItemInWorldManagerMixin"
+            "EntityPlayerMPMixin"
         ));
 
         if (FMLLaunchHandler.side().isClient()) {
@@ -75,8 +73,7 @@ public class CombativesCorePlugin implements IFMLLoadingPlugin, IEarlyMixinLoade
                 "RenderMixin",
                 "RendererLivingEntityMixin",
                 "EntityOtherPlayerMPMixin",
-                "PlayerControllerMPMixin",
-                "C07PacketPlayerDiggingMixin"
+                "PlayerControllerMPMixin"
             ));
         }
 

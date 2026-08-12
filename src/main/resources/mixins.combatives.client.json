@@ -16,8 +16,7 @@
     "RenderPlayerMixin",
     "RenderMixin",
     "RendererLivingEntityMixin",
-    "PlayerControllerMPMixin",
-    "C07PacketPlayerDiggingMixin"
+    "PlayerControllerMPMixin"
   ],
   "server": []
 }

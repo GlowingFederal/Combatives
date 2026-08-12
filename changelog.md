@@ -143,3 +143,37 @@
   interpolated AABB floor plus accepted eye offset for every player pose.
 - Preserved vanilla block/entity selection and reach while keeping visual-only
   camera transforms out of gameplay aim.
+
+(d258ccd Fix dedicated-server MPM targeting geometry)
+
+- Made the dedicated server authoritative for MPM-derived player width, height,
+  and eye scale, and synchronized that tuple to owning and tracking clients on
+  login/construction, live model changes, and tracking transitions.
+- Restored the vanilla 1.7.10 relationship between the resized AABB floor and
+  all vertical position samples so movement packets and server corrections
+  cannot reconstruct the player at a different vertical anchor.
+- Added paired `CLIENT TARGET GEOMETRY` and `SERVER PLAYER GEOMETRY` diagnostics
+  covering position history, AABB dimensions, eye geometry, MPM data, and pose.
+- Documented the integrated-versus-dedicated ownership error, synchronization
+  lifecycle, remote-player behavior, and movement-anchor fix.
+
+(cd92e5d Trace block interaction coordinates end to end)
+
+- Instrumented the actual client `objectMouseOver`, controller target, C07
+  construction, server packet receipt, and `ItemInWorldManager` damage chain.
+- Distinguished initial clicks, held-button mining, completion/abort actions,
+  right-click block use, and entity attacks without constructing another ray.
+- Removed size-resize writes to `posY`, `prevPosY`, and `lastTickPosY`; physical
+  AABB resizing no longer mutates movement packets or server distance checks.
+- Documented that vanilla 1.7.10 forwards immutable packet coordinates and does
+  not server-ray-trace a replacement target, plus the exact diagnostic method
+  for locating the first unequal boundary in a dedicated-server reproduction.
+
+(88b3a59 Correct interaction diagnostics for 1.7.10 MCP mappings)
+
+- Replaced the nonexistent `ItemInWorldManager#blockRemoving` injection with
+  the mapped 1.7.10 `uncheckedTryHarvestBlock(int, int, int)` completion path.
+- Corrected the C07 constructor injection to the mapped integer-action
+  `(int, int, int, int, int)` signature; 1.7.10 has no nested `Action` argument.
+- Updated the interaction pipeline audit to name the actual mapped server
+  methods instead of relying on a later-version method name.

@@ -2,6 +2,9 @@ package com.glowingfederal.combatives.compat.mpm;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.Collections;
+import java.util.WeakHashMap;
 
 import com.glowingfederal.combatives.config.CombativesConfig;
 import cpw.mods.fml.common.Loader;
@@ -17,10 +20,21 @@ public final class MpmCompatibility {
     private static Method getData;
     private static Method getEntity;
     private static Field size;
+    private static final Map<EntityPlayer, Geometry> serverGeometry = Collections.synchronizedMap(
+            new WeakHashMap<EntityPlayer, Geometry>());
 
     private MpmCompatibility() { }
 
     public static Geometry resolve(EntityPlayer player) {
+        if (player != null && player.worldObj != null && player.worldObj.isRemote) {
+            Geometry synchronizedGeometry = serverGeometry.get(player);
+            if (synchronizedGeometry != null) return synchronizedGeometry;
+        }
+        return resolveLocal(player);
+    }
+
+    /** Resolve MPM's local cache. On a server this is the authoritative saved model data. */
+    public static Geometry resolveLocal(EntityPlayer player) {
         if (!CombativesConfig.enableMpmHitboxScaling || player == null || !isAvailable()) {
             return Geometry.DEFAULT;
         }
@@ -50,6 +64,11 @@ public final class MpmCompatibility {
             // Optional compatibility must degrade normally if an incompatible MPM revision is present.
             return Geometry.DEFAULT;
         }
+    }
+
+    /** Install geometry resolved by the server; client MPM render data is never authoritative. */
+    public static void applyServerGeometry(EntityPlayer player, Geometry geometry) {
+        if (player != null && geometry != null) serverGeometry.put(player, geometry);
     }
 
     public static boolean hasEntityDisguise(EntityPlayer player) {
@@ -92,7 +111,7 @@ public final class MpmCompatibility {
         public final boolean fromMpm;
         public final String disguiseClass;
 
-        private Geometry(int rawSize, float widthScale, float heightScale, float eyeScale,
+        public Geometry(int rawSize, float widthScale, float heightScale, float eyeScale,
                 boolean fromMpm, String disguiseClass) {
             this.rawSize = rawSize;
             this.widthScale = widthScale;

@@ -26,6 +26,7 @@ public class PoseSyncEvents {
     public void onStartTracking(StartTracking event) {
         if (event.entityPlayer instanceof EntityPlayerMP) {
             PoseSync.sendAuthoritativePose((EntityPlayerMP) event.entityPlayer, event.target);
+            PlayerGeometrySync.sendTo((EntityPlayerMP) event.entityPlayer, event.target);
         }
     }
 

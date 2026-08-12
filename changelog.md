@@ -116,3 +116,30 @@
   moving player coordinates, and added verbose transition diagnostics.
 - Added an independent default-enabled compatibility option and documented
   fallback behavior, synchronization, ownership, and manual validation cases.
+
+(d3a8d96 Scale MPM disguise hitboxes and restore first-person items)
+
+- Derived width, height, and eye proportions from MPM's synchronized vanilla or
+  modded entity disguise and composed them with whole-model size and pose.
+- Restored the vanilla first-person arm and held-item render pass for MPM entity
+  disguises after tracing the absence to MPM's canceled `RenderHandEvent`.
+- Documented compatibility behavior, graceful fallbacks, and ownership.
+
+(cf147ac Align transformed camera and targeting geometry)
+
+- Retained the complete accepted MPM disguise geometry instead of reconstructing
+  height and eye position from the disguise's width ratio.
+- Kept the rendered first-person camera, authoritative block ray, and entity
+  targeting sweep aligned for transformed players with non-uniform proportions.
+- Preserved the prior accepted camera and ray geometry while an enlarged
+  disguise hitbox is obstructed and waiting for clearance.
+
+(ae92111 Restore authoritative first-person targeting ray)
+
+- Fixed the all-player crosshair regression caused by using an
+  `orientCamera` sample from the previous render pass during the current
+  pass's earlier `getMouseOver` call.
+- Derived both the rendered base camera and current gameplay ray from the same
+  interpolated AABB floor plus accepted eye offset for every player pose.
+- Preserved vanilla block/entity selection and reach while keeping visual-only
+  camera transforms out of gameplay aim.

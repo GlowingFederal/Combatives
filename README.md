@@ -134,7 +134,14 @@ build, MPM remains loadable and retains its native targeting behavior; see the
 
 MPM+ whole-model `size` is also consumed independently on both logical sides
 when `enableMpmHitboxScaling` is enabled. Combatives composes the synchronized
-uniform `size / 5` factor with its standing/crouching/crawl/swim dimensions;
+uniform `size / 5` factor and the selected entity disguise's initialized
+width/height/eye proportions with its standing/crouching/crawl/swim dimensions;
 per-part render scales remain cosmetic. Expansion waits for a collision-free
 centered box, while shrinking and accepted expansion preserve the current AABB
-floor.
+floor. For entity disguises, the optional MPM late mixin also restores Forge's
+vanilla first-person arm/held-item pass that MPM otherwise cancels completely.
+The accepted disguise geometry is retained as a complete width/height/eye
+tuple, keeping the rendered center crosshair, block ray, and entity sweep on the
+same current-pass origin even for non-uniform entity proportions. Targeting is
+derived from accepted physical geometry rather than a previous-frame camera
+sample; presentation-only bob, lean, shake, and recoil remain excluded.

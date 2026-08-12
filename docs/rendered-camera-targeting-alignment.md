@@ -182,6 +182,18 @@ physical floor. MPM's temporary translation cancels between the interpolated Y
 and the `boundingBox.minY - posY` anchor, requiring neither a model constant nor
 any entity-field mutation by Combatives.
 
+`getMouseOver` runs before `orientCamera` in the same
+`updateCameraAndRender` pass. A camera origin captured by `orientCamera` is
+therefore necessarily from the previous rendered pass and must not be the
+authoritative input for current targeting. This stale-sample ordering was the
+regression that could separate the crosshair and gameplay ray for every player,
+especially across movement or geometry changes. For Combatives players,
+targeting reconstructs the current-pass origin directly as the interpolated
+physical AABB floor plus the exact accepted `eyeAboveMinY`. `orientCamera` uses
+that same expression for every standing, transformed, crouching, crawling, and
+swimming player. The captured sample remains only as a fallback for non-player
+render-view entities.
+
 The authoritative direction remains the view entity's interpolated
 `getLook(partialTicks)` vector: the centered symmetric projection adds no
 angular offset. Procedural translation, shake, bob, lean, and presentation

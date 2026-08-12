@@ -3,7 +3,10 @@ package com.glowingfederal.combatives.client.camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.Vec3;
+import com.glowingfederal.combatives.entity.player.EffectivePlayerGeometry;
+import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 
 /**
  * The non-presentational, first-person ray represented by the center pixel.
@@ -35,8 +38,7 @@ public final class AuthoritativeViewRay {
     public static void beginTargeting(EntityLivingBase entity, float partialTicks) {
         clearTarget();
         Minecraft mc = Minecraft.getMinecraft();
-        if (!hasCameraSample || entity != cameraEntity || entity != mc.renderViewEntity
-                || mc.gameSettings.thirdPersonView != 0 || entity.isPlayerSleeping()) {
+        if (entity != mc.renderViewEntity || mc.gameSettings.thirdPersonView != 0 || entity.isPlayerSleeping()) {
             return;
         }
 
@@ -44,8 +46,21 @@ public final class AuthoritativeViewRay {
         double interpolatedY = interpolate(entity.prevPosY, entity.posY, partialTicks);
         double interpolatedMinY = interpolatedY + entity.boundingBox.minY - entity.posY;
         double z = interpolate(entity.prevPosZ, entity.posZ, partialTicks);
+        double aboveMinY;
+        if (entity instanceof EntityPlayer && entity instanceof ICombativesPlayerPose) {
+            /* getMouseOver runs before orientCamera in updateCameraAndRender, so
+             * a captured camera sample belongs to the previous render pass.
+             * Resolve the same accepted physical eye used by orientCamera for
+             * this pass instead of consuming that stale sample. */
+            EffectivePlayerGeometry geometry = ((ICombativesPlayerPose) entity).getEffectiveGeometry();
+            aboveMinY = geometry.eyeAboveMinY;
+        } else if (hasCameraSample && entity == cameraEntity) {
+            aboveMinY = cameraAboveMinY;
+        } else {
+            return;
+        }
         targetEntity = entity;
-        targetOrigin = Vec3.createVectorHelper(x, interpolatedMinY + cameraAboveMinY, z);
+        targetOrigin = Vec3.createVectorHelper(x, interpolatedMinY + aboveMinY, z);
         // Deliberately excludes CameraController's presentation-only rotations.
         targetDirection = entity.getLook(partialTicks);
     }

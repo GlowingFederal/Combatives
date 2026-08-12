@@ -21,7 +21,8 @@ fields. Vanilla 1.7.10 performs build-height and squared-distance checks against
 the server player position, but it does **not** perform a replacement ray trace
 and cannot select a neighboring grass block. Accepted start/stop requests pass
 the packet X/Y/Z to `ItemInWorldManager#onBlockClicked` or
-`#blockRemoving`; harvesting reaches `#tryHarvestBlock` with those coordinates.
+`#uncheckedTryHarvestBlock`; the latter invokes `#tryHarvestBlock` with those
+coordinates.
 Consequently, if the manager truly damages grass at a different coordinate,
 the first divergence must already be on the client between the displayed
 `objectMouseOver` sample and the controller/packet construction sample (or be
@@ -62,7 +63,7 @@ target from player geometry:
 4. `SERVER DIG PACKET RECEIVED` runs at `processPlayerDigging` entry and logs
    the received fields, server block, player position/AABB, and legacy eye Y.
 5. `SERVER BLOCK DAMAGE` logs the arguments received by `onBlockClicked`,
-   `blockRemoving`, and `tryHarvestBlock`, plus the harvest result.
+   `uncheckedTryHarvestBlock`, and `tryHarvestBlock`, plus the harvest result.
 
 The first unequal adjacent pair identifies the owning boundary. Initial click,
 continued mining, completion, target changes, and abort packets are distinct in

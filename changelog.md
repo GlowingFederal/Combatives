@@ -168,3 +168,12 @@
 - Documented that vanilla 1.7.10 forwards immutable packet coordinates and does
   not server-ray-trace a replacement target, plus the exact diagnostic method
   for locating the first unequal boundary in a dedicated-server reproduction.
+
+(88b3a59 Correct interaction diagnostics for 1.7.10 MCP mappings)
+
+- Replaced the nonexistent `ItemInWorldManager#blockRemoving` injection with
+  the mapped 1.7.10 `uncheckedTryHarvestBlock(int, int, int)` completion path.
+- Corrected the C07 constructor injection to the mapped integer-action
+  `(int, int, int, int, int)` signature; 1.7.10 has no nested `Action` argument.
+- Updated the interaction pipeline audit to name the actual mapped server
+  methods instead of relying on a later-version method name.

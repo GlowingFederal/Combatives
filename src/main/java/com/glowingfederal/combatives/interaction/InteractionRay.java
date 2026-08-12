@@ -61,7 +61,7 @@ public final class InteractionRay {
     }
 
     public MovingObjectPosition traceBlocks(EntityLivingBase player, double reach) {
-        return player.worldObj.rayTraceBlocks(this.origin, end(reach), false, false, true);
+        return player.worldObj.rayTraceBlocks(this.origin, end(reach), false);
     }
 
     private static double interpolate(double previous, double current, float partialTicks) {

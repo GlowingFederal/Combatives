@@ -13,23 +13,57 @@ import net.minecraft.util.MovingObjectPosition;
 public final class ServerInteractionTarget {
     private ServerInteractionTarget() { }
 
-    public static MovingObjectPosition resolveDigStart(EntityPlayerMP player,
+    public static MovingObjectPosition resolveDigStart(
+            EntityPlayerMP player,
             C07PacketPlayerDigging packet) {
+
+        // 1.7.10 C07 digging status:
+        // 0 = start digging
+        // 1 = cancel digging
+        // 2 = finish digging
+        // 3 = drop item stack
+        // 4 = drop item
+        // 5 = release use item
         if (!(player instanceof ICombativesPlayerPose)
-                || packet.func_149506_g() != C07PacketPlayerDigging.Action.START_DESTROY_BLOCK) return null;
-        InteractionRay ray = InteractionRay.authoritative(player);
-        MovingObjectPosition hit = ray.traceBlocks(player,
-                player.theItemInWorldManager.getBlockReachDistance());
-        if (CombativesConfig.verboseMovementDebug && Combatives.logger != null) {
-            Combatives.logger.info("SERVER INTERACTION RAY player={} tick={} geometryRevision={} pose={} position=[{},{},{}] aabb={} width={} height={} anchor={} yaw={} pitch={} origin={} direction={} reach={} rayBlock={} packetBlock=[{},{},{}] agreement={}",
-                    player.getCommandSenderName(), player.ticksExisted, ray.geometryRevision,
-                    ((ICombativesPlayerPose) player).getPose(), player.posX, player.posY, player.posZ,
-                    player.boundingBox, player.width, player.height,
-                    ((ICombativesPlayerPose) player).getEffectiveGeometry().eyeAboveMinY,
-                    player.rotationYaw, player.rotationPitch, ray.origin, ray.direction,
-                    player.theItemInWorldManager.getBlockReachDistance(), format(hit),
-                    packet.func_149505_c(), packet.func_149503_d(), packet.func_149502_e(), agrees(hit, packet));
+                || packet.func_149506_g() != 0) {
+            return null;
         }
+
+        InteractionRay ray = InteractionRay.authoritative(player);
+
+        MovingObjectPosition hit = ray.traceBlocks(
+                player,
+                player.theItemInWorldManager.getBlockReachDistance());
+
+        if (CombativesConfig.verboseMovementDebug && Combatives.logger != null) {
+            Combatives.logger.info(
+                    "SERVER INTERACTION RAY player={} tick={} geometryRevision={} pose={} "
+                            + "position=[{},{},{}] aabb={} width={} height={} anchor={} "
+                            + "yaw={} pitch={} origin={} direction={} reach={} rayBlock={} "
+                            + "packetBlock=[{},{},{}] agreement={}",
+                    player.getCommandSenderName(),
+                    player.ticksExisted,
+                    ray.geometryRevision,
+                    ((ICombativesPlayerPose) player).getPose(),
+                    player.posX,
+                    player.posY,
+                    player.posZ,
+                    player.boundingBox,
+                    player.width,
+                    player.height,
+                    ((ICombativesPlayerPose) player).getEffectiveGeometry().eyeAboveMinY,
+                    player.rotationYaw,
+                    player.rotationPitch,
+                    ray.origin,
+                    ray.direction,
+                    player.theItemInWorldManager.getBlockReachDistance(),
+                    format(hit),
+                    packet.func_149505_c(),
+                    packet.func_149503_d(),
+                    packet.func_149502_e(),
+                    agrees(hit, packet));
+        }
+
         return hit;
     }
 

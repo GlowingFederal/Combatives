@@ -33,14 +33,16 @@ public final class PlayerGeometrySync {
     public static void sendTo(EntityPlayerMP observer, Entity source) {
         if (!(source instanceof EntityPlayerMP) || NetworkHandler.channel == null) return;
         EntityPlayerMP player = (EntityPlayerMP) source;
+        ICombativesPlayerPose state = (ICombativesPlayerPose) player;
         NetworkHandler.channel.sendTo(new PacketPlayerGeometryS2C(player.getEntityId(),
-                acceptedGeometry(player)), observer);
+                state.getGeometryRevision(), acceptedGeometry(player)), observer);
     }
 
     private static void broadcast(EntityPlayerMP player, MpmCompatibility.Geometry geometry,
             boolean includeSelf, String reason) {
         if (NetworkHandler.channel == null) return;
-        PacketPlayerGeometryS2C packet = new PacketPlayerGeometryS2C(player.getEntityId(), geometry);
+        int revision = ((ICombativesPlayerPose) player).getGeometryRevision();
+        PacketPlayerGeometryS2C packet = new PacketPlayerGeometryS2C(player.getEntityId(), revision, geometry);
         NetworkHandler.channel.sendToAllAround(packet, new NetworkRegistry.TargetPoint(
                 player.dimension, player.posX, player.posY, player.posZ, 512.0D));
         if (includeSelf) NetworkHandler.channel.sendTo(packet, player);

@@ -1,5 +1,8 @@
 # Authoritative player geometry and MPM+ compatibility
 
+The complete crosshair-to-server ownership model is documented in
+[authoritative interaction geometry](authoritative-interaction-geometry.md).
+
 ## Verified MPM+ 4.2 mapping and optional loading
 
 The integration is a late, client-only GTNHMixins integration offered only when

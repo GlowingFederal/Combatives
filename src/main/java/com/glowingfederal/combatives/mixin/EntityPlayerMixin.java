@@ -60,6 +60,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     private Pose combativesPose = Pose.STANDING;
     private Pose combativesAppliedPose = Pose.STANDING;
     private EffectivePlayerGeometry combativesAppliedGeometry;
+    private int combativesGeometryRevision;
     private boolean combativesPoseWatcherReady;
     private int combativesLastStepHeightWarningTick = -200;
     private MovementSnapshot combativesMovementSnapshot = MovementSnapshot.EMPTY;
@@ -160,6 +161,10 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
                 : this.combativesAppliedGeometry;
     }
     @Override public EffectivePlayerGeometry getEffectiveGeometry(Pose pose) { return this.combatives$resolveGeometry(pose); }
+    @Override public int getGeometryRevision() { return this.combativesGeometryRevision; }
+    @Override public void acceptGeometryRevision(int revision) {
+        if (revision > this.combativesGeometryRevision) this.combativesGeometryRevision = revision;
+    }
     private EffectivePlayerGeometry combatives$resolveGeometry(Pose pose) {
         MpmCompatibility.Geometry geometry = MpmCompatibility.resolve(this.getPlayer());
         this.combativesLastMpmRawSize = geometry.rawSize;
@@ -204,8 +209,14 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
                         + " boundingBox.minY=" + this.boundingBox.minY + " boundingBox.maxY=" + this.boundingBox.maxY);
             }
             this.combativesSize = newSize;
+            boolean geometryChanged = this.combativesAppliedGeometry == null
+                    || this.combativesAppliedGeometry.pose != requestedGeometry.pose
+                    || Float.compare(this.combativesAppliedGeometry.width, requestedGeometry.width) != 0
+                    || Float.compare(this.combativesAppliedGeometry.height, requestedGeometry.height) != 0
+                    || Float.compare(this.combativesAppliedGeometry.eyeAboveMinY, requestedGeometry.eyeAboveMinY) != 0;
             this.combativesAppliedPose = this.getPose();
             this.combativesAppliedGeometry = requestedGeometry;
+            if (geometryChanged && !this.worldObj.isRemote) this.combativesGeometryRevision++;
             this.recalculateEyeHeight();
         } else {
             MovementDiagnostics.verbose(this.getPlayer(), "resize rejected for " + this.getPose()
@@ -257,6 +268,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         EffectivePlayerGeometry geometry = this.getEffectiveGeometry();
         MovementDiagnostics.verbose(this.getPlayer(), heading + " reason=" + reason
                 + " side=" + (this.worldObj.isRemote ? "CLIENT" : "SERVER")
+                + " tick=" + this.ticksExisted + " geometryRevision=" + this.combativesGeometryRevision
                 + " pos=[" + this.posX + "," + this.posY + "," + this.posZ + "]"
                 + " prevPos=[" + this.prevPosX + "," + this.prevPosY + "," + this.prevPosZ + "]"
                 + " box=[" + this.boundingBox.minY + "," + this.boundingBox.maxY + "]"

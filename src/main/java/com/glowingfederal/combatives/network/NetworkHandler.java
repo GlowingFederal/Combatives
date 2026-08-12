@@ -4,6 +4,7 @@ import com.glowingfederal.combatives.Combatives;
 import com.glowingfederal.combatives.network.message.PacketCrawlKeyState;
 import com.glowingfederal.combatives.network.message.PacketPlayerPoseC2S;
 import com.glowingfederal.combatives.network.message.PacketPlayerPoseS2C;
+import com.glowingfederal.combatives.network.message.PacketPlayerGeometryS2C;
 import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import cpw.mods.fml.relauncher.Side;
@@ -12,6 +13,7 @@ public final class NetworkHandler {
     private static final int PACKET_CRAWL_KEY_STATE = 0;
     private static final int PACKET_PLAYER_POSE_C2S = 1;
     private static final int PACKET_PLAYER_POSE_S2C = 2;
+    private static final int PACKET_PLAYER_GEOMETRY_S2C = 3;
 
     public static SimpleNetworkWrapper channel;
 
@@ -32,5 +34,6 @@ public final class NetworkHandler {
 
         channel.registerMessage(PacketPlayerPoseC2S.Handler.class, PacketPlayerPoseC2S.class, PACKET_PLAYER_POSE_C2S, Side.SERVER);
         channel.registerMessage(PacketPlayerPoseS2C.Handler.class, PacketPlayerPoseS2C.class, PACKET_PLAYER_POSE_S2C, Side.CLIENT);
+        channel.registerMessage(PacketPlayerGeometryS2C.Handler.class, PacketPlayerGeometryS2C.class, PACKET_PLAYER_GEOMETRY_S2C, Side.CLIENT);
     }
 }

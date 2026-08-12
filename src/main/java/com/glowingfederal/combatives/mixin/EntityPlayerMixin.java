@@ -12,6 +12,7 @@ import com.glowingfederal.combatives.movement.MovementController;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.movement.MovementSnapshot;
 import com.glowingfederal.combatives.network.PoseSync;
+import com.glowingfederal.combatives.network.PlayerGeometrySync;
 import net.minecraft.entity.player.EntityPlayerMP;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -118,6 +119,9 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         this.eyesInWater = this.isInsideOfMaterial(Material.water);
         this.updateSwimming();
         this.recalculateSize();
+        if (!this.worldObj.isRemote && this.getPlayer() instanceof EntityPlayerMP) {
+            PlayerGeometrySync.sampleAndBroadcast((EntityPlayerMP) this.getPlayer());
+        }
     }
 
     @Override
@@ -217,6 +221,10 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         double half = newSize.width / 2.0D;
         this.boundingBox.setBB(AxisAlignedBB.getBoundingBox(this.posX - half, floorY, this.posZ - half,
                 this.posX + half, floorY + newSize.height, this.posZ + half));
+        /* Resizing changes physical bounds, not the legacy movement/network
+         * position. In particular, never move posY or its interpolation samples
+         * here: C03 packets and the server's digging-distance check own those
+         * coordinates. Eye conversion explicitly bridges posY to this floor. */
     }
 
     private void recalculateEyeHeight() {
@@ -232,6 +240,29 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
                 + this.combativesEyeHeight - this.posY);
         this.previousEyeHeight = this.eyeHeight;
         MovementDiagnostics.verbose(this.getPlayer(), "eye height recalculated for " + pose + ": " + this.combativesEyeHeight);
+    }
+
+    @Override
+    public void logGeometry(String heading, String reason) {
+        if (!MovementDiagnostics.isVerboseEnabled()) return;
+        MpmCompatibility.Geometry mpm = this.worldObj.isRemote
+                ? MpmCompatibility.resolve(this.getPlayer()) : MpmCompatibility.resolveLocal(this.getPlayer());
+        EffectivePlayerGeometry geometry = this.getEffectiveGeometry();
+        MovementDiagnostics.verbose(this.getPlayer(), heading + " reason=" + reason
+                + " side=" + (this.worldObj.isRemote ? "CLIENT" : "SERVER")
+                + " pos=[" + this.posX + "," + this.posY + "," + this.posZ + "]"
+                + " prevPos=[" + this.prevPosX + "," + this.prevPosY + "," + this.prevPosZ + "]"
+                + " box=[" + this.boundingBox.minY + "," + this.boundingBox.maxY + "]"
+                + " boxWidth=" + (this.boundingBox.maxX - this.boundingBox.minX)
+                + " boxHeight=" + (this.boundingBox.maxY - this.boundingBox.minY)
+                + " entitySize=" + this.width + "x" + this.height
+                + " yOffset=" + this.yOffset + " ySize=" + this.ySize
+                + " getEyeHeight=" + this.getEyeHeight() + " physicalEyeOffset=" + geometry.eyeAboveMinY
+                + " pose=" + this.getPose() + " sneaking=" + this.isSneaking()
+                + " swimming=" + this.isSwimming() + " crawling=" + this.crawlKeyDown
+                + " mpmRawSize=" + mpm.rawSize + " mpmScale=[" + mpm.widthScale + ","
+                + mpm.heightScale + "," + mpm.eyeScale + "] mpmFromData=" + mpm.fromMpm
+                + " mpmDisguise=" + mpm.disguiseClass);
     }
 
     @Override

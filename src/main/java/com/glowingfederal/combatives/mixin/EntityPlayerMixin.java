@@ -12,6 +12,7 @@ import com.glowingfederal.combatives.movement.MovementController;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.movement.MovementSnapshot;
 import com.glowingfederal.combatives.network.PoseSync;
+import com.glowingfederal.combatives.network.PlayerGeometrySync;
 import net.minecraft.entity.player.EntityPlayerMP;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -118,6 +119,9 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         this.eyesInWater = this.isInsideOfMaterial(Material.water);
         this.updateSwimming();
         this.recalculateSize();
+        if (!this.worldObj.isRemote && this.getPlayer() instanceof EntityPlayerMP) {
+            PlayerGeometrySync.sampleAndBroadcast((EntityPlayerMP) this.getPlayer());
+        }
     }
 
     @Override
@@ -217,6 +221,17 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         double half = newSize.width / 2.0D;
         this.boundingBox.setBB(AxisAlignedBB.getBoundingBox(this.posX - half, floorY, this.posZ - half,
                 this.posX + half, floorY + newSize.height, this.posZ + half));
+        /* Entity#setPosition and moveEntity define the legacy 1.7.10 anchor as
+         * minY = posY - yOffset + ySize. Keeping only the old AABB floor made
+         * the next multiplayer position/correction packet reconstruct a
+         * different floor. Preserve the physical floor and move every vertical
+         * position sample together so interpolation and packet stance retain
+         * that vanilla invariant on both logical sides. */
+        double anchoredPosY = floorY + this.yOffset - this.ySize;
+        double deltaY = anchoredPosY - this.posY;
+        this.posY = anchoredPosY;
+        this.prevPosY += deltaY;
+        this.lastTickPosY += deltaY;
     }
 
     private void recalculateEyeHeight() {
@@ -232,6 +247,29 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
                 + this.combativesEyeHeight - this.posY);
         this.previousEyeHeight = this.eyeHeight;
         MovementDiagnostics.verbose(this.getPlayer(), "eye height recalculated for " + pose + ": " + this.combativesEyeHeight);
+    }
+
+    @Override
+    public void logGeometry(String heading, String reason) {
+        if (!MovementDiagnostics.isVerboseEnabled()) return;
+        MpmCompatibility.Geometry mpm = this.worldObj.isRemote
+                ? MpmCompatibility.resolve(this.getPlayer()) : MpmCompatibility.resolveLocal(this.getPlayer());
+        EffectivePlayerGeometry geometry = this.getEffectiveGeometry();
+        MovementDiagnostics.verbose(this.getPlayer(), heading + " reason=" + reason
+                + " side=" + (this.worldObj.isRemote ? "CLIENT" : "SERVER")
+                + " pos=[" + this.posX + "," + this.posY + "," + this.posZ + "]"
+                + " prevPos=[" + this.prevPosX + "," + this.prevPosY + "," + this.prevPosZ + "]"
+                + " box=[" + this.boundingBox.minY + "," + this.boundingBox.maxY + "]"
+                + " boxWidth=" + (this.boundingBox.maxX - this.boundingBox.minX)
+                + " boxHeight=" + (this.boundingBox.maxY - this.boundingBox.minY)
+                + " entitySize=" + this.width + "x" + this.height
+                + " yOffset=" + this.yOffset + " ySize=" + this.ySize
+                + " getEyeHeight=" + this.getEyeHeight() + " physicalEyeOffset=" + geometry.eyeAboveMinY
+                + " pose=" + this.getPose() + " sneaking=" + this.isSneaking()
+                + " swimming=" + this.isSwimming() + " crawling=" + this.crawlKeyDown
+                + " mpmRawSize=" + mpm.rawSize + " mpmScale=[" + mpm.widthScale + ","
+                + mpm.heightScale + "," + mpm.eyeScale + "] mpmFromData=" + mpm.fromMpm
+                + " mpmDisguise=" + mpm.disguiseClass);
     }
 
     @Override

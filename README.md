@@ -132,9 +132,10 @@ optional `EntityRendererAlt#getMouseOver(float)` hook cannot match a changed MPM
 build, MPM remains loadable and retains its native targeting behavior; see the
 [player geometry compatibility notes](docs/player-geometry-and-mpm-compatibility.md).
 
-MPM+ whole-model `size` is also consumed independently on both logical sides
-when `enableMpmHitboxScaling` is enabled. Combatives composes the synchronized
-uniform `size / 5` factor and the selected entity disguise's initialized
+MPM+ whole-model `size` is consumed authoritatively on the server when
+`enableMpmHitboxScaling` is enabled. Combatives synchronizes the resolved tuple
+to owning and tracking clients, then composes the uniform `size / 5` factor and
+the selected entity disguise's initialized
 width/height/eye proportions with its standing/crouching/crawl/swim dimensions;
 per-part render scales remain cosmetic. Expansion waits for a collision-free
 centered box, while shrinking and accepted expansion preserve the current AABB

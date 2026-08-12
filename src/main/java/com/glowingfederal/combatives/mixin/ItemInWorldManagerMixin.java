@@ -15,10 +15,9 @@ public abstract class ItemInWorldManagerMixin {
         InteractionDiagnostics.logDamage((ItemInWorldManager) (Object) this, "onBlockClicked", x, y, z, face, null);
     }
 
-    @Inject(method = "uncheckedTryHarvestBlock", at = @At("HEAD"))
+    @Inject(method = "blockRemoving", at = @At("HEAD"))
     private void combatives$traceContinue(int x, int y, int z, CallbackInfo ci) {
-        InteractionDiagnostics.logDamage((ItemInWorldManager) (Object) this,
-                "uncheckedTryHarvestBlock", x, y, z, -1, null);
+        InteractionDiagnostics.logDamage((ItemInWorldManager) (Object) this, "blockRemoving", x, y, z, -1, null);
     }
 
     @Inject(method = "tryHarvestBlock", at = @At("RETURN"))

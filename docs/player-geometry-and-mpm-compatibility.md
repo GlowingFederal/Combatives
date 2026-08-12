@@ -141,15 +141,12 @@ repeat the handshake. Client-local MPM transformations remain available to the
 renderer but can no longer replace synchronized gameplay geometry. This also
 makes remote-player target AABBs consume the same tuple as server collision.
 
-The resize path also restores the vanilla 1.7.10 vertical-anchor equation,
-`boundingBox.minY = posY - yOffset + ySize`. It preserves the accepted physical
-AABB floor, then translates `posY`, `prevPosY`, and `lastTickPosY` together to
-the corresponding legacy anchor. Without that step, the next `setPosition`,
-`moveEntity`, server movement correction, or respawn reconstruction could
-rebuild the box at a different floor. Translating all samples by one delta
-preserves interpolation while keeping the movement-packet stance and AABB in
-the same coordinate contract on integrated server, dedicated server, and the
-dedicated client.
+The resize path preserves the accepted physical AABB floor without writing
+`posY`, `prevPosY`, or `lastTickPosY`. Those samples belong to movement and C03
+network synchronization; changing them during a size-only operation alters the
+server position used for digging-distance validation. The box-relative eye
+conversion already bridges the legacy position and physical floor. See the
+[block interaction pipeline audit](block-interaction-coordinate-pipeline.md).
 
 With verbose movement diagnostics enabled, a five-second server sample and
 each geometry transition are headed `SERVER PLAYER GEOMETRY`. The ray-time

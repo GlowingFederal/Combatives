@@ -221,17 +221,10 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         double half = newSize.width / 2.0D;
         this.boundingBox.setBB(AxisAlignedBB.getBoundingBox(this.posX - half, floorY, this.posZ - half,
                 this.posX + half, floorY + newSize.height, this.posZ + half));
-        /* Entity#setPosition and moveEntity define the legacy 1.7.10 anchor as
-         * minY = posY - yOffset + ySize. Keeping only the old AABB floor made
-         * the next multiplayer position/correction packet reconstruct a
-         * different floor. Preserve the physical floor and move every vertical
-         * position sample together so interpolation and packet stance retain
-         * that vanilla invariant on both logical sides. */
-        double anchoredPosY = floorY + this.yOffset - this.ySize;
-        double deltaY = anchoredPosY - this.posY;
-        this.posY = anchoredPosY;
-        this.prevPosY += deltaY;
-        this.lastTickPosY += deltaY;
+        /* Resizing changes physical bounds, not the legacy movement/network
+         * position. In particular, never move posY or its interpolation samples
+         * here: C03 packets and the server's digging-distance check own those
+         * coordinates. Eye conversion explicitly bridges posY to this floor. */
     }
 
     private void recalculateEyeHeight() {

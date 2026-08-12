@@ -30,8 +30,17 @@ crawl/swim is `0.6 x 0.6` with eye `0.28`. Eye values are offsets above
 physical camera base, and vanilla targeting use this same geometry. The legacy
 1.7.10 `getEyeHeight()` API is converted at the boundary to an offset from
 `posY`; see [the coordinate-contract audit](legacy-player-coordinate-contract.md).
-Mutable MPM `yOffset`, part scale, and disguise data remain presentation-only.
-The exception is MPM's whole-model `ModelData.size`: when the independent
+Mutable MPM `yOffset` and part scale remain presentation-only. MPM's synchronized
+entity disguise is now a geometry input: Combatives asks MPM for its cached
+`EntityLivingBase` and derives independent width, height, and eye ratios from
+the entity's initialized vanilla/modded dimensions. This covers models such as
+silverfish as well as living entities supplied by other mods without keeping a
+hard-coded entity table. The disguise ratios are composed with the active
+Combatives posture, so crawling remains a low pose instead of resetting to the
+disguise's standing height. Invalid or unavailable entity dimensions fall back
+to ordinary player proportions.
+
+MPM's whole-model `ModelData.size` is also a geometry input: when the independent
 `enableMpmHitboxScaling` option is enabled, Combatives resolves its uniform
 render factor (`size / 5`) on both logical sides and multiplies posture width,
 height, and box-relative eye height by that factor. MPM defaults `size` to 5,
@@ -46,7 +55,9 @@ cache for local and remote client players and its server model-data controller
 for server players. MPM broadcasts the complete NBT on changes; consequently,
 the same raw value is available for client interception and server-authoritative
 collision. Missing data, reflection failures, values outside MPM's legal 1–10
-range, and non-finite/non-positive resolved factors fall back to scale 1.
+range, and non-finite/non-positive resolved factors fall back to player
+geometry. MPM synchronizes `entityClass` in the same model NBT, so disguise
+geometry resolves on both the logical client and authoritative server.
 
 Combatives is the sole final-dimension owner. Its player tick resolves posture
 bases first, multiplies by the current MPM factor, and rebuilds a centered box
@@ -98,3 +109,14 @@ rapid live size changes, expansion under low ceilings/beside walls, respawn,
 dimension changes, reconnect, mounts, and transitions among crawl, swim, and
 standing. The authoritative ray remains anchored to the scaled effective
 geometry relative to `boundingBox.minY`; no MPM position-mutation hook is used.
+
+## First-person hand and held item
+
+MPM+ 4.2 deliberately cancels Forge's complete `RenderHandEvent` whenever an
+entity disguise is active. That event encloses both the first-person arm and
+held-item pass, which explains why even a held item disappeared; it was not a
+Combatives camera transform. The optional late compatibility mixin now
+uncancels only that entity-disguise case after MPM's handler returns. Vanilla's
+normal first-person item renderer (including Combatives' visual-only hand
+camera transform) then runs. MPM's separate cancellation for sleeping and its
+empty-handed bow animation remains untouched when no disguise is selected.

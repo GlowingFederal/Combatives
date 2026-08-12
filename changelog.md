@@ -116,3 +116,11 @@
   moving player coordinates, and added verbose transition diagnostics.
 - Added an independent default-enabled compatibility option and documented
   fallback behavior, synchronization, ownership, and manual validation cases.
+
+(d3a8d96 Scale MPM disguise hitboxes and restore first-person items)
+
+- Derived width, height, and eye proportions from MPM's synchronized vanilla or
+  modded entity disguise and composed them with whole-model size and pose.
+- Restored the vanilla first-person arm and held-item render pass for MPM entity
+  disguises after tracing the absence to MPM's canceled `RenderHandEvent`.
+- Documented compatibility behavior, graceful fallbacks, and ownership.

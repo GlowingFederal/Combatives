@@ -17,6 +17,7 @@ public interface ICombativesPlayerPose {
     EffectivePlayerGeometry getEffectiveGeometry(Pose pose);
     EntitySize getSize(Pose pose);
     void recalculateSize();
+    void logGeometry(String heading, String reason);
     boolean isResizingAllowed();
     boolean isActuallySneaking();
     float getStandingEyeHeight(Pose pose, EntitySize size);

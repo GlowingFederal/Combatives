@@ -60,6 +60,13 @@ public final class TargetingDiagnostics {
         targetYaw = (float) Math.toDegrees(Math.atan2(-look.xCoord, look.zCoord));
         targetPitch = (float) Math.toDegrees(Math.asin(-look.yCoord));
         float reach = mc.playerController == null ? Float.NaN : mc.playerController.getBlockReachDistance();
+        state.logGeometry("CLIENT TARGET GEOMETRY", "getMouseOver ray construction");
+        Combatives.logger.info("CLIENT TARGET GEOMETRY interpolatedPos=[{},{},{}] posY={} prevPosY={} lastTickPosY={} boxMinY={} boxMaxY={} boxWidth={} boxHeight={} physicalEyeOffset={} rayOrigin=[{},{},{}] pose={}",
+                originX, interpolatedY, originZ, player.posY, player.prevPosY, player.lastTickPosY,
+                player.boundingBox.minY, player.boundingBox.maxY,
+                player.boundingBox.maxX - player.boundingBox.minX,
+                player.boundingBox.maxY - player.boundingBox.minY, geometry.eyeAboveMinY,
+                originX, physicalCameraBaseY, originZ, pose);
         Combatives.logger.info("Combatives targeting enter: renderer={} pose={} geometry={}x{} eyeAboveMinY={} boundingBox=[{},{}] getEyeHeight={} posY={} prevPosY={} lastTickPosY={} yOffset={} ySize={} entityHeight={} partialTicks={} targetOrigin=[{},{},{}] expectedTargetOriginY={} actualVanillaOriginY={} physicalCameraBaseY={} originDelta={} targetLook=[{},{},{}] targetYaw={} targetPitch={} reach={}",
                 renderer.getClass().getName(), pose, geometry.width, geometry.height, geometry.eyeAboveMinY,
                 player.boundingBox.minY, player.boundingBox.maxY, player.getEyeHeight(), player.posY, player.prevPosY,

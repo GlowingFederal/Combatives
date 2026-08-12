@@ -9,7 +9,9 @@
     "EntityPlayerMixin",
     "EntityMixin",
     "EntityLivingBaseMixin",
-    "EntityPlayerMPMixin"
+    "EntityPlayerMPMixin",
+    "NetHandlerPlayServerMixin",
+    "ItemInWorldManagerMixin"
   ],
   "client": [],
   "server": []

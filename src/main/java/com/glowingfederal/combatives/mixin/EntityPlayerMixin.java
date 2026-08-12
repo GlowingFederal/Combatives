@@ -67,6 +67,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     private int combativesLastMountWaitLogTick = -20;
     private int combativesLastMpmRawSize = MpmCompatibility.DEFAULT_RAW_SIZE;
     private float combativesLastMpmScale = 1.0F;
+    private String combativesLastMpmDisguise;
 
     public EntityPlayerMixin(World world) {
         super(world);
@@ -155,10 +156,13 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     }
     @Override public EffectivePlayerGeometry getEffectiveGeometry(Pose pose) { return this.combatives$resolveGeometry(pose); }
     private EffectivePlayerGeometry combatives$resolveGeometry(Pose pose) {
-        MpmCompatibility.Scale scale = MpmCompatibility.resolve(this.getPlayer());
-        this.combativesLastMpmRawSize = scale.rawSize;
-        this.combativesLastMpmScale = scale.value;
-        return PlayerGeometryResolver.resolve(pose).scaled(scale.value);
+        MpmCompatibility.Geometry geometry = MpmCompatibility.resolve(this.getPlayer());
+        this.combativesLastMpmRawSize = geometry.rawSize;
+        this.combativesLastMpmScale = geometry.heightScale;
+        this.combativesLastMpmDisguise = geometry.disguiseClass;
+        EffectivePlayerGeometry base = PlayerGeometryResolver.resolve(pose);
+        return new EffectivePlayerGeometry(pose, base.width * geometry.widthScale,
+                base.height * geometry.heightScale, base.eyeAboveMinY * geometry.eyeScale);
     }
     @Override public EntitySize getSize(Pose pose) {
         EffectivePlayerGeometry geometry = this.getEffectiveGeometry(pose);
@@ -186,6 +190,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
                 EffectivePlayerGeometry posture = PlayerGeometryResolver.resolve(this.getPose());
                 MovementDiagnostics.verbose(this.getPlayer(), "MPM hitbox player=" + this.getCommandSenderName()
                         + " mpmRawSize=" + this.combativesLastMpmRawSize + " mpmResolvedScale=" + this.combativesLastMpmScale
+                        + " mpmDisguise=" + this.combativesLastMpmDisguise
                         + " baseWidth=0.6 baseHeight=1.8 posture=" + this.getPose()
                         + " postureBaseWidth=" + posture.width + " postureBaseHeight=" + posture.height
                         + " finalWidth=" + newSize.width + " finalHeight=" + newSize.height

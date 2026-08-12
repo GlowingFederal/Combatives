@@ -31,22 +31,6 @@ The mixin now converts the pose value to the legacy pos-relative return value. T
 
 First-person pose camera interpolation remains a render-only conversion from the same box-relative geometry. Procedural transforms remain visual, and neither movement nor mouse deltas are changed. Third-person targeting uses the same corrected vanilla ray start.
 
-## Server digging validation
-
-The client sends the block coordinates selected by its authoritative view ray;
-the dedicated server does not construct a replacement ray. It does, however,
-apply vanilla's preliminary digging-distance guard from a hard-coded
-`player.posY + 1.5` origin. That standing-only approximation disagrees with the
-client for crawl, swim, and scaled-model eyes and can reject a block which the
-client legitimately selected.
-
-Combatives now substitutes an equivalent legacy Y position only while that
-guard reads `EntityPlayerMP.posY`. After vanilla adds `1.5`, the resulting
-validation origin is `boundingBox.minY + effectiveGeometry.eyeAboveMinY`, the
-same accepted physical eye used by client targeting and synchronized server
-geometry. Packet action handling, the selected coordinates, vanilla's distance
-tolerance, spawn protection, and game-mode checks remain unchanged.
-
 ## Diagnostics and verification matrix
 
 The throttled targeting line now includes `posY`, all interpolation samples, both box Y faces, `yOffset`, `ySize`, entity height, legacy `getEyeHeight()`, resolved eye-above-minimum, expected origin, computed vanilla origin, delta, look, reach, and hit result. Camera diagnostics separately report the base and final procedural origin and pose transition.

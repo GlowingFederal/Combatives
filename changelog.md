@@ -177,11 +177,3 @@
   `(int, int, int, int, int)` signature; 1.7.10 has no nested `Action` argument.
 - Updated the interaction pipeline audit to name the actual mapped server
   methods instead of relying on a later-version method name.
-
-(e4c293f Align server digging validation with client targeting)
-
-- Aligned the dedicated server's digging-distance origin with the client's
-  accepted physical eye for every Combatives pose and synchronized model scale.
-- Preserved vanilla packet handling, reach tolerance, spawn protection, and
-  game-mode checks while removing the standing-only `posY + 1.5` assumption.
-- Documented the client-selection and server-validation targeting contract.

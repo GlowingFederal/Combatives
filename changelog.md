@@ -170,3 +170,13 @@
 - Removed common-side linkage to client targeting classes and documented the
   verified 1.7.10 packet pipeline, obsolete calculations, synchronization
   boundary, and diagnostic comparison procedure.
+
+(1f499be Rewrite README as player project page)
+
+- Reorganized the landing page around player-facing movement, camera,
+  compatibility, configuration, and installation information.
+- Added a concise contributor path for the legacy ForgeGradle workspace and a
+  public Camera API overview with links to the focused technical documentation.
+- Replaced obsolete implementation-status prose with current source-available
+  core, Apache-2.0 Camera API, dependency, compatibility, and attribution
+  guidance verified against the repository.

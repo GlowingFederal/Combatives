@@ -1,0 +1,106 @@
+# Combatives Source Available License
+
+**Version 1.0 — August 2026**
+
+Copyright © 2026 GlowingFederal/HiddenMerit. All rights reserved.
+
+## 1. Scope
+
+This license governs the Combatives software project ("Combatives"), including its source code, assets, documentation, and other materials distributed as part of the project, except for components that are explicitly identified as being licensed separately.
+
+The **Combatives Camera API** is excluded from the restrictions of this license and is separately made available under the **Apache License, Version 2.0**, as described in Section 8.
+
+Third-party software incorporated into or distributed alongside Combatives remains subject to its respective copyright and license terms.
+
+## 2. Source Availability
+
+Permission is granted, free of charge, to access and view the Combatives source code for purposes including:
+
+* studying and understanding the software;
+* debugging compatibility problems;
+* developing integrations with Combatives;
+* creating private modifications;
+* compiling the software for personal development and testing;
+* contributing changes, patches, or improvements to the official Combatives project; and
+* educational and research purposes.
+
+Making the source code publicly available does not place Combatives in the public domain and does not waive any copyright or other intellectual-property rights.
+
+## 3. Private Modification
+
+You may modify, compile, and use Combatives for personal or internal purposes.
+
+Private modifications may be used on servers, development environments, or private modpacks controlled by you or your organization, provided that the modified version is not publicly distributed except as otherwise permitted by this license.
+
+## 4. Redistribution
+
+Official, unmodified releases of Combatives may be included in Minecraft modpacks and distributed for use on Minecraft servers, provided that:
+
+1. Combatives is clearly attributed to GlowingFederal;
+2. this license and existing copyright notices are not removed or misrepresented;
+3. the distributed copy is not represented as an independently developed or unofficially maintained version of Combatives; and
+4. access to Combatives itself is not sold separately.
+
+Links to official Combatives distribution pages or repositories are encouraged.
+
+Except for the permissions above, you may not publicly redistribute modified versions, forks, ports, substantial portions of the source code, or derivative versions of Combatives without prior written permission from the copyright holder.
+
+Patches or contributions intended for inclusion in the official Combatives project may be publicly submitted through the project's designated contribution channels.
+
+## 5. Derivative Works
+
+You may not, without prior written permission:
+
+* publish or distribute a modified build of Combatives;
+* maintain a public fork intended to function as an independently distributed replacement for Combatives;
+* port Combatives or substantial portions of its implementation to another Minecraft version, mod loader, game, or software project and publicly distribute that work;
+* incorporate substantial portions of Combatives implementation code into another publicly distributed project; or
+* relicense Combatives or represent yourself as the owner of Combatives.
+
+This restriction does not prohibit independently developed software from interacting with Combatives through documented APIs, compatibility layers, reflection, events, networking interfaces, or other interoperability mechanisms.
+
+## 6. Commercial Use
+
+You may use Combatives as part of a server, modpack, video, stream, development environment, or other project that generates revenue, provided that Combatives itself is not being sold, relicensed, or commercially redistributed as a separate product.
+
+Commercial licensing of Combatives source code, modified distributions, ports, or derivative products requires prior written permission from the copyright holder.
+
+## 7. Contributions
+
+By intentionally submitting source code or other material for inclusion in the official Combatives project, you represent that you have the right to submit that material and grant the Combatives copyright holder a perpetual, worldwide, non-exclusive, royalty-free license to use, reproduce, modify, distribute, sublicense, and incorporate the contribution into Combatives.
+
+Contributors retain copyright in their original contributions unless copyright is separately assigned in writing.
+
+## 8. Combatives Camera API
+
+The portions of the project explicitly identified as the **Combatives Camera API** are licensed separately under the **Apache License, Version 2.0**.
+
+Subject to that license, developers may freely use, reproduce, modify, distribute, and integrate the Camera API into other software, including proprietary and open-source Minecraft mods.
+
+Software that merely uses, implements against, communicates with, or depends upon the Camera API is **not** subject to the Combatives Source Available License solely because of that interaction.
+
+The Apache-licensed Camera API files should be clearly identified within the source tree and accompanied by the applicable Apache License 2.0 notices.
+
+## 9. Name and Branding
+
+This license does not grant permission to use the Combatives name, logos, branding, or the name of GlowingFederal in a manner that implies endorsement, authorship, or official status for an unofficial project.
+
+Accurate attribution and factual references to compatibility with Combatives are permitted.
+
+## 10. No Warranty
+
+COMBATIVES IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT.
+
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE COPYRIGHT HOLDER AND CONTRIBUTORS SHALL NOT BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM OR RELATED TO COMBATIVES OR ITS USE.
+
+## 11. No Implied Rights
+
+Any rights not expressly granted by this license are reserved by the respective copyright holders.
+
+Possession of the source code, access to a public repository, or receipt of a compiled version does not grant rights beyond those expressly stated in this license.
+
+## 12. Additional Permission
+
+The copyright holder may grant additional permissions or alternative commercial licenses on an individual basis in writing.
+
+Such permission does not modify the terms applicable to other users or distributions of Combatives.

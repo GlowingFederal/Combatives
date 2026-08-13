@@ -180,3 +180,12 @@
 - Replaced obsolete implementation-status prose with current source-available
   core, Apache-2.0 Camera API, dependency, compatibility, and attribution
   guidance verified against the repository.
+
+(4f6143c Improve Combatives player crawling animation and pose)
+
+- Added a rendering-only land-crawl distinction while retaining the shared
+  swimming pose for authoritative mechanics and forced low-clearance crawling.
+- Replaced the land swimming stroke with a restrained, movement-scaled diagonal
+  crawl cycle and preserved the existing animation for actual swimming.
+- Preserved crawl look direction, grounding ownership, camera, targeting,
+  collision, movement, and third-party renderer compatibility boundaries.

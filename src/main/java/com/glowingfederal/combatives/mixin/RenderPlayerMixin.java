@@ -1,6 +1,7 @@
 package com.glowingfederal.combatives.mixin;
 
 import com.glowingfederal.combatives.client.model.ICombativesModelBipedSwimming;
+import com.glowingfederal.combatives.client.render.CombativesVisualPoseHelper;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.util.math.MathHelperNew;
@@ -47,7 +48,7 @@ public abstract class RenderPlayerMixin extends RendererLivingEntity {
             float rotation = MathHelperNew.lerp(animation, 0.0F, targetPitch);
             GL11.glRotatef(rotation, 1.0F, 0.0F, 0.0F);
 
-            boolean landCrawl = pose.isCrawlKeyDown() && !player.isInWater();
+            boolean landCrawl = CombativesVisualPoseHelper.isLandCrawling(player);
             float translateY = pose.isActuallySwimming() ? -1.0F : 0.0F;
             float translateZ = pose.isActuallySwimming() ? 0.3F : 0.0F;
             if (landCrawl && pose.isActuallySwimming()) {

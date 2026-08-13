@@ -2,6 +2,7 @@ package com.glowingfederal.combatives.mixin;
 
 import com.glowingfederal.combatives.client.model.ICombativesModelBipedSwimming;
 import com.glowingfederal.combatives.client.render.CombativesVisualPoseHelper;
+import com.glowingfederal.combatives.client.render.CrawlPoseAnimator;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.util.math.MathHelperNew;
@@ -36,7 +37,9 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
         if (entity instanceof ICombativesPlayerPose && this.combatives$getSwimAnimationFor(entity) > 0.0F) {
             ICombativesPlayerPose pose = (ICombativesPlayerPose) entity;
             float swimAnimation = this.combatives$getSwimAnimationFor(entity);
-            if (pose.isActuallySwimming()) {
+            boolean landCrawl = entity instanceof EntityPlayer
+                && CombativesVisualPoseHelper.isLandCrawling((EntityPlayer) entity);
+            if (pose.isActuallySwimming() && !landCrawl) {
                 headPitch = this.combatives$rotLerpRad(swimAnimation, this.bipedHead.rotateAngleX, -((float) Math.PI / 4.0F)) / 0.017453292F;
             } else {
                 headPitch = this.combatives$rotLerpRad(swimAnimation, this.bipedHead.rotateAngleX, headPitch * ((float) Math.PI / 180.0F)) / 0.017453292F;
@@ -55,6 +58,11 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
         if (entity instanceof EntityPlayer && entity instanceof ICombativesPlayerPose) {
             ICombativesPlayerPose pose = (ICombativesPlayerPose) entity;
             MovementDiagnostics.verbose((EntityPlayer) entity, "Combatives crawl/swim model hook fired: crawl=" + pose.isCrawlKeyDown() + " swim=" + pose.isSwimming() + " pose=" + pose.getPose() + " animation=" + this.combatives$swimAnimation);
+            if (CombativesVisualPoseHelper.isLandCrawling((EntityPlayer) entity)) {
+                CrawlPoseAnimator.apply((ModelBiped) (Object) this, limbSwing, limbSwingAmount, swimAnimation);
+                ci.cancel();
+                return;
+            }
         }
         float cycle = limbSwing % 26.0F;
         float armBlend = this.onGround > 0.0F ? 0.0F : swimAnimation;

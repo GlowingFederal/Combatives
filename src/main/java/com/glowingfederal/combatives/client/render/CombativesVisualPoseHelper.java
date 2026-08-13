@@ -21,6 +21,19 @@ public final class CombativesVisualPoseHelper {
         return pose.isSwimming() || pose.isCrawlKeyDown() || pose.getPose() == Pose.SWIMMING;
     }
 
+    /**
+     * Rendering-only distinction between the shared low pose's land crawl and
+     * real swimming. Forced crawling under an obstruction may outlive the key
+     * request, so the synchronized pose is the primary signal.
+     */
+    public static boolean isLandCrawling(EntityPlayer player) {
+        if (!(player instanceof ICombativesPlayerPose)) {
+            return false;
+        }
+        ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
+        return pose.getPose() == Pose.SWIMMING && !pose.isSwimming() && !player.isInWater();
+    }
+
     public static float getVisualSwimAnimation(EntityPlayer player, float partialTicks) {
         if (!(player instanceof ICombativesPlayerPose)) {
             return 0.0F;

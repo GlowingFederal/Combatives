@@ -1,148 +1,162 @@
 # Combatives
 
-Developer documentation for the legacy player-origin and targeting invariant is available in [the 1.7.10 coordinate-contract audit](docs/legacy-player-coordinate-contract.md).
+Combatives is a source-available movement and first-person camera overhaul for
+Minecraft Forge 1.7.10. It brings modern swimming and prone/crawling movement
+to the older game while adding physical, movement-responsive camera feedback.
 
-Development documentation includes the [authoritative player geometry and
-MorePlayerModels+ compatibility boundary](docs/player-geometry-and-mpm-compatibility.md).
+The project is designed to preserve ordinary Minecraft gameplay and multiplayer
+pose authority rather than replace them: movement and poses are synchronized,
+and the camera layer presents motion without intentionally changing mouse
+sensitivity, aiming input, player rotation, reach, or other gameplay mechanics.
 
-## Mount and dismount compatibility
+## Features
 
-Combatives treats riding as a vanilla-owned lifecycle for every entity type. While a player is riding, the crawl request and swimming flag are cleared and the normal `0.6 x 1.8` player pose is restored without asking whether that box intersects the mount; overlap with a rider is expected and is not evidence that the player must crawl.
+- **Modern swimming** with water movement, a swimming pose, adjusted collision
+  bounds, eye height, and third-person animation.
+- **Crawling / prone movement**, toggled with `C` by default, including
+  standing-clearance checks and matching collision and visual poses.
+- **Multiplayer pose synchronization** between the owning player, server, and
+  tracking clients across normal lifecycle changes.
+- **A physical first-person camera** with procedural movement bob, lean, and
+  movement-responsive FOV.
+- **Action feedback** for landing, freefall, momentum changes, collisions, and
+  nearby explosions.
+- **Entity-aware camera behavior**, including speed- and terrain-responsive
+  horse riding. The extensible provider system also lets other mods describe
+  camera behavior for their own entities.
+- **Compatibility-oriented player geometry** that keeps camera, collision, and
+  interaction origins aligned and avoids taking ownership of vanilla mount and
+  dismount placement.
 
-After any change from a non-null `ridingEntity` to no riding entity, Combatives keeps the standing pose until the standing box is collision-free. It does not teleport the player, select an exit side, push the player, or inspect the mount's class. Vanilla or the rideable entity therefore remains responsible for exit placement and collision resolution. This state-based handoff covers direct `mountEntity(null)` calls as well as custom rideable implementations observed on the following player tick, without an entity-specific dependency or a fixed tick delay.
+Camera effects are presentation only and are bounded by the camera system's
+saturation and hard clamps. The crawl-specific camera cycle is **experimental**
+and disabled by default; crawling itself is not dependent on that effect. An
+optional, default-off raw mouse-delta safety clamp exists for diagnosing
+pathological input spikes, but is separate from normal camera effects.
 
-With verbose movement diagnostics enabled, mount changes and throttled pending-dismount reports include the logical side, tick, player and mount IDs, mount class, position, pose/crawl state, dimensions, both AABBs, standing collision count, and base-box intersection state.
+## Requirements and compatibility
 
-### MCHELI investigation
+| Component | Requirement |
+| --- | --- |
+| Minecraft | **1.7.10** only |
+| Minecraft Forge | Built against **10.13.4.1614** |
+| UniMixins | **Required**; the build expects `unimixins-all-1.7.10-0.3.1` |
+| Java | Java 8 is the project's source and target level |
 
-The attached MCHELI implementation uses ordinary `Entity.mountEntity(null)` (`func_70078_a(null)`) to break the relationship on the server and then calls its own `setUnmountPosition` using the configured seat position. Passenger seats likewise call `mountEntity(null)`. It does not override the player's pose or Combatives sizing. MCHELI exposes the bug because its large/custom vehicle collision can still overlap the chosen exit area: the former Combatives controller interpreted that expected entity overlap as failed standing clearance, retained or re-selected the `0.6`-high swimming/crawl pose, and allowed that smaller box to occupy space beneath the vehicle.
+- Combatives uses UniMixins/GTNHMixins to side-gate its common and client
+  mixins. Do not remove UniMixins from either a player installation or the
+  development environment.
+- **MorePlayerModels / MorePlayerModels+** is an optional integration, not a
+  dependency. When FML detects its `moreplayermodels` mod ID, Combatives can
+  align supported whole-model/entity-disguise geometry and restore the
+  first-person item pass for entity disguises. If the optional targeting hook
+  does not match a changed MPM build, MPM retains its own targeting behavior.
+- Mounted pose handling uses Minecraft's generic riding relationship rather
+  than hard-coded mount classes. Rideable mods remain responsible for choosing
+  valid dismount positions.
+- Compatibility is deliberately defensive, but universal mod compatibility is
+  not claimed. See the [player geometry and MPM compatibility notes](docs/player-geometry-and-mpm-compatibility.md)
+  and [riding/crawling camera notes](docs/riding-and-crawling-camera.md) for the
+  currently documented boundaries.
 
-Vanilla horses, pigs, boats, and minecarts use the same `ridingEntity`/`riddenByEntity` relationship and `mountEntity` lifecycle. Their smaller, conventional exit geometry made the ordering defect less visible; the compatibility guarantee is intentionally based only on the generic riding relationship, so custom seats, aircraft, rideable mobs, and future mounts receive the same behavior.
+## Configuration
 
-### Compatibility guarantee
+Forge creates the standard configuration at `config/Combatives.cfg`. Its main
+categories cover:
 
-* Combatives never chooses or alters a dismount coordinate.
-* A mounted player cannot retain a Combatives crawl/swim collision box.
-* A dismount never causes Combatives to shrink a standing player merely to fit unresolved collision.
-* Pose handling resumes only when the standing box is clear; there is no hard-coded delay and no mod-class check.
-* Mount implementations must eventually clear the player's generic `ridingEntity` reference and remain responsible for producing a valid exit position, matching the vanilla entity contract.
+- camera features and strength multipliers (bob, lean, FOV, landing, freefall,
+  inertia, collision, explosion, horse riding, and experimental crawl motion);
+- camera safety limits and the optional raw mouse-delta clamp;
+- MorePlayerModels+ physical hitbox scaling; and
+- general or verbose movement/camera diagnostics.
 
-Combatives is a Battlefield-inspired movement and camera overhaul foundation for Minecraft Forge 1.7.10.
+The separately distributed Fairplay build uses `Combatives-Fairplay.cfg`; it
+locks gameplay and camera values to project defaults and exposes only general
+and verbose diagnostics.
 
-## Aqua Acrobatics Legacy port foundation
+## Developers and contributors
 
-Combatives now ports and refactors the working modern swimming and crawling behavior from Aqua Acrobatics Legacy into the active `com.glowingfederal.combatives` package tree. Aqua Acrobatics Legacy is included in this repository as public-domain (Unlicense) reference material and port foundation, but it is not required at runtime and no old Aqua mod ID or package is used by compiled Combatives source.
+This is an old-style ForgeGradle 1.2 project. Keep its versions intact: do not
+upgrade Gradle, ForgeGradle, mappings, Java, Mixins, or Forge as incidental
+cleanup.
 
-The port is intentionally scoped to player pose, collision bounds, eye-height state, water movement, crawl input/keybind handling, client-to-server crawl state networking, standing-space checks, and server-safe DataWatcher synchronization needed for swimming/crawling. Aqua build logic, metadata, branding, resources, optional compatibility systems, and unrelated aquatics features remain unported.
+### Set up and build
 
-## Current foundation
+1. Install a **Java 8 JDK** and clone the repository.
+2. Place `unimixins-all-1.7.10-0.3.1.jar` in `libs/`; `build.gradle` resolves
+   that local flat-directory dependency by name.
+3. Use the included Gradle 4.4.1 wrapper. Run `./gradlew setupDecompWorkspace`
+   when a ForgeGradle workspace must be prepared, then `./gradlew idea` or
+   `./gradlew eclipse` if the corresponding IDE metadata is wanted.
+4. Build the production artifacts with `./gradlew build`. Production builds
+   increment the build number and create the normal and Fairplay jars under
+   `build/libs/`.
 
-- Mod name: Combatives
-- Mod ID: `combatives`
-- Root package: `com.glowingfederal.combatives`
-- Forge target: `1.7.10-10.13.4.1614`
-- UniMixins-compatible Combatives movement mixins are queued from `mixins.combatives.common.json` by the core plugin, with client-only render/input/model mixins side-gated in `CombativesCorePlugin`
-- Common/client proxy structure plus a Combatives early mixin loader for common player pose-state injection
-- Always-on modern swimming and crawling behavior, refactored from the Aqua Acrobatics Legacy reference source
-- Dedicated crawl keybind (`C` by default) with common-preInit Combatives networking for authoritative server-side crawl state; ordinary Minecraft client fields and key binding calls are written with mapped MCP names and remapped by ForgeGradle for production
-- Explicit multiplayer pose synchronization from the owning client to the server and from the server to tracking clients, including join/respawn/dimension/tracking lifecycle resends
-- Lightweight horizontal momentum controller that shapes `motionX`/`motionZ` from input intent toward vanilla velocity targets while keeping collision, gravity, jumping, step handling, and `moveEntity` authoritative; normal movement is shaped through the vanilla `moveFlying` hook, while crawl and swim/water movement are shaped only in their dedicated Combatives branches using normal mapped vanilla method calls that ForgeGradle remaps for production
-- Client/server movement snapshots for future camera work, exposing velocity, acceleration, normalized speed, wish direction, grounded/sprint/sneak/crawl/swim/underwater/airborne flags, landing impact, and turn values
-- Client-only first-person camera foundation with read-only movement sampling, subtle procedural camera bob, recreated vanilla-style first-person arm/item bob, movement lean, movement FOV, a damped shake impulse framework, render-time camera state sampling, vanilla `S27PacketExplosion` client feedback, client-side previous-tick landing feedback, low-level `Entity#setAngles` spike diagnostics for player look rotation, hard-clamped visual-only pitch/yaw/roll/translation transforms, with API yaw applied only in the Combatives-owned render transform and never written to player look rotation
-- Initial config options:
-  - `enableCombativesCamera = true`
-  - `enableProceduralBob = true`
-  - `enableMovementLean = true`
-  - `enableMovementFov = true`
-  - `enableCameraRotations = true`
-  - `enableCameraShake = true`
-  - `maxCameraYawDegrees = 4.0`
-  - `enableLandingCameraFeedback = true`
-  - `enableExplosionCameraFeedback = true`
-  - `debugMovement = false`
-  - `verboseMovementDebug = false`
-  - `debugCamera = false`
-  - `verboseCameraDebug = false`
-  - `enableMpmHitboxScaling = true` (optional common-side MPM+ physical scaling)
+Useful entry points:
 
-## Production Fairplay jar remapping
+- `src/main/java/com/glowingfederal/combatives/` contains the mod, movement,
+  swimming, crawling, networking, configuration, compatibility, camera
+  implementation, and mixins.
+- `src/main/java/com/combatives/api/camera/` contains the **public Camera API**.
+  Code under `com.glowingfederal.combatives.client.camera.internal` is an
+  implementation detail, not an integration surface.
+- `src/main/resources/` contains the FML metadata and side-specific mixin
+  configurations.
+- `docs/` contains focused engineering notes, including the
+  [Aqua port map](docs/aqua-port-map.md),
+  [interaction-geometry contract](docs/authoritative-interaction-geometry.md),
+  and [camera documentation](docs/camera-api.md).
 
-The Fairplay artifact is derived from the already-reobfuscated normal jar instead of packaging `sourceSets.main.output` directly. The previous crash chain was caused by unreobfuscated development bytecode retaining MCP names such as `Minecraft.getMinecraft`, `KeyBinding#getIsKeyPressed`, `World#isRemote`, and `Entity#moveFlying` inside the Fairplay jar. Source code should use ordinary mapped MCP calls for public vanilla members and rely on ForgeGradle reobfuscation; the Fairplay jar replaces only its intended edition-specific metadata/resources after the normal jar has been reobfuscated.
+Compatibility work should preserve vanilla/client-server ownership, use
+optional and side-safe boundaries, and fail back to the other mod's native
+behavior when a hook cannot be applied. Consult the relevant audit in `docs/`
+before changing player geometry, targeting, riding, or MPM behavior. Do not
+compile or commit material from `referenceSRC/`; it is reference and attribution
+material rather than active Combatives source.
 
-## Movement diagnostics
+## Combatives Camera API
 
-Combatives movement diagnostics are split into three levels so normal crawling and swimming stay quiet by default:
+Other mods can contribute camera intent without modifying Combatives' renderer
+internals. API version 1 is rooted at
+`com.combatives.api.camera.CombativesCameraAPI` and supports:
 
-- Off/default (`debugMovement = false`, `verboseMovementDebug = false`): only warnings, errors, invalid state, rejected unsafe actions, and missing required runtime state are logged.
-- General (`debugMovement = true`): high-level lifecycle diagnostics such as crawl/swim enter/exit, rejected crawl exits due to clearance, server authority rejections, and one-time Combatives movement mixin summaries.
-- Verbose (`verboseMovementDebug = true`): per-frame/per-tick movement diagnostics, including render/model hook traces, grounding values, DataWatcher pose changes, and repeated eye-height/size recalculations. Verbose movement diagnostics imply the general movement diagnostics stream.
+- tuned preset effects such as explosions, landings, impacts, weapon fire,
+  vehicle collisions, environmental rumble, and suppression;
+- namespaced custom impulses with pitch/yaw/roll, translation, FOV, timing,
+  decay, priority, stacking, and optional positional falloff;
+- continuous effects with handles that can update strength or position, be
+  enabled/disabled, and be stopped; and
+- entity camera providers registered by matcher/factory, with motion samples
+  and sinks for per-frame, impulse, and continuous contributions.
 
-## Future work
+Check `CombativesCameraAPI.getApiVersion()` and `getCapabilities()` at runtime
+rather than inferring support from the mod version. Start with
+[`docs/camera-api.md`](docs/camera-api.md) for effect examples and
+[`docs/entity-camera-behaviors.md`](docs/entity-camera-behaviors.md) for custom
+mount/entity providers. Public integrations should depend on
+`com.combatives.api.camera` and its `entity` subpackage, never the internal
+camera manager or render mixins.
 
-Future work will build on the camera foundation with weapon-specific first-person behavior and additional camera impulses.
+## Credits and acknowledgements
 
+- **GlowingFederal** — Combatives author.
+- **Aqua Acrobatics Legacy** — public-domain reference foundation for the
+  swimming and crawling port. It is not a runtime dependency.
+- Minecraft Forge, FML, UniMixins, Sponge Mixin, and other included reference
+  material retain their own notices and upstream licenses. See
+  [`CREDITS-fml.txt`](CREDITS-fml.txt),
+  [`MinecraftForge-Credits.txt`](MinecraftForge-Credits.txt), and the license
+  files accompanying the relevant material.
 
+## License
 
-## Production mixin smoke test
-
-For production validation, build a reobfuscated jar and run it in a real Forge 1.7.10 client without `-Dmixin.env.disableRefMap=true`. The packaged jar must include `mixins.combatives.refmap.json` at the jar root, both Combatives mixin configs must reference that exact refmap name, and the client log must not contain `No refMap loaded` or `InvalidMixinException` for Combatives mixins. This smoke test specifically protects the `EntityPlayerMixin` pose interface from failing before `EntityPlayerMPMixin` or client pose hooks use it.
-
-## Development notes
-
-See `docs/aqua-port-map.md` for the inspected Aqua source map and port/skipped-class rationale. Do not compile anything inside the reference folder. Do not compile or add generated binary files to commits or pull requests. Common and client Combatives movement mixins are loaded through `com.glowingfederal.combatives.loading.CombativesCorePlugin`, with the client render/input/model mixins added only on the physical client side. Do not port unrelated Aqua Acrobatics systems unless they are required for Combatives swimming/crawling behavior to function.
-
-The source-based MorePlayerModels+ compatibility investigation is documented in
-`docs/more-player-models-plus-compatibility-audit.md`. The audit separates MPM+
-visual scale from gameplay geometry, traces its renderer replacement and
-targeting wrapper, and records the proposed integration order and test matrix.
-
-## Build outputs
-
-A production `assemble` or `build` now creates both supported distribution jars from the same source tree:
-
-- `build/libs/Combatives-<version>.jar` is the standard build and keeps the existing configuration behavior.
-- `build/libs/Combatives-Fairplay-<version>.jar` is the official Fairplay build variant.
-
-The Fairplay jar carries the display name `Combatives Fairplay` and contains build metadata that makes `BuildInfo.FAIRPLAY_BUILD` resolve to `true` at runtime. The standard jar carries the normal `Combatives` display name and resolves the same flag to `false`.
-
-## Fairplay build behavior
-
-Fairplay is a build/distribution variant only. It does not add multiplayer verification, networking, handshakes, hashing, anti-tamper behavior, or server enforcement.
-
-When the Fairplay jar starts, Combatives logs one informational message stating that Fairplay mode is active and gameplay/camera settings are locked. It then resolves gameplay and camera settings from the canonical defaults used by the standard config, instead of reading user-provided gameplay or camera config values.
-
-Fairplay uses a separate `Combatives-Fairplay.cfg` file so an existing standard Combatives config cannot interfere. That file intentionally exposes only:
-
-- `debug`
-- `verboseDebug`
-
-These two options enable the existing movement and camera diagnostic streams for debugging while leaving gameplay and camera behavior locked to the canonical defaults.
-
-## Riding and crawling camera motion
-
-First-person horse riding and crawling now participate in the same entity-provider camera pipeline as landing, collision, freefall, recoil, and explosion feedback. Horse subclasses are matched through the entity behavior registry: speed is continuously mapped through walk, trot, and gallop envelopes; terrain and landing events use ordinary camera impulses; and turn rate adds at most two degrees of roll. Dismounting detaches the provider immediately, so no riding state can remain active.
-
-Crawling adds restrained phase-driven vertical/forward motion plus a monotonic configurable 150–250 ms posture blend. Crawl pulls submit small impulses to the shared accumulator. Neither feature changes player/mount rotations, adds a renderer hook, or bypasses shared saturation and hard clamps. See `docs/camera-api.md` for provider integration and configuration details.
-
-Riding cadence is synchronized to the horse's actual limb animation and uses asymmetric stride loading, nonlinear speed weight, and acceleration inertia rather than a free-running sine wave. Crawl camera troubleshooting is available through `verboseCameraDebug`, which traces pose detection through sink acceptance, accumulation, and final rendering.
-
-MorePlayerModels+ compatibility is registered as a GTNHMixins late mixin only
-on the client and only when FML discovers the `moreplayermodels` mod id. If its
-optional `EntityRendererAlt#getMouseOver(float)` hook cannot match a changed MPM
-build, MPM remains loadable and retains its native targeting behavior; see the
-[player geometry compatibility notes](docs/player-geometry-and-mpm-compatibility.md).
-
-MPM+ whole-model `size` is consumed authoritatively on the server when
-`enableMpmHitboxScaling` is enabled. Combatives synchronizes the resolved tuple
-to owning and tracking clients, then composes the uniform `size / 5` factor and
-the selected entity disguise's initialized
-width/height/eye proportions with its standing/crouching/crawl/swim dimensions;
-per-part render scales remain cosmetic. Expansion waits for a collision-free
-centered box, while shrinking and accepted expansion preserve the current AABB
-floor. For entity disguises, the optional MPM late mixin also restores Forge's
-vanilla first-person arm/held-item pass that MPM otherwise cancels completely.
-The accepted disguise geometry is retained as a complete width/height/eye
-tuple, keeping the rendered center crosshair, block ray, and entity sweep on the
-same current-pass origin even for non-uniform entity proportions. Targeting is
-derived from accepted physical geometry rather than a previous-frame camera
-sample; presentation-only bob, lean, shake, and recoil remain excluded.
+- **Combatives core** is **source available** under the
+  [Combatives Source Available License](LICENSE.txt). It is not described as
+  open source; redistribution and derivative works are restricted by that
+  license.
+- **Combatives Camera API** — the files explicitly comprising the public API
+  under `src/main/java/com/combatives/api/camera/` — is separately licensed
+  under the **Apache License 2.0**, allowing other mods to use and integrate
+  with that API under its terms.
+- Third-party and reference code remains governed by its respective upstream
+  licenses and notices.

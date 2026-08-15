@@ -1,9 +1,14 @@
 # EntityPlayer DataWatcher 28 compatibility investigation
 
+> **Implementation status:** Resolved. Combatives now keeps pose in its owned
+> per-player field and synchronizes it through the existing explicit pose packet
+> lifecycle; it no longer allocates or reads a private DataWatcher slot for pose.
+
 ## Scope and conclusion
 
-This is a source audit of the Combatives 1.0.7.1 player-construction crash
-`Duplicate id value for 28`. It deliberately does not implement a runtime fix.
+This document records the source audit of the Combatives 1.0.7.1
+player-construction crash `Duplicate id value for 28`. The investigation itself
+did not implement a runtime fix; the resolution noted above was applied later.
 
 The narrowest robust fix is to remove Combatives' private pose value from
 `EntityPlayer`'s `DataWatcher`, retain it in the existing `combativesPose` field,

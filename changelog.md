@@ -198,3 +198,9 @@
   configurable, dynamic, EndlessIDs-assisted, and watcher-free alternatives.
 - Recommended moving pose into existing Combatives-owned state and packet
   synchronization, with a narrow implementation and compatibility test plan.
+
+(f46e0f1 Remove pose DataWatcher allocation)
+
+- Removed Combatives' fixed EntityPlayer pose DataWatcher slot and metadata callback so other mods may own watcher ID 28 without collision.
+- Made the owned per-player pose field the sole local pose store while retaining null-safe standing defaults and explicit geometry recalculation.
+- Preserved the existing pose packet broadcasts, owner/tracker lifecycle synchronization, and independent MPM geometry composition.

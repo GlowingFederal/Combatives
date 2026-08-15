@@ -104,6 +104,7 @@ Useful entry points:
   configurations.
 - `docs/` contains focused engineering notes, including the
   [Aqua port map](docs/aqua-port-map.md),
+  [DataWatcher 28 compatibility investigation](docs/datawatcher-28-compatibility-investigation.md),
   [interaction-geometry contract](docs/authoritative-interaction-geometry.md),
   and [camera documentation](docs/camera-api.md).
 

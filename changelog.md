@@ -189,3 +189,12 @@
   crawl cycle and preserved the existing animation for actual swimming.
 - Preserved crawl look direction, grounding ownership, camera, targeting,
   collision, movement, and third-party renderer compatibility boundaries.
+
+(6482e8e Investigate DataWatcher pose collision)
+
+- Documented the root cause and complete lifecycle of the colliding player pose
+  watcher without changing runtime behavior.
+- Audited every Combatives DataWatcher allocation and evaluated fixed,
+  configurable, dynamic, EndlessIDs-assisted, and watcher-free alternatives.
+- Recommended moving pose into existing Combatives-owned state and packet
+  synchronization, with a narrow implementation and compatibility test plan.

@@ -38,7 +38,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(EntityPlayer.class)
 public abstract class EntityPlayerMixin extends EntityLivingBase implements ICombativesPlayerPose, ICombativesMovementState {
-    private static final int POSE_WATCHER_ID = 28;
     private static final EntitySize STANDING_SIZE = EntitySize.flexible(0.6F, 1.8F);
 
     @Shadow public PlayerCapabilities capabilities;
@@ -61,7 +60,6 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     private Pose combativesAppliedPose = Pose.STANDING;
     private EffectivePlayerGeometry combativesAppliedGeometry;
     private int combativesGeometryRevision;
-    private boolean combativesPoseWatcherReady;
     private int combativesLastStepHeightWarningTick = -200;
     private MovementSnapshot combativesMovementSnapshot = MovementSnapshot.EMPTY;
     private Entity combativesLastRidingEntity;
@@ -84,8 +82,6 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
                 + this.combativesEyeHeight - this.posY);
         this.combativesPose = Pose.STANDING;
         this.combativesAppliedGeometry = PlayerGeometryResolver.resolve(Pose.STANDING);
-        this.getDataWatcher().addObject(POSE_WATCHER_ID, Pose.STANDING.ordinal());
-        this.combativesPoseWatcherReady = true;
         PlayerStepHeight.restoreVanillaStepHeight(this.getPlayer(), "EntityPlayer<init>");
     }
 
@@ -98,15 +94,6 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     @Override
     public void setCombativesMovementSnapshot(MovementSnapshot snapshot) {
         this.combativesMovementSnapshot = snapshot == null ? MovementSnapshot.EMPTY : snapshot;
-    }
-
-    @Override
-    public void func_145781_i(int key) {
-        if (key == POSE_WATCHER_ID && this.worldObj.isRemote && !this.isRiding()) {
-            MovementDiagnostics.verbose(this.getPlayer(), "DataWatcher pose changed on client: " + this.getPose());
-            this.recalculateSize();
-        }
-        super.func_145781_i(key);
     }
 
     @Override
@@ -301,14 +288,12 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     }
 
     @Override public void setPose(Pose pose) {
+        pose = pose == null ? Pose.STANDING : pose;
         Pose old = this.getPose();
         if (old != pose) {
             MovementDiagnostics.verbose(this.getPlayer(), "setPose " + old + " -> " + pose + " via " + this.combatives$getPoseCaller());
         }
         this.combativesPose = pose;
-        if (this.combativesPoseWatcherReady) {
-            this.getDataWatcher().updateObject(POSE_WATCHER_ID, pose.ordinal());
-        }
     }
 
     private String combatives$getPoseCaller() {
@@ -322,16 +307,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         return "unknown";
     }
     @Override public Pose getPose() {
-        if (!this.combativesPoseWatcherReady) {
-            return this.combativesPose == null ? Pose.STANDING : this.combativesPose;
-        }
-        try {
-            int id = this.getDataWatcher().getWatchableObjectInt(POSE_WATCHER_ID);
-            this.combativesPose = id >= 0 && id < Pose.values().length ? Pose.values()[id] : Pose.STANDING;
-            return this.combativesPose;
-        } catch (RuntimeException e) {
-            return this.combativesPose == null ? Pose.STANDING : this.combativesPose;
-        }
+        return this.combativesPose == null ? Pose.STANDING : this.combativesPose;
     }
     @Override public boolean isPoseClear(Pose pose) { return this.worldObj.getCollidingBoundingBoxes(this, this.getBoundingBox(pose)).isEmpty(); }
     @Override public boolean getShouldBeDead() { return this.deathTime > 0; }

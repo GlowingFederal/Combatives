@@ -21,7 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(RenderPlayer.class)
 public abstract class RenderPlayerMixin extends RendererLivingEntity {
-    private static final float CRAWL_GROUNDING_Y = -0.10F;
+    private static final float CRAWL_GROUNDING_Y = -0.35F;
 
     private boolean combatives$loggedLocalCrawlGrounding;
     private boolean combatives$loggedRemoteCrawlGrounding;

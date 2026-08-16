@@ -21,7 +21,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(RenderPlayer.class)
 public abstract class RenderPlayerMixin extends RendererLivingEntity {
-    private static final float CRAWL_GROUNDING_Y = -0.35F;
+    /** Four model pixels in world space; applied before the prone rotation. */
+    private static final float CRAWL_GROUNDING_WORLD_Y = -4.0F / 16.0F;
 
     private boolean combatives$loggedLocalCrawlGrounding;
     private boolean combatives$loggedRemoteCrawlGrounding;
@@ -46,14 +47,17 @@ public abstract class RenderPlayerMixin extends RendererLivingEntity {
             }
             float targetPitch = player.isInWater() ? -90.0F - player.rotationPitch : -90.0F;
             float rotation = MathHelperNew.lerp(animation, 0.0F, targetPitch);
+            boolean landCrawl = CombativesVisualPoseHelper.isLandCrawling(player);
+
+            // OpenGL post-multiplies transforms. Ground before rotating so this
+            // remains a world-down correction instead of becoming prone-local Z.
+            if (landCrawl && pose.isActuallySwimming()) {
+                GL11.glTranslatef(0.0F, CRAWL_GROUNDING_WORLD_Y, 0.0F);
+            }
             GL11.glRotatef(rotation, 1.0F, 0.0F, 0.0F);
 
-            boolean landCrawl = CombativesVisualPoseHelper.isLandCrawling(player);
             float translateY = pose.isActuallySwimming() ? -1.0F : 0.0F;
             float translateZ = pose.isActuallySwimming() ? 0.3F : 0.0F;
-            if (landCrawl && pose.isActuallySwimming()) {
-                translateY += CRAWL_GROUNDING_Y;
-            }
 
             if (pose.isCrawlKeyDown()) {
                 boolean localPlayer = Minecraft.getMinecraft().thePlayer == player;
@@ -65,7 +69,7 @@ public abstract class RenderPlayerMixin extends RendererLivingEntity {
                         + " yOffset=" + player.yOffset + " ySize=" + player.ySize + " width=" + player.width + " height=" + player.height
                         + " pose=" + pose.getPose() + " crawl=" + pose.isCrawlKeyDown() + " swim=" + pose.isSwimming()
                         + " actuallySwimming=" + pose.isActuallySwimming() + " landCrawl=" + landCrawl
-                        + " baseTranslateY=" + (pose.isActuallySwimming() ? -1.0F : 0.0F) + " groundingY=" + (landCrawl ? CRAWL_GROUNDING_Y : 0.0F)
+                        + " baseTranslateY=" + (pose.isActuallySwimming() ? -1.0F : 0.0F) + " worldGroundingY=" + (landCrawl ? CRAWL_GROUNDING_WORLD_Y : 0.0F)
                         + " finalTranslateY=" + translateY + " translateZ=" + translateZ);
                     if (localPlayer) {
                         this.combatives$loggedLocalCrawlGrounding = true;

@@ -10,7 +10,7 @@ public final class CrawlPoseAnimator {
     private static final float REST_ARM_SWEEP = 0.52F;
     private static final float ARM_PULL_SWEEP = 0.30F;
     private static final float ARM_REACH_PITCH = 0.20F;
-    private static final float LEG_BEND = 0.24F;
+    private static final float LEVEL_LEG_PITCH = 0.0F;
     private static final float LEG_DRIVE = 0.28F;
     private static final float LEG_SPREAD = 0.10F;
 
@@ -40,9 +40,9 @@ public final class CrawlPoseAnimator {
 
         // Each arm pulls with the opposite leg: left arm/right leg, then vice versa.
         model.bipedLeftLeg.rotateAngleX = blend(model.bipedLeftLeg.rotateAngleX,
-            LEG_BEND + LEG_DRIVE * movement * rightPull, poseBlend);
+            LEVEL_LEG_PITCH + LEG_DRIVE * movement * rightPull, poseBlend);
         model.bipedRightLeg.rotateAngleX = blend(model.bipedRightLeg.rotateAngleX,
-            LEG_BEND + LEG_DRIVE * movement * leftPull, poseBlend);
+            LEVEL_LEG_PITCH + LEG_DRIVE * movement * leftPull, poseBlend);
         model.bipedLeftLeg.rotateAngleZ = blend(model.bipedLeftLeg.rotateAngleZ, LEG_SPREAD, poseBlend);
         model.bipedRightLeg.rotateAngleZ = blend(model.bipedRightLeg.rotateAngleZ, -LEG_SPREAD, poseBlend);
     }

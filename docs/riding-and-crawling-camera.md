@@ -32,15 +32,18 @@ continues through the original swimming stroke.
 The vanilla biped has rigid arms and legs with shoulder and hip pivots, so it
 cannot display real bent elbows or knees. The dedicated crawl animator instead
 uses a restrained forearm-support silhouette: arms rest forward and outward,
-legs have a small opposing spread and bend, and motion amplitude scales with
+legs rest level with the torso with a small opposing spread, and motion amplitude scales with
 vanilla's render-interpolated `limbSwingAmount`. A sinusoidal diagonal cycle
 pairs each arm with the opposite leg. The head retains vanilla look yaw and
 pitch before the renderer applies the whole-player prone transform, avoiding
 the swimming-specific forced head pitch during a land crawl.
 
-The existing prone body rotation and model translation remain the single owner
-of crawl grounding. The small land-only grounding correction is retained; the
-limb animation adds no world-space offsets, so it cannot affect camera or
+The prone renderer remains the single owner of crawl grounding. Its land-only
+correction translates the model downward by four model pixels before applying
+the prone rotation. Applying it in that order is required by OpenGL's
+post-multiplied transform stack: a Y translation after the rotation would move
+along prone-local Z instead of lowering the model in world space. The limb
+animation adds no world-space offsets, so it cannot affect camera or
 authoritative player geometry. Models derived from `ModelBiped` receive the
 pose through the existing mixin, while renderers that replace the vanilla biped
 model remain responsible for mapping Combatives' synchronized pose visually.

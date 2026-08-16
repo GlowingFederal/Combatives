@@ -213,3 +213,12 @@
 - Leveled the legs with the torso at rest while retaining the alternating,
   movement-scaled leg drive and opposing spread during crawling.
 - Documented the grounding transform order and revised resting leg silhouette.
+
+(3994975 Correct crawl head pitch above terrain)
+
+- Counter-rotated the head and headwear against the crawl body's blended prone
+  pitch so a straight-ahead gaze remains forward and above level terrain.
+- Kept the existing world-space torso grounding, limb animation, collision,
+  swimming, camera, targeting, synchronization, and MPM geometry behavior.
+- Documented why the head clipped independently of the correctly grounded body
+  and how the render-only correction preserves look pitch through transitions.

@@ -7,6 +7,7 @@ import net.minecraft.util.MathHelper;
 /** Applies a restrained, alternating prone crawl to the vanilla rigid-limb biped. */
 public final class CrawlPoseAnimator {
     private static final float PI = (float) Math.PI;
+    private static final float PRONE_HEAD_COUNTER_PITCH = PI / 2.0F;
     private static final float REST_ARM_SWEEP = 0.52F;
     private static final float ARM_PULL_SWEEP = 0.30F;
     private static final float ARM_REACH_PITCH = 0.20F;
@@ -26,6 +27,16 @@ public final class CrawlPoseAnimator {
         float movement = MathHelper.clamp_float(limbSwingAmount, 0.0F, 1.0F);
         float leftPull = MathHelper.sin(limbSwing * 0.6662F);
         float rightPull = -leftPull;
+
+        /*
+         * RenderPlayer pitches the complete model from upright to prone.  A
+         * vanilla zero-pitch head therefore looks into the floor unless its
+         * local pitch cancels that crawl-only body rotation.  Counter it with
+         * the same blend so the remaining angle is the player's look pitch;
+         * do not move the shared model origin or gameplay entity upward.
+         */
+        model.bipedHead.rotateAngleX += PRONE_HEAD_COUNTER_PITCH * poseBlend;
+        model.bipedHeadwear.rotateAngleX = model.bipedHead.rotateAngleX;
 
         model.bipedLeftArm.rotateAngleX = blend(model.bipedLeftArm.rotateAngleX,
             -ARM_REACH_PITCH + ARM_REACH_PITCH * movement * leftPull, poseBlend);

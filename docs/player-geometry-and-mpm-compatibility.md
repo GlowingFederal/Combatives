@@ -98,6 +98,31 @@ can clean up normally. No RETURN restoration remains: restoring originals there
 would be redundant/stale, while leaving originals installed before MPM cleanup
 would cause MPM to subtract its mutation twice.
 
+## Crawl model grounding and head pose
+
+Land crawling uses two separate render operations. `RenderPlayer` lowers the
+model by `3/16` of a block in world space to ground the otherwise-correct prone
+torso and then blends the complete biped through a 90-degree prone pitch. The
+model animator owns only the crawl-specific limb and head pose. Neither
+operation changes the entity position, collision box, eye height, camera, or
+interaction ray.
+
+Because the vanilla head has a zero-pitch local rotation when the player looks
+straight ahead, rotating the complete biped prone also rotated the face toward
+the ground. The head cube then projected its front/lower extent below the
+already-grounded torso plane; changing the global grounding offset would merely
+raise every otherwise-correct body part. The crawl animator instead applies an
+equal and opposite 90-degree local head pitch, multiplied by the same pose
+blend as the global rotation. The two rotations cancel for a level gaze while
+the player's normal look pitch remains, and the headwear receives the corrected
+pitch with the head. Limb-cycle offsets cannot disturb this correction because
+they do not alter either head pivot.
+
+This correction is selected only for the rendering-only land-crawl branch.
+Actual swimming retains its existing head treatment, and third-party model
+geometry, including MPM scale and gameplay geometry composition, remains
+outside the crawl animator.
+
 ## Targeting and rendered-camera ownership
 
 MPM derives one model-dependent displacement and applies the same displacement

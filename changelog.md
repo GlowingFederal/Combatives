@@ -204,3 +204,12 @@
 - Removed Combatives' fixed EntityPlayer pose DataWatcher slot and metadata callback so other mods may own watcher ID 28 without collision.
 - Made the owned per-player pose field the sole local pose store while retaining null-safe standing defaults and explicit geometry recalculation.
 - Preserved the existing pose packet broadcasts, owner/tracker lifecycle synchronization, and independent MPM geometry composition.
+
+(a1ec44b Lower and level the crawl pose)
+
+- Moved the four-pixel land-crawl grounding correction ahead of the prone
+  rotation so OpenGL transform composition lowers the rendered player in world
+  space instead of shifting it along the rotated model's local depth axis.
+- Leveled the legs with the torso at rest while retaining the alternating,
+  movement-scaled leg drive and opposing spread during crawling.
+- Documented the grounding transform order and revised resting leg silhouette.

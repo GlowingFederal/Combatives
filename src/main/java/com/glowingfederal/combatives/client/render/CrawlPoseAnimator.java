@@ -7,7 +7,7 @@ import net.minecraft.util.MathHelper;
 /** Applies a restrained, alternating prone crawl to the vanilla rigid-limb biped. */
 public final class CrawlPoseAnimator {
     private static final float PI = (float) Math.PI;
-    private static final float PRONE_HEAD_COUNTER_PITCH = PI / 2.0F;
+    private static final float PRONE_HEAD_COUNTER_PITCH = -(PI * 0.40F);
     private static final float REST_ARM_SWEEP = 0.52F;
     private static final float ARM_PULL_SWEEP = 0.30F;
     private static final float ARM_REACH_PITCH = 0.20F;

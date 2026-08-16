@@ -22,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(RenderPlayer.class)
 public abstract class RenderPlayerMixin extends RendererLivingEntity {
     /** Four model pixels in world space; applied before the prone rotation. */
-    private static final float CRAWL_GROUNDING_WORLD_Y = -4.0F / 16.0F;
+    private static final float CRAWL_GROUNDING_WORLD_Y = -3.0F / 16.0F;
 
     private boolean combatives$loggedLocalCrawlGrounding;
     private boolean combatives$loggedRemoteCrawlGrounding;

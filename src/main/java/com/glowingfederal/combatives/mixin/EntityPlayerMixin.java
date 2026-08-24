@@ -247,6 +247,36 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         MovementDiagnostics.verbose(this.getPlayer(), "eye height recalculated for " + pose + ": " + this.combativesEyeHeight);
     }
 
+    /**
+     * Vanilla chooses the bed exit only after it has restored the standing
+     * player size.  This state has to be committed before wakeUpPlayer reaches
+     * that calculation: waiting for the next player tick leaves
+     * combativesSize/appliedGeometry describing the bed-sized body and makes
+     * isResizingAllowed reject the vanilla 0.6 x 1.8 size as foreign.
+     *
+     * The wake transition deliberately bypasses ordinary expansion clearance.
+     * The player is still at the bed here; vanilla is about to choose a clear
+     * exit using the restored height, and its own setSize has the same forced
+     * semantics.
+     */
+    private void combatives$restoreStandingForWake() {
+        this.crawlKeyDown = false;
+        this.combatives$setSwimming(false, "wake-up");
+        this.setPose(Pose.STANDING);
+
+        EntitySize oldSize = this.combativesSize == null ? STANDING_SIZE : this.combativesSize;
+        EffectivePlayerGeometry standing = this.combatives$resolveGeometry(Pose.STANDING);
+        EntitySize newSize = new EntitySize(standing.width, standing.height, false);
+        this.recalculateSize(oldSize, newSize);
+        this.width = newSize.width;
+        this.height = newSize.height;
+        this.combativesSize = newSize;
+        this.combativesAppliedPose = Pose.STANDING;
+        this.combativesAppliedGeometry = standing;
+        if (!this.worldObj.isRemote) this.combativesGeometryRevision++;
+        this.recalculateEyeHeight();
+    }
+
     @Override
     public void logGeometry(String heading, String reason) {
         if (!MovementDiagnostics.isVerboseEnabled()) return;
@@ -623,6 +653,22 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     @Redirect(method = "sleepInBedAt", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/player/EntityPlayer;setSize(FF)V"))
     private void combatives$sleepSize(EntityPlayer player, float width, float height) {
         this.setPose(Pose.SLEEPING);
+        this.recalculateSize();
+    }
+
+    @Inject(method = "wakeUpPlayer", at = @At("HEAD"))
+    private void combatives$beforeWakeUp(boolean immediately, boolean updateWorldFlag, boolean setSpawn,
+            CallbackInfo ci) {
+        this.combatives$restoreStandingForWake();
+    }
+
+    @Inject(method = "wakeUpPlayer", at = @At("RETURN"))
+    private void combatives$afterWakeUp(boolean immediately, boolean updateWorldFlag, boolean setSpawn,
+            CallbackInfo ci) {
+        // resetHeight and the exit setPosition run after the HEAD hook.  Cache
+        // the legacy eye conversion from their final standing anchor.
+        this.recalculateEyeHeight();
+        this.logGeometry("wake-up complete", "vanilla exit placement finished");
     }
 
     private EntityPlayer getPlayer() { return (EntityPlayer)(Object)this; }

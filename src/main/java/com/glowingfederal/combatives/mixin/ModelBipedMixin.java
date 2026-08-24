@@ -30,6 +30,13 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
     @Shadow public ModelRenderer bipedLeftLeg;
 
     @Unique private float combatives$swimAnimation;
+    @Unique private boolean combatives$crawlLegBaseCaptured;
+    @Unique private float combatives$leftLegBaseX;
+    @Unique private float combatives$leftLegBaseY;
+    @Unique private float combatives$leftLegBaseZ;
+    @Unique private float combatives$rightLegBaseX;
+    @Unique private float combatives$rightLegBaseY;
+    @Unique private float combatives$rightLegBaseZ;
 
     @Redirect(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/model/ModelBiped;setRotationAngles(FFFFFFLnet/minecraft/entity/Entity;)V"))
     private void combatives$setRotationAngles(ModelBiped model, float limbSwing, float limbSwingAmount, float ageInTicks,
@@ -59,6 +66,7 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
             ICombativesPlayerPose pose = (ICombativesPlayerPose) entity;
             MovementDiagnostics.verbose((EntityPlayer) entity, "Combatives crawl/swim model hook fired: crawl=" + pose.isCrawlKeyDown() + " swim=" + pose.isSwimming() + " pose=" + pose.getPose() + " animation=" + this.combatives$swimAnimation);
             if (CombativesVisualPoseHelper.isLandCrawling((EntityPlayer) entity)) {
+                this.combatives$captureCrawlLegBase();
                 CrawlPoseAnimator.apply((ModelBiped) (Object) this, limbSwing, limbSwingAmount, swimAnimation);
                 ci.cancel();
                 return;
@@ -93,6 +101,30 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
         this.bipedLeftLeg.rotateAngleX = MathHelperNew.lerp(swimAnimation, this.bipedLeftLeg.rotateAngleX, 0.3F * MathHelper.cos(limbSwing * 0.33333334F + (float) Math.PI));
         this.bipedRightLeg.rotateAngleX = MathHelperNew.lerp(swimAnimation, this.bipedRightLeg.rotateAngleX, 0.3F * MathHelper.cos(limbSwing * 0.33333334F));
         ci.cancel();
+    }
+
+    @Inject(method = "render", at = @At("RETURN"))
+    private void combatives$restoreCrawlLegBase(Entity entity, float limbSwing, float limbSwingAmount,
+            float ageInTicks, float netHeadYaw, float headPitch, float scaleFactor, CallbackInfo ci) {
+        if (!this.combatives$crawlLegBaseCaptured) return;
+        this.bipedLeftLeg.rotateAngleX = this.combatives$leftLegBaseX;
+        this.bipedLeftLeg.rotateAngleY = this.combatives$leftLegBaseY;
+        this.bipedLeftLeg.rotateAngleZ = this.combatives$leftLegBaseZ;
+        this.bipedRightLeg.rotateAngleX = this.combatives$rightLegBaseX;
+        this.bipedRightLeg.rotateAngleY = this.combatives$rightLegBaseY;
+        this.bipedRightLeg.rotateAngleZ = this.combatives$rightLegBaseZ;
+        this.combatives$crawlLegBaseCaptured = false;
+    }
+
+    @Unique
+    private void combatives$captureCrawlLegBase() {
+        this.combatives$leftLegBaseX = this.bipedLeftLeg.rotateAngleX;
+        this.combatives$leftLegBaseY = this.bipedLeftLeg.rotateAngleY;
+        this.combatives$leftLegBaseZ = this.bipedLeftLeg.rotateAngleZ;
+        this.combatives$rightLegBaseX = this.bipedRightLeg.rotateAngleX;
+        this.combatives$rightLegBaseY = this.bipedRightLeg.rotateAngleY;
+        this.combatives$rightLegBaseZ = this.bipedRightLeg.rotateAngleZ;
+        this.combatives$crawlLegBaseCaptured = true;
     }
 
     @Override

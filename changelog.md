@@ -222,3 +222,14 @@
   swimming, camera, targeting, synchronization, and MPM geometry behavior.
 - Documented why the head clipped independently of the correctly grounded body
   and how the render-only correction preserves look pitch through transitions.
+
+(507e052 Restore pose state across sleep and crawl rendering)
+
+- Committed standing physical/effective geometry before vanilla wake placement
+  and resampled the final legacy eye anchor afterward, preventing bed-sized
+  pose state from surviving wake-up in collision, camera, and targeting paths.
+- Scoped crawl-authored leg rotations to the current render by restoring the
+  vanilla animation values captured for that frame instead of zeroing axes or
+  relying on a later animation path to overwrite them.
+- Documented the vanilla/Combatives sleep lifecycle, transition invariants, and
+  additive An Extra Touch camera pipeline; no compatibility code is required.

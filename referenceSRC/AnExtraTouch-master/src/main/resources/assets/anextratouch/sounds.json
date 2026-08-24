@@ -1,0 +1,151 @@
+{
+  "armor.light_walk": {
+    "category": "player",
+    "sounds": [
+      "anextratouch:armor/light_1",
+      "anextratouch:armor/light_2",
+      "anextratouch:armor/light_3"
+    ]
+  },
+  "armor.medium_walk": {
+    "category": "player",
+    "sounds": [
+      "anextratouch:armor/medium_walk1",
+      "anextratouch:armor/medium_walk2",
+      "anextratouch:armor/medium_walk3"
+    ]
+  },
+  "armor.heavy_walk": {
+    "category": "player",
+    "sounds": [
+      "anextratouch:armor/heavy_walk1",
+      "anextratouch:armor/heavy_walk2",
+      "anextratouch:armor/heavy_walk3",
+      "anextratouch:armor/heavy_walk4",
+      "anextratouch:armor/heavy_walk5",
+      "anextratouch:armor/heavy_walk6"
+    ]
+  },
+  "armor.heavy_run": {
+    "category": "player",
+    "sounds": [
+      "anextratouch:armor/heavy_run1",
+      "anextratouch:armor/heavy_run2",
+      "anextratouch:armor/heavy_run3",
+      "anextratouch:armor/heavy_run4",
+      "anextratouch:armor/heavy_run5",
+      "anextratouch:armor/heavy_run6",
+      "anextratouch:armor/heavy_run7",
+      "anextratouch:armor/heavy_run8",
+      "anextratouch:armor/heavy_run9"
+    ]
+  },
+  "armor.heavy_foot": {
+    "category": "player",
+    "sounds": [
+      "anextratouch:armor/heavy_foot1",
+      "anextratouch:armor/heavy_foot2",
+      "anextratouch:armor/heavy_foot3",
+      "anextratouch:armor/heavy_foot4"
+    ]
+  },
+  "armor.crystal_walk": {
+    "category": "player",
+    "sounds": [
+      "anextratouch:armor/crystal_walk1",
+      "anextratouch:armor/crystal_walk2",
+      "anextratouch:armor/crystal_walk3",
+      "anextratouch:armor/crystal_walk4",
+      "anextratouch:armor/crystal_walk5",
+      "anextratouch:armor/crystal_walk6"
+    ]
+  },
+  "armor.crystal_run": {
+    "category": "player",
+    "sounds": [
+      "anextratouch:armor/crystal_run1",
+      "anextratouch:armor/crystal_run2",
+      "anextratouch:armor/crystal_run3",
+      "anextratouch:armor/crystal_run4",
+      "anextratouch:armor/crystal_run5",
+      "anextratouch:armor/crystal_run6"
+    ]
+  },
+  "armor.crystal_foot": {
+    "category": "player",
+    "sounds": [
+      "anextratouch:armor/crystal_foot1",
+      "anextratouch:armor/crystal_foot2",
+      "anextratouch:armor/crystal_foot3",
+      "anextratouch:armor/crystal_foot4"
+    ]
+  },
+  "rain.splash": {
+    "category": "player",
+    "sounds": [
+      "anextratouch:rain_splash/water_through1",
+      "anextratouch:rain_splash/water_through2",
+      "anextratouch:rain_splash/water_through3",
+      "anextratouch:rain_splash/water_through4",
+      "anextratouch:rain_splash/water_through5",
+      "anextratouch:rain_splash/water_through6",
+      "anextratouch:rain_splash/water_through7",
+      "anextratouch:rain_splash/water_through8",
+      "anextratouch:rain_splash/water_through9",
+      "anextratouch:rain_splash/water_through10",
+      "anextratouch:rain_splash/water_through11"
+    ]
+  },
+  "waterfall.0": {
+    "category": "ambient",
+    "sounds": [
+      "anextratouch:ambient/stream/waterfall0"
+    ]
+  },
+  "waterfall.1": {
+    "category": "ambient",
+    "sounds": [
+      "anextratouch:ambient/stream/waterfall1"
+    ]
+  },
+  "waterfall.2": {
+    "category": "ambient",
+    "sounds": [
+      "anextratouch:ambient/stream/waterfall2"
+    ]
+  },
+  "waterfall.3": {
+    "category": "ambient",
+    "sounds": [
+      "anextratouch:ambient/stream/waterfall3"
+    ]
+  },
+  "waterfall.4": {
+    "category": "ambient",
+    "sounds": [
+      "anextratouch:ambient/stream/waterfall4"
+    ]
+  },
+  "waterfall.5": {
+    "category": "ambient",
+    "sounds": [
+      "anextratouch:ambient/stream/waterfall5"
+    ]
+  },
+  "waves.waves_breaking": {
+    "category": "ambient",
+    "sounds": [
+      "anextratouch:waves/wave_0",
+      "anextratouch:waves/wave_1",
+      "anextratouch:waves/wave_2",
+      "anextratouch:waves/wave_3",
+      "anextratouch:waves/wave_4",
+      "anextratouch:waves/wave_5",
+      "anextratouch:waves/wave_6",
+      "anextratouch:waves/wave_7",
+      "anextratouch:waves/wave_8",
+      "anextratouch:waves/wave_9",
+      "anextratouch:waves/wave_10"
+    ]
+  }
+}

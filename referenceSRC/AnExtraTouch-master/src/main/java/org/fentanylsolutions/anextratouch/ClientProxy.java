@@ -1,0 +1,95 @@
+package org.fentanylsolutions.anextratouch;
+
+import net.minecraftforge.common.MinecraftForge;
+
+import org.fentanylsolutions.anextratouch.footsteps.FootprintManager;
+import org.fentanylsolutions.anextratouch.handlers.client.ClientHandler;
+import org.fentanylsolutions.anextratouch.handlers.client.SmoothGuiHandler;
+import org.fentanylsolutions.anextratouch.handlers.client.StepSoundHandler;
+import org.fentanylsolutions.anextratouch.handlers.client.camera.DecoupledCameraHandler;
+import org.fentanylsolutions.anextratouch.handlers.client.camera.SoundShakeHandler;
+import org.fentanylsolutions.anextratouch.handlers.client.effects.BreathHandler;
+import org.fentanylsolutions.anextratouch.handlers.client.effects.PlayerEffectHandler;
+import org.fentanylsolutions.anextratouch.handlers.client.effects.WakeTrailManager;
+import org.fentanylsolutions.anextratouch.handlers.client.effects.WaterCascadeManager;
+import org.fentanylsolutions.anextratouch.handlers.client.effects.WaterRippleManager;
+import org.fentanylsolutions.anextratouch.handlers.client.effects.WaterSplashManager;
+import org.fentanylsolutions.anextratouch.handlers.client.effects.WaterWaveManager;
+import org.fentanylsolutions.anextratouch.handlers.client.effects.WetParticleHandler;
+import org.fentanylsolutions.anextratouch.varinstances.VarInstanceClient;
+
+import cpw.mods.fml.common.FMLCommonHandler;
+import cpw.mods.fml.common.event.FMLInitializationEvent;
+import cpw.mods.fml.common.event.FMLPostInitializationEvent;
+import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+
+@SuppressWarnings("unused")
+public class ClientProxy extends CommonProxy {
+
+    @Override
+    public void preInit(FMLPreInitializationEvent event) {
+        super.preInit(event);
+        AnExtraTouch.vic = new VarInstanceClient();
+    }
+
+    @Override
+    public void init(FMLInitializationEvent event) {
+        super.init(event);
+        FMLCommonHandler.instance()
+            .bus()
+            .register(new PlayerEffectHandler());
+        FMLCommonHandler.instance()
+            .bus()
+            .register(new StepSoundHandler());
+        FMLCommonHandler.instance()
+            .bus()
+            .register(FootprintManager.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(new SmoothGuiHandler());
+        BreathHandler breathHandler = new BreathHandler();
+        FMLCommonHandler.instance()
+            .bus()
+            .register(breathHandler);
+        MinecraftForge.EVENT_BUS.register(breathHandler);
+        MinecraftForge.EVENT_BUS.register(new WetParticleHandler());
+        FMLCommonHandler.instance()
+            .bus()
+            .register(WaterSplashManager.INSTANCE);
+        FMLCommonHandler.instance()
+            .bus()
+            .register(WaterRippleManager.INSTANCE);
+        FMLCommonHandler.instance()
+            .bus()
+            .register(WakeTrailManager.INSTANCE);
+        FMLCommonHandler.instance()
+            .bus()
+            .register(WaterWaveManager.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(WaterWaveManager.INSTANCE);
+        FMLCommonHandler.instance()
+            .bus()
+            .register(WaterCascadeManager.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(WaterCascadeManager.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(FootprintManager.INSTANCE);
+        ClientHandler clientHandler = new ClientHandler();
+        FMLCommonHandler.instance()
+            .bus()
+            .register(clientHandler);
+        MinecraftForge.EVENT_BUS.register(clientHandler);
+        MinecraftForge.EVENT_BUS.register(new SoundShakeHandler());
+        DecoupledCameraHandler.registerKeybinding();
+    }
+
+    @Override
+    public void postInit(FMLPostInitializationEvent event) {
+        super.postInit(event);
+        AnExtraTouch.vic.postInitHook();
+    }
+
+    @Override
+    public void onConfigReload() {
+        super.onConfigReload();
+        AnExtraTouch.vic.populateListsFromConfig();
+        WaterCascadeManager.INSTANCE.onConfigReload();
+        WaterWaveManager.INSTANCE.onConfigReload();
+    }
+
+}

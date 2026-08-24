@@ -1,0 +1,21 @@
+{
+	"modListVersion": 2,
+	"modList": [{
+		"modid": "${modId}",
+		"name": "${modName}",
+		"description": "Various small visual, audio, and gameplay tweaks, aimed to enhance the game experience.",
+		"version": "${modVersion}",
+		"mcversion": "${minecraftVersion}",
+		"url": "https://github.com/JackOfNoneTrades/AnExtraTouch",
+		"updateUrl": "",
+		"authorList": ["jack"],
+		"credits": "OreCruncher for Dynamic Surroundings, Alex-Hashtag for Legendary Survival Overhaul",
+		"logoFile": "assets/${modId}/logo.png",
+		"screenshots": [],
+		"parent": "",
+		"requiredMods": [],
+		"dependencies": [],
+		"dependants": [],
+		"useDependencyInformation": false
+	}]
+}

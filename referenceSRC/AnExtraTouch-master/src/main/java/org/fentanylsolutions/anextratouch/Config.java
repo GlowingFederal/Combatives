@@ -1,0 +1,1370 @@
+package org.fentanylsolutions.anextratouch;
+
+import java.io.File;
+
+import net.minecraftforge.common.config.Configuration;
+
+public class Config {
+
+    private static Configuration config;
+
+    public static class Categories {
+
+        public static final String general = "general";
+        public static final String footprints = "footprints";
+        public static final String breath = "breath";
+        public static final String armor = "armor";
+        public static final String wetness = "wetness";
+        public static final String debug = "debug";
+        public static final String trampling = "trampling";
+        public static final String rainSplash = "rain_splash";
+        public static final String waterSplash = "water_splash";
+        public static final String waves = "waves";
+        public static final String fluidInteractions = "fluid_interactions";
+        public static final String misc = "misc";
+        public static final String smoothGui = "smooth_gui";
+        public static final String camera = "camera";
+    }
+
+    // general
+    public static boolean boatControlsEnabled = true;
+
+    // footprints
+    public static String[] entityClassList = { "Blaze" };
+    public static boolean entityClassListIsBlacklist = true;
+    public static String[] entityOverrides = {};
+    public static boolean footprintsEnabled = true;
+    public static float defaultStride = 1.0f;
+    public static float defaultFootSize = 1.0f;
+    public static float defaultStanceWidth = 0.1f;
+    public static float babyStrideMultiplier = 0.5f;
+    public static float babyFootSizeMultiplier = 0.5f;
+    public static float babyStanceWidthMultiplier = 0.5f;
+    public static String[] babyEntityOverrides = {};
+    public static String[] footprintSoundTypes = { "sand", "snow", "grass", "gravel" };
+    public static String[] blockBlacklist = {};
+    public static String[] blockWhitelist = {};
+    public static int defaultFootprintLifespan = 200;
+    public static float rainLifespanMultiplier = 0.4f;
+    public static float snowLifespanMultiplier = 0.6f;
+    public static String[] soundTypeLifespans = { "snow;100", "sand;300", "grass;200", "gravel;250" };
+    public static float defaultFootprintOpacity = 0.4f;
+    public static String[] soundTypeOpacities = { "snow;0.6", "sand;0.5", "grass;0.4", "gravel;0.35" };
+    public static String[] blockOpacityOverrides = {};
+    public static int footprintParticleCap = 2000;
+
+    // breath
+    public static boolean breathEnabled = true;
+    public static String[] breathEntityClassList = { "Chicken", "SnowMan", "Zombie", "VillagerGolem", "Skeleton",
+        "Creeper", "Enderman" };
+    public static boolean breathEntityClassListIsBlacklist = true;
+    public static float breathDefaultUpOffset = -0.4f;
+    public static float breathDefaultForwardDist = 0.3f;
+    public static float breathDefaultBabyUpOffset = -0.1f;
+    public static float breathDefaultBabyForwardDist = 0.0f;
+    public static String[] breathEntityOverrides = { "Pig;-0.3;1.1", "Cow;-0.15;0.85", "Sheep;-0.15;0.85",
+        "MushroomCow;-0.15;0.85", "EntityHorse;-0.3;1.2", "Wolf;-0.2;0.3", "Ozelot;-0.15;0.2", "Villager;-0.4;0.25" };
+    public static String[] breathBabyEntityOverrides = {};
+    public static float breathTemperatureThreshold = 0.5f;
+    public static int breathAltitudeThreshold = 130;
+    public static String[] breathDimensionRules = { "-1;never", "1;never" };
+    public static String breathDefaultDimensionMode = "normal";
+    public static String[] breathColdBiomes = {};
+    public static int breathRenderDistance = 64;
+
+    // armor
+    public static boolean armorSoundsEnabled = true;
+    public static String armorSoundMode = "priority";
+    public static float armorSoundVolume = 0.3f;
+    public static String armorDefaultCategory = "heavy";
+    public static String[] armorCategoryOverrides = { "etfuturum:elytra;elytra" };
+    public static String[] armorSoundEntityWhitelist = { "Player", "Zombie", "Skeleton", "PigZombie" };
+
+    // wetness
+    public static boolean wetParticlesEnabled = true;
+    public static String[] wetnessEntityClassList = {};
+    public static boolean wetnessEntityClassListIsBlacklist = true;
+    public static boolean wetnessRainEnabled = true;
+    public static float wetnessDuration = 1.0f;
+    public static float wetnessParticleDensity = 1.0f;
+
+    // trampling
+    public static boolean tramplingEnabled = false;
+    public static int tramplingMinPasses = 3;
+    public static int tramplingMaxPasses = 8;
+    public static int tramplingForgetTime = 5;
+    public static String[] tramplingBlocks = { "minecraft:tallgrass", "minecraft:double_plant", "minecraft:deadbush" };
+    public static String[] tramplingEntityClassList = { "Player" };
+    public static boolean tramplingEntityClassListIsBlacklist = false;
+
+    // water splash
+    public static boolean waterSplashEnabled = true;
+    public static int waterSplashFallbackColor = 0x3F76E4;
+    public static String[] waterSplashEntityBlacklist = { "EntityXPOrb" };
+    public static boolean waterCascadeEnabled = true;
+    public static boolean waterfallSprayEnabled = true;
+    public static boolean waterfallSoundEnabled = true;
+    public static float waterfallSoundVolume = 1.0f;
+    public static float waterfallSoundRange = 64.0f;
+    public static float waterfallSoundCutoff = 0.0f;
+    public static boolean chestBubblesEnabled = true;
+    public static boolean soulSandChestBubblesEnabled = true;
+    public static boolean rainRipplesEnabled = true;
+    public static boolean waterDripRipplesEnabled = true;
+    public static float waterRippleAlpha = 0.8f;
+    public static float rainRippleDensity = 1.0f;
+    public static boolean waterWakesEnabled = true;
+    public static float waterWakeAlpha = 1.0f;
+    public static float waterWakeDensity = 1.0f;
+
+    // waves
+    public static boolean wavesEnabled = true;
+    public static int waveSearchDistance = 14;
+    public static float waveSpawnDistance = 64.0f;
+    public static float waveSpawnAmount = 0.7f;
+    public static int waveSpawnFrequency = 20;
+    public static float waveSpawnDistanceFromShoreMin = 4.0f;
+    public static float waveSpawnDistanceFromShoreMax = 48.0f;
+    public static float waveSpawningFOVLimit = 140.0f;
+    public static float waveVolume = 1.0f;
+    public static float waveSoundRange = 128.0f;
+    public static int waveBreakingSoundChance = 40;
+    public static float waveScale = 1.0f;
+    public static String[] waveBiomeWhitelist = { "type:OCEAN", "type:BEACH", "Coral Reef", "Kelp Forest", "Tropics" };
+    public static String[] waveBiomeBlacklist = { "Shield" };
+
+    // fluid interactions
+    public static String[] fluidInteractionBlacklist = {};
+    public static String[] splashFluidBlacklist = { "honey" };
+    public static String[] cascadeFluidBlacklist = { "honey" };
+
+    // rain splash
+    public static boolean rainSplashEnabled = true;
+    public static float rainSplashVolume = 0.15f;
+    public static String[] rainSplashEntityClassList = {};
+    public static boolean rainSplashEntityClassListIsBlacklist = true;
+
+    // smooth gui
+    public static boolean smoothGuiEnabled = true;
+    public static int smoothGuiAnimationTime = 220;
+    public static float smoothGuiAnimationScale = 1.0f;
+    public static boolean smoothGuiFadeBackground = true;
+    public static int smoothGuiBackgroundFadeTime = 85;
+    public static String smoothGuiAnimationStyle = "BACK";
+    public static String smoothGuiAnimationDirection = "DOWN";
+    public static String[] smoothGuiExcludedScreens = { "GuiChat", "GuiDownloadTerrain", "GuiMemoryErrorScreen",
+        "GuiGameOver", "GuiMainMenu" };
+
+    // camera
+    public static boolean cameraOverhaulEnabled = true;
+    public static boolean cameraOverhaulThirdPerson = true;
+    public static boolean cameraDisableWhilePaused = true;
+    public static boolean cameraKeepFirstPersonHandStable = true;
+    // turning roll
+    public static float cameraTurningRollAccumulation = 0.7f;
+    public static float cameraTurningRollIntensity = 0.9f;
+    public static float cameraTurningRollSmoothing = 1.0f;
+    // camera sway
+    public static float cameraSwayIntensity = 0.6f;
+    public static float cameraSwayFrequency = 0.16f;
+    public static float cameraSwayFadeInDelay = 0.15f;
+    public static float cameraSwayFadeInLength = 5.0f;
+    public static float cameraSwayFadeOutLength = 0.75f;
+    public static boolean cameraFallingShakeEnabled = true;
+    public static float cameraFallingShakeMinDistance = 3.0f;
+    public static float cameraFallingShakeMaxDistance = 16.0f;
+    public static float cameraFallingShakeIntensity = 1.2f;
+    public static float cameraFallingShakeFrequency = 1.4f;
+    // screen shakes
+    public static float cameraShakeMaxIntensity = 2.5f;
+    public static float cameraShakeMaxFrequency = 6.0f;
+    public static float cameraExplosionTrauma = 1.0f;
+    public static float cameraExplosionLength = 2.0f;
+    public static float cameraThunderTrauma = 0.05f;
+    public static float cameraHandSwingTrauma = 0.03f;
+    public static boolean cameraFallShakeEnabled = true;
+    public static float cameraFallShakeMinDistance = 4.0f;
+    public static float cameraFallShakeMaxDistance = 20.0f;
+    public static float cameraFallShakeMaxTrauma = 0.45f;
+    public static float cameraFallShakeFrequency = 0.8f;
+    public static float cameraFallShakeLength = 0.55f;
+    // walking context
+    public static float cameraWalkStrafingRoll = 10.0f;
+    public static float cameraWalkForwardPitch = 7.0f;
+    public static float cameraWalkVerticalPitch = 4.5f;
+    public static float cameraWalkHorizSmoothing = 1.0f;
+    public static float cameraWalkVertSmoothing = 0.75f;
+    // flying context
+    public static float cameraFlyStrafingRoll = -10.0f;
+    public static float cameraFlyForwardPitch = 7.0f;
+    public static float cameraFlyVerticalPitch = 2.5f;
+    public static float cameraFlyHorizSmoothing = 1.0f;
+    public static float cameraFlyVertSmoothing = 1.0f;
+    // riding context
+    public static float cameraRideStrafingRoll = 5.0f;
+    public static float cameraRideForwardPitch = 3.5f;
+    public static float cameraRideVerticalPitch = 7.0f;
+    public static float cameraRideHorizSmoothing = 1.0f;
+    public static float cameraRideVertSmoothing = 1.0f;
+    // camera clipping, follow and player fade
+    public static float cameraClippingSmoothing = 0.5f;
+    public static float cameraFollowSmoothing = 0.8f;
+    public static boolean cameraPlayerFadeEnabled = true;
+    public static float cameraPlayerFadeStartDistance = 1.5f;
+    public static float cameraPlayerFadeEndDistance = 0.5f;
+    public static boolean cameraSoundCentering = true;
+    public static float cameraVerticalOffset = 0.0f;
+    public static boolean cameraFovOverrideEnabled = false;
+    public static float cameraFovOverride = 70.0f;
+    public static boolean simplePerspectiveToggle = false;
+    // decoupled camera (shoulder surfing integration)
+    public static boolean decoupledCameraEnabled = true;
+    public static float decoupledCameraOffsetDecay = 0.5f;
+    public static float decoupledCameraPlayerTurnSpeed = 0.25f;
+    public static int decoupledCameraTurningLockTicks = 10;
+    public static String[] decoupledCameraAimingActions = { "bow" };
+    public static String[] decoupledCameraAimingItems = { "minecraft:snowball", "minecraft:egg",
+        "minecraft:ender_pearl", "minecraft:ender_eye", "minecraft:experience_bottle", "minecraft:fishing_rod",
+        "minecraft:potion@16384-32767" };
+    public static boolean decoupledCameraAimFirstPerson = true;
+    public static int decoupledCameraAimTransitionTicks = 5;
+    public static String decoupledCameraAimTransitionEasing = "smooth";
+
+    // sound shakes
+    public static boolean cameraSoundShakesEnabled = true;
+    public static String[] cameraSoundShakes = {
+        "sound=mob.enderdragon.growl;trauma=0.7;radius=80;frequency=2.0;duration=2.5",
+        "sound=mob.enderdragon.end;trauma=1.0;radius=120;frequency=0.3;duration=11.0",
+        "sound=mob.wither.spawn;trauma=0.5;radius=60;frequency=0.3;duration=2.0",
+        "sound=mob.wither.idle;trauma=0.15;radius=40;frequency=0.5;duration=0.8",
+        "sound=mob.wither.death;trauma=0.7;radius=80;frequency=0.3;duration=2.5",
+        "sound=mob.wither.shoot;trauma=0.1;radius=30;frequency=1.0;duration=0.3", };
+
+    // misc
+    public static boolean cakeEatingParticlesEnabled = true;
+    public static boolean blizzSnowTrailEnabled = true;
+    public static boolean loadingProgressBarEnabled = true;
+
+    // debug
+    public static boolean debugMode = false;
+    public static boolean printMobNames = false;
+
+    public static void loadConfig(File configFile) {
+        loadConfig(configFile, true);
+    }
+
+    public static void loadConfig(File configFile, boolean save) {
+        config = new Configuration(configFile);
+
+        try {
+            // general
+            boatControlsEnabled = config.getBoolean(
+                "boatControlsEnabled",
+                Categories.general,
+                boatControlsEnabled,
+                "Enable modern directional controls for vanilla boats. Disable to restore vanilla boat movement.");
+
+            // footprints
+            entityClassList = config.getStringList(
+                "entityClassList",
+                Categories.footprints,
+                entityClassList,
+                "List of mobs which are either leaving footprints, or not, depending on entityClassListIsBlacklist.");
+            entityClassListIsBlacklist = config.getBoolean(
+                "entityClassListIsBlacklist",
+                Categories.footprints,
+                entityClassListIsBlacklist,
+                "Whether entityClassList is a blacklist (or a whitelist).");
+            entityOverrides = config.getStringList(
+                "entityOverrides",
+                Categories.footprints,
+                entityOverrides,
+                "Per-entity overrides. Format: \"mob_class_name;stride;foot_size;stance_width\". Leave a value empty to use defaults, e.g. \"Creeper;;0.5;\"");
+            footprintsEnabled = config.getBoolean(
+                "footprintsEnabled",
+                Categories.footprints,
+                footprintsEnabled,
+                "Whether footprint particles are enabled.");
+            defaultStride = config.getFloat(
+                "defaultStride",
+                Categories.footprints,
+                defaultStride,
+                0.1f,
+                100.0f,
+                "Default distance between footprints in blocks.");
+            defaultFootSize = config.getFloat(
+                "defaultFootSize",
+                Categories.footprints,
+                defaultFootSize,
+                0.1f,
+                100.0f,
+                "Default foot size scale multiplier for the footprint particle.");
+            defaultStanceWidth = config.getFloat(
+                "defaultStanceWidth",
+                Categories.footprints,
+                defaultStanceWidth,
+                0.0f,
+                100.0f,
+                "Default perpendicular offset between left and right foot in blocks.");
+            babyStrideMultiplier = config.getFloat(
+                "babyStrideMultiplier",
+                Categories.footprints,
+                babyStrideMultiplier,
+                0.1f,
+                100.0f,
+                "Multiplier applied to stride for baby mobs.");
+            babyFootSizeMultiplier = config.getFloat(
+                "babyFootSizeMultiplier",
+                Categories.footprints,
+                babyFootSizeMultiplier,
+                0.1f,
+                100.0f,
+                "Multiplier applied to foot size for baby mobs.");
+            babyStanceWidthMultiplier = config.getFloat(
+                "babyStanceWidthMultiplier",
+                Categories.footprints,
+                babyStanceWidthMultiplier,
+                0.1f,
+                100.0f,
+                "Multiplier applied to stance width for baby mobs.");
+            babyEntityOverrides = config.getStringList(
+                "babyEntityOverrides",
+                Categories.footprints,
+                babyEntityOverrides,
+                "Per-entity baby overrides (absolute values, not multiplied). Format: \"mob_class_name;stride;foot_size;stance_width\". Leave a value empty to use adult value * baby multiplier.");
+            footprintSoundTypes = config.getStringList(
+                "footprintSoundTypes",
+                Categories.footprints,
+                footprintSoundTypes,
+                "Sound types that allow footprints. Valid values: stone, wood, gravel, grass, cloth, sand, snow, ladder, anvil.");
+            blockBlacklist = config.getStringList(
+                "blockBlacklist",
+                Categories.footprints,
+                blockBlacklist,
+                "Blocks that should never have footprints, regardless of sound type. Use registry names, e.g. \"minecraft:tallgrass\".");
+            blockWhitelist = config.getStringList(
+                "blockWhitelist",
+                Categories.footprints,
+                blockWhitelist,
+                "Blocks that should always have footprints, even if their sound type is not in the list. Use registry names, e.g. \"minecraft:stone\".");
+            defaultFootprintLifespan = config.getInt(
+                "defaultFootprintLifespan",
+                Categories.footprints,
+                defaultFootprintLifespan,
+                1,
+                6000,
+                "Default footprint lifespan in ticks (20 ticks = 1 second).");
+            rainLifespanMultiplier = config.getFloat(
+                "rainLifespanMultiplier",
+                Categories.footprints,
+                rainLifespanMultiplier,
+                0.0f,
+                100.0f,
+                "Multiplier applied to footprint lifespan when raining at the footprint's position.");
+            snowLifespanMultiplier = config.getFloat(
+                "snowLifespanMultiplier",
+                Categories.footprints,
+                snowLifespanMultiplier,
+                0.0f,
+                100.0f,
+                "Multiplier applied to footprint lifespan when snowing at the footprint's position.");
+            soundTypeLifespans = config.getStringList(
+                "soundTypeLifespans",
+                Categories.footprints,
+                soundTypeLifespans,
+                "Per-sound-type lifespan overrides. Format: \"sound_type;lifespan_in_ticks\". e.g. \"snow;100\", \"sand;300\".");
+            defaultFootprintOpacity = config.getFloat(
+                "defaultFootprintOpacity",
+                Categories.footprints,
+                defaultFootprintOpacity,
+                0.0f,
+                100.0f,
+                "Default footprint opacity (0.0 = invisible, 1.0 = fully opaque).");
+            soundTypeOpacities = config.getStringList(
+                "soundTypeOpacities",
+                Categories.footprints,
+                soundTypeOpacities,
+                "Per-sound-type opacity overrides. Format: \"sound_type;opacity\". e.g. \"snow;0.6\", \"sand;0.3\".");
+            blockOpacityOverrides = config.getStringList(
+                "blockOpacityOverrides",
+                Categories.footprints,
+                blockOpacityOverrides,
+                "Per-block opacity overrides (takes priority over sound type). Format: \"registry_name;opacity\". e.g. \"minecraft:snow_layer;0.7\".");
+            footprintParticleCap = config.getInt(
+                "footprintParticleCap",
+                Categories.footprints,
+                footprintParticleCap,
+                0,
+                100000,
+                "Maximum number of footprint particles tracked at once. 0 = unlimited.");
+
+            // breath
+            breathEnabled = config.getBoolean(
+                "breathEnabled",
+                Categories.breath,
+                breathEnabled,
+                "Enable breath particles on entities in cold environments.");
+            breathEntityClassList = config.getStringList(
+                "breathEntityClassList",
+                Categories.breath,
+                breathEntityClassList,
+                "List of mobs which either show breath, or don't, depending on breathEntityClassListIsBlacklist.");
+            breathEntityClassListIsBlacklist = config.getBoolean(
+                "breathEntityClassListIsBlacklist",
+                Categories.breath,
+                breathEntityClassListIsBlacklist,
+                "Whether breathEntityClassList is a blacklist (or a whitelist).");
+            breathDefaultUpOffset = config.getFloat(
+                "breathDefaultUpOffset",
+                Categories.breath,
+                breathDefaultUpOffset,
+                -100.0f,
+                100.0f,
+                "Default vertical offset from top of bounding box for breath spawn point.");
+            breathDefaultForwardDist = config.getFloat(
+                "breathDefaultForwardDist",
+                Categories.breath,
+                breathDefaultForwardDist,
+                -100.0f,
+                100.0f,
+                "Default forward distance along look direction for breath spawn point.");
+            breathDefaultBabyUpOffset = config.getFloat(
+                "breathDefaultBabyUpOffset",
+                Categories.breath,
+                breathDefaultBabyUpOffset,
+                -100.0f,
+                100.0f,
+                "Default vertical offset for baby entities.");
+            breathDefaultBabyForwardDist = config.getFloat(
+                "breathDefaultBabyForwardDist",
+                Categories.breath,
+                breathDefaultBabyForwardDist,
+                -100.0f,
+                100.0f,
+                "Default forward distance for baby entities.");
+            breathEntityOverrides = config.getStringList(
+                "breathEntityOverrides",
+                Categories.breath,
+                breathEntityOverrides,
+                "Per-entity breath position overrides. Format: \"mob_name;upOffset;forwardDist\". Leave a value empty to use defaults, e.g. \"Pig;;0.4\".");
+            breathBabyEntityOverrides = config.getStringList(
+                "breathBabyEntityOverrides",
+                Categories.breath,
+                breathBabyEntityOverrides,
+                "Per-entity baby breath position overrides. Format: \"mob_name;upOffset;forwardDist\". Leave empty to use adult value.");
+            breathTemperatureThreshold = config.getFloat(
+                "breathTemperatureThreshold",
+                Categories.breath,
+                breathTemperatureThreshold,
+                -100.0f,
+                100.0f,
+                "Biome temperature below which breath is visible. Vanilla temps: Ice Plains 0.0, Taiga 0.25, Extreme Hills 0.2, Plains 0.8, Desert 2.0. Temperature also drops with altitude above Y=64.");
+            breathAltitudeThreshold = config.getInt(
+                "breathAltitudeThreshold",
+                Categories.breath,
+                breathAltitudeThreshold,
+                0,
+                1000,
+                "Above this Y level, breath is always visible regardless of biome temperature.");
+            breathDimensionRules = config.getStringList(
+                "breathDimensionRules",
+                Categories.breath,
+                breathDimensionRules,
+                "Per-dimension breath rules. Format: \"dimensionId;mode\". Modes: \"normal\" (temperature + altitude checks), \"always\" (breath always visible), \"never\" (breath disabled). Unlisted dimensions use breathDefaultDimensionMode.");
+            breathDefaultDimensionMode = config.getString(
+                "breathDefaultDimensionMode",
+                Categories.breath,
+                breathDefaultDimensionMode,
+                "Default breath mode for dimensions not listed in breathDimensionRules.",
+                new String[] { "normal", "always", "never" });
+            breathColdBiomes = config.getStringList(
+                "breathColdBiomes",
+                Categories.breath,
+                breathColdBiomes,
+                "Biomes that always show breath regardless of temperature. Accepts biome names and numeric biome IDs, e.g. \"Extreme Hills\", \"FrozenRiver\", \"3\", \"158\".");
+            breathRenderDistance = config.getInt(
+                "breathRenderDistance",
+                Categories.breath,
+                breathRenderDistance,
+                1,
+                1000,
+                "Maximum distance in blocks at which breath particles are rendered.");
+
+            // armor
+            armorSoundsEnabled = config.getBoolean(
+                "armorSoundsEnabled",
+                Categories.armor,
+                armorSoundsEnabled,
+                "Enable armor accent sounds on footsteps.");
+            armorSoundMode = config.getString(
+                "armorSoundMode",
+                Categories.armor,
+                armorSoundMode,
+                "How to handle mixed armor. \"priority\" picks the highest-priority category between chest and legs. \"mixed\" plays both chest and legs sounds if different.");
+            armorSoundVolume = config.getFloat(
+                "armorSoundVolume",
+                Categories.armor,
+                armorSoundVolume,
+                0.0f,
+                1.0f,
+                "Base volume for armor accent sounds.");
+            armorDefaultCategory = config.getString(
+                "armorDefaultCategory",
+                Categories.armor,
+                armorDefaultCategory,
+                "Default armor sound category for unknown/modded armor items. Valid: light, medium, heavy, crystal, elytra.");
+            armorCategoryOverrides = config.getStringList(
+                "armorCategoryOverrides",
+                Categories.armor,
+                armorCategoryOverrides,
+                "Per-item armor category overrides. Format: \"registry_name;category\". e.g. \"minecraft:iron_chestplate;crystal\". Valid categories: light, medium, heavy, crystal, elytra. The \"elytra\" category routes to the vanilla MC 1.20+ equip_elytra sound provided by Et Futurum Requiem's Asset Director.");
+            armorSoundEntityWhitelist = config.getStringList(
+                "armorSoundEntityWhitelist",
+                Categories.armor,
+                armorSoundEntityWhitelist,
+                "Entity classes that play armor sounds. Only entities in this list will have armor accent sounds.");
+
+            // wetness
+            wetParticlesEnabled = config.getBoolean(
+                "wetParticlesEnabled",
+                Categories.wetness,
+                wetParticlesEnabled,
+                "Enable water drip particles when entities exit water or stand in rain.");
+            wetnessEntityClassList = config.getStringList(
+                "wetnessEntityClassList",
+                Categories.wetness,
+                wetnessEntityClassList,
+                "List of mobs which either show wetness particles, or don't, depending on wetnessEntityClassListIsBlacklist.");
+            wetnessEntityClassListIsBlacklist = config.getBoolean(
+                "wetnessEntityClassListIsBlacklist",
+                Categories.wetness,
+                wetnessEntityClassListIsBlacklist,
+                "Whether wetnessEntityClassList is a blacklist (or a whitelist).");
+            wetnessRainEnabled = config.getBoolean(
+                "wetnessRainEnabled",
+                Categories.wetness,
+                wetnessRainEnabled,
+                "Whether standing in rain causes wetness buildup.");
+            wetnessDuration = config.getFloat(
+                "wetnessDuration",
+                Categories.wetness,
+                wetnessDuration,
+                0.1f,
+                100.0f,
+                "Multiplier for how long entities stay wet after leaving water. Higher values = longer dripping. 1.0 = default (~65 seconds from fully soaked).");
+            wetnessParticleDensity = config.getFloat(
+                "wetnessParticleDensity",
+                Categories.wetness,
+                wetnessParticleDensity,
+                0.1f,
+                100.0f,
+                "Multiplier for particle spawn frequency. Higher values = more water drops.");
+
+            // trampling
+            tramplingEnabled = config.getBoolean(
+                "tramplingEnabled",
+                Categories.trampling,
+                tramplingEnabled,
+                "Enable grass/plant trampling. Blocks walked through repeatedly will break after a random number of passes.");
+            tramplingMinPasses = config.getInt(
+                "tramplingMinPasses",
+                Categories.trampling,
+                tramplingMinPasses,
+                1,
+                100,
+                "Minimum number of passes before a block breaks.");
+            tramplingMaxPasses = config.getInt(
+                "tramplingMaxPasses",
+                Categories.trampling,
+                tramplingMaxPasses,
+                1,
+                100,
+                "Maximum number of passes before a block breaks. A random threshold between min and max is chosen per block.");
+            tramplingForgetTime = config.getInt(
+                "tramplingForgetTime",
+                Categories.trampling,
+                tramplingForgetTime,
+                1,
+                60,
+                "Minutes before the tracker forgets about a block that hasn't been walked through.");
+            tramplingBlocks = config.getStringList(
+                "tramplingBlocks",
+                Categories.trampling,
+                tramplingBlocks,
+                "Blocks that can be trampled. Use registry names, e.g. \"minecraft:tallgrass\".");
+            tramplingEntityClassList = config.getStringList(
+                "tramplingEntityClassList",
+                Categories.trampling,
+                tramplingEntityClassList,
+                "Entity classes that trample blocks (or are excluded, depending on tramplingEntityClassListIsBlacklist). Use entity class names, e.g. \"Player\", \"Zombie\", \"Cow\".");
+            tramplingEntityClassListIsBlacklist = config.getBoolean(
+                "tramplingEntityClassListIsBlacklist",
+                Categories.trampling,
+                tramplingEntityClassListIsBlacklist,
+                "Whether tramplingEntityClassList is a blacklist (true) or whitelist (false).");
+
+            // water splash
+            waterSplashEnabled = config.getBoolean(
+                "waterSplashEnabled",
+                Categories.waterSplash,
+                waterSplashEnabled,
+                "Enable enhanced water splash particles when entities enter water.");
+            waterSplashEntityBlacklist = config.getStringList(
+                "waterSplashEntityBlacklist",
+                Categories.waterSplash,
+                waterSplashEntityBlacklist,
+                "Entity class simple-names that should never spawn a water splash. Matches Class#getSimpleName(), e.g. \"EntityXPOrb\", \"EntityArrow\".");
+
+            waterSplashFallbackColor = config.getInt(
+                "waterSplashFallbackColor",
+                Categories.waterSplash,
+                waterSplashFallbackColor,
+                0,
+                0xFFFFFF,
+                "Fallback splash tint (hex RGB) used when the water_still texture has no color information (vanilla 1.7.10 ships it as grayscale). Modulated by the biome's water color multiplier and the texture's luminance. Default 0x3F76E4 matches modern Minecraft water. Set to 0xFFFFFF to disable the fallback (splashes appear grey in untinted biomes).");
+            waterCascadeEnabled = config.getBoolean(
+                "waterCascadeEnabled",
+                Categories.waterSplash,
+                waterCascadeEnabled,
+                "Enable Particular-style cascade foam particles where falling water feeds into more water.");
+            waterfallSprayEnabled = config.getBoolean(
+                "waterfallSprayEnabled",
+                Categories.waterSplash,
+                waterfallSprayEnabled,
+                "Enable Particular-style waterfall spray particles that use the generic_0 mist sprite.");
+            waterfallSoundEnabled = config.getBoolean(
+                "waterfallSoundEnabled",
+                Categories.waterSplash,
+                waterfallSoundEnabled,
+                "Enable looping Dynamic Surroundings-style waterfall ambience for cascade seams.");
+            waterfallSoundVolume = config.getFloat(
+                "waterfallSoundVolume",
+                Categories.waterSplash,
+                waterfallSoundVolume,
+                0.0f,
+                2.0f,
+                "Volume multiplier for waterfall ambience.");
+            waterfallSoundRange = config.getFloat(
+                "waterfallSoundRange",
+                Categories.waterSplash,
+                waterfallSoundRange,
+                0.0f,
+                256.0f,
+                "Maximum attenuation distance in blocks for waterfall ambience. Vanilla range at the default maximum waterfall volume is 21.6 blocks; the default custom range is 64. Set to 0 to use vanilla sound range.");
+            waterfallSoundCutoff = config.getFloat(
+                "waterfallSoundCutoff",
+                Categories.waterSplash,
+                waterfallSoundCutoff,
+                0.0f,
+                3.0f,
+                "Minimum cascade strength required before waterfall ambience will play.");
+            chestBubblesEnabled = config.getBoolean(
+                "chestBubblesEnabled",
+                Categories.waterSplash,
+                chestBubblesEnabled,
+                "Enable Particular-style bubble bursts when opening underwater chests.");
+            soulSandChestBubblesEnabled = config.getBoolean(
+                "soulSandChestBubblesEnabled",
+                Categories.waterSplash,
+                soulSandChestBubblesEnabled,
+                "Enable Particular-style underwater chests on soul sand randomly opening and releasing bubbles.");
+            rainRipplesEnabled = config.getBoolean(
+                "rainRipplesEnabled",
+                Categories.waterSplash,
+                rainRipplesEnabled,
+                "Enable Particular-style water ripples where rain hits water surfaces.");
+            waterDripRipplesEnabled = config.getBoolean(
+                "waterDripRipplesEnabled",
+                Categories.waterSplash,
+                waterDripRipplesEnabled,
+                "Enable Particular-style water ripples where falling water drip particles hit water surfaces.");
+            waterRippleAlpha = config.getFloat(
+                "waterRippleAlpha",
+                Categories.waterSplash,
+                waterRippleAlpha,
+                0.0f,
+                1.0f,
+                "Opacity for Particular-style water ripples.");
+            rainRippleDensity = config.getFloat(
+                "rainRippleDensity",
+                Categories.waterSplash,
+                rainRippleDensity,
+                0.0f,
+                32.0f,
+                "Multiplier for how many rain ripples spawn on water surfaces.");
+            waterWakesEnabled = config.getBoolean(
+                "waterWakesEnabled",
+                Categories.waterSplash,
+                waterWakesEnabled,
+                "Enable Wakes-style trails behind boats, players, mobs, and items moving on the water surface.");
+            waterWakeAlpha = config.getFloat(
+                "waterWakeAlpha",
+                Categories.waterSplash,
+                waterWakeAlpha,
+                0.0f,
+                1.0f,
+                "Opacity for Wakes-style surface trails.");
+            waterWakeDensity = config.getFloat(
+                "waterWakeDensity",
+                Categories.waterSplash,
+                waterWakeDensity,
+                0.0f,
+                8.0f,
+                "Multiplier for how densely Wakes-style surface trails are stamped behind moving entities.");
+            config.getCategory(Categories.waterSplash)
+                .remove("cristalineWaterRippleAlphaMultiplier");
+
+            // waves
+            wavesEnabled = config.getBoolean(
+                "wavesEnabled",
+                Categories.waves,
+                wavesEnabled,
+                "Enable ambient coastal waves on vanilla water surfaces.");
+            waveSearchDistance = config.getInt(
+                "waveSearchDistance",
+                Categories.waves,
+                waveSearchDistance,
+                1,
+                64,
+                "Maximum block distance to search for a shoreline from a candidate water block.");
+            waveSpawnDistance = config.getFloat(
+                "waveSpawnDistance",
+                Categories.waves,
+                waveSpawnDistance,
+                8.0f,
+                256.0f,
+                "Maximum horizontal distance from the player where waves can spawn.");
+            waveSpawnAmount = config.getFloat(
+                "waveSpawnAmount",
+                Categories.waves,
+                waveSpawnAmount,
+                0.0f,
+                16.0f,
+                "Average number of waves to try spawning per spawn tick. Fractional values are accumulated over time.");
+            waveSpawnFrequency = config.getInt(
+                "waveSpawnFrequency",
+                Categories.waves,
+                waveSpawnFrequency,
+                0,
+                Integer.MAX_VALUE,
+                "Ticks between wave spawn attempts. Set to 0 to disable spawning without disabling rendering.");
+            waveSpawnDistanceFromShoreMin = config.getFloat(
+                "waveSpawnDistanceFromShoreMin",
+                Categories.waves,
+                waveSpawnDistanceFromShoreMin,
+                0.0f,
+                256.0f,
+                "Minimum water-block distance from shore for new waves.");
+            waveSpawnDistanceFromShoreMax = config.getFloat(
+                "waveSpawnDistanceFromShoreMax",
+                Categories.waves,
+                waveSpawnDistanceFromShoreMax,
+                0.0f,
+                512.0f,
+                "Maximum water-block distance from shore for new waves.");
+            waveSpawningFOVLimit = config.getFloat(
+                "waveSpawningFOVLimit",
+                Categories.waves,
+                waveSpawningFOVLimit,
+                0.0f,
+                360.0f,
+                "Maximum angle around the player's view direction where waves can spawn. 360 allows waves all around the player.");
+            waveVolume = config.getFloat(
+                "waveVolume",
+                Categories.waves,
+                waveVolume,
+                0.0f,
+                10.0f,
+                "Volume multiplier for breaking wave sounds.");
+            waveSoundRange = config.getFloat(
+                "waveSoundRange",
+                Categories.waves,
+                waveSoundRange,
+                0.0f,
+                512.0f,
+                "Maximum attenuation distance in blocks for breaking wave sounds. Vanilla range at the default worst-case wave volume is about 105 blocks; the default custom range is 128. Set to 0 to use vanilla sound range.");
+            waveBreakingSoundChance = config.getInt(
+                "waveBreakingSoundChance",
+                Categories.waves,
+                waveBreakingSoundChance,
+                0,
+                Integer.MAX_VALUE,
+                "How often waves play a breaking sound near shore. Higher values are rarer; 0 makes every eligible wave audible. Set waveVolume to 0 to silence waves.");
+            waveScale = config.getFloat(
+                "waveScale",
+                Categories.waves,
+                waveScale,
+                0.1f,
+                8.0f,
+                "Visual size multiplier for wave sprites.");
+            waveBiomeWhitelist = config.getStringList(
+                "waveBiomeWhitelist",
+                Categories.waves,
+                waveBiomeWhitelist,
+                "Biome IDs, biome names, or Forge BiomeDictionary entries where ambient coastal waves may spawn. Use entries like \"type:OCEAN\", \"type:BEACH\", \"Ocean\", or \"Coral Reef\". Matching is case-insensitive and ignores spaces, underscores, hyphens, and namespace prefixes. Defaults mirror the original Waves biome tag with 1.7.10 and Biomes O' Plenty ocean/beach biomes.");
+            waveBiomeBlacklist = config.getStringList(
+                "waveBiomeBlacklist",
+                Categories.waves,
+                waveBiomeBlacklist,
+                "Biomes to exclude from wave spawning even if they match the whitelist. Accepts the same format as waveBiomeWhitelist: biome IDs, names, or \"type:\" dictionary entries. Blacklisted biomes always take priority over whitelisted entries.");
+
+            // fluid interactions
+            fluidInteractionBlacklist = config.getStringList(
+                "fluidInteractionBlacklist",
+                Categories.fluidInteractions,
+                fluidInteractionBlacklist,
+                "Forge fluids this mod should ignore globally. Feature-specific blacklists are additive with this list. Use fluid registry names like \"water\", \"honey\", \"poison\", or \"hell_blood\". Block registry names like \"minecraft:water\" are also accepted as a fallback.");
+            splashFluidBlacklist = config.getStringList(
+                "splashFluidBlacklist",
+                Categories.fluidInteractions,
+                splashFluidBlacklist,
+                "Forge fluids this mod should ignore only for enhanced water splashes. This is additive with fluidInteractionBlacklist. Defaults include Biomes O' Plenty honey because it reads poorly as splash foam.");
+            cascadeFluidBlacklist = config.getStringList(
+                "cascadeFluidBlacklist",
+                Categories.fluidInteractions,
+                cascadeFluidBlacklist,
+                "Forge fluids this mod should ignore only for cascade foam, waterfall spray, and waterfall sounds. This is additive with fluidInteractionBlacklist. Defaults include Biomes O' Plenty honey because it reads poorly as waterfall foam.");
+
+            // rain splash
+            rainSplashEnabled = config.getBoolean(
+                "rainSplashEnabled",
+                Categories.rainSplash,
+                rainSplashEnabled,
+                "Enable rain splash accent sounds on footsteps when walking in rain.");
+            rainSplashVolume = config.getFloat(
+                "rainSplashVolume",
+                Categories.rainSplash,
+                rainSplashVolume,
+                0.0f,
+                1.0f,
+                "Base volume for rain splash sounds. Actual volume is scaled by rain intensity.");
+            rainSplashEntityClassList = config.getStringList(
+                "rainSplashEntityClassList",
+                Categories.rainSplash,
+                rainSplashEntityClassList,
+                "List of mobs which either play rain splash sounds, or don't, depending on rainSplashEntityClassListIsBlacklist.");
+            rainSplashEntityClassListIsBlacklist = config.getBoolean(
+                "rainSplashEntityClassListIsBlacklist",
+                Categories.rainSplash,
+                rainSplashEntityClassListIsBlacklist,
+                "Whether rainSplashEntityClassList is a blacklist (or a whitelist).");
+
+            // smooth gui
+            smoothGuiEnabled = config.getBoolean(
+                "smoothGuiEnabled",
+                Categories.smoothGui,
+                smoothGuiEnabled,
+                "Enable smooth GUI opening animations (slide-in and background fade).");
+            smoothGuiAnimationTime = config.getInt(
+                "smoothGuiAnimationTime",
+                Categories.smoothGui,
+                smoothGuiAnimationTime,
+                10,
+                10000,
+                "Animation duration in milliseconds.");
+            smoothGuiAnimationScale = config.getFloat(
+                "smoothGuiAnimationScale",
+                Categories.smoothGui,
+                smoothGuiAnimationScale,
+                0.0f,
+                100.0f,
+                "Animation intensity multiplier. Higher values = larger displacement.");
+            smoothGuiFadeBackground = config.getBoolean(
+                "smoothGuiFadeBackground",
+                Categories.smoothGui,
+                smoothGuiFadeBackground,
+                "Fade in the dark background overlay when opening GUIs in-world.");
+            smoothGuiBackgroundFadeTime = config.getInt(
+                "smoothGuiBackgroundFadeTime",
+                Categories.smoothGui,
+                smoothGuiBackgroundFadeTime,
+                1,
+                10000,
+                "Background fade duration in milliseconds.");
+            smoothGuiAnimationStyle = config.getString(
+                "smoothGuiAnimationStyle",
+                Categories.smoothGui,
+                smoothGuiAnimationStyle,
+                "Easing curve for the animation. \"BACK\" has a slight overshoot bounce, \"CUBIC\" is a simple smooth curve.",
+                new String[] { "BACK", "CUBIC" });
+            smoothGuiAnimationDirection = config.getString(
+                "smoothGuiAnimationDirection",
+                Categories.smoothGui,
+                smoothGuiAnimationDirection,
+                "Direction the GUI slides in from. \"DOWN\" slides up from below, \"UP\" slides down from above.",
+                new String[] { "DOWN", "UP" });
+            smoothGuiExcludedScreens = config.getStringList(
+                "smoothGuiExcludedScreens",
+                Categories.smoothGui,
+                smoothGuiExcludedScreens,
+                "GUI screen classes that should not be animated. Can be simple names (e.g. \"GuiChat\") or fully qualified (e.g. \"net.minecraft.client.gui.GuiChat\").");
+
+            // camera
+            cameraOverhaulEnabled = config.getBoolean(
+                "cameraOverhaulEnabled",
+                Categories.camera,
+                cameraOverhaulEnabled,
+                "Enable dynamic camera effects (velocity pitch, strafing roll, turning roll, idle sway).");
+            cameraOverhaulThirdPerson = config.getBoolean(
+                "cameraOverhaulThirdPerson",
+                Categories.camera,
+                cameraOverhaulThirdPerson,
+                "Apply camera effects in third person view.");
+            cameraDisableWhilePaused = config.getBoolean(
+                "cameraDisableWhilePaused",
+                Categories.camera,
+                cameraDisableWhilePaused,
+                "Disable camera offsets and shakes while the pause menu is open.");
+            cameraKeepFirstPersonHandStable = config.getBoolean(
+                "cameraKeepFirstPersonHandStable",
+                Categories.camera,
+                cameraKeepFirstPersonHandStable,
+                "Keep first-person hand/item stable instead of inheriting camera tilt effects.");
+            cameraTurningRollAccumulation = config.getFloat(
+                "cameraTurningRollAccumulation",
+                Categories.camera,
+                cameraTurningRollAccumulation,
+                0.0f,
+                100.0f,
+                "How quickly turning roll accumulates when rotating the camera.");
+            cameraTurningRollIntensity = config.getFloat(
+                "cameraTurningRollIntensity",
+                Categories.camera,
+                cameraTurningRollIntensity,
+                0.0f,
+                100.0f,
+                "Maximum intensity of the turning roll effect.");
+            cameraTurningRollSmoothing = config.getFloat(
+                "cameraTurningRollSmoothing",
+                Categories.camera,
+                cameraTurningRollSmoothing,
+                0.0f,
+                100.0f,
+                "Smoothing factor for turning roll decay. Higher = slower decay.");
+            cameraSwayIntensity = config.getFloat(
+                "cameraSwayIntensity",
+                Categories.camera,
+                cameraSwayIntensity,
+                0.0f,
+                100.0f,
+                "Intensity of idle camera sway.");
+            cameraSwayFrequency = config.getFloat(
+                "cameraSwayFrequency",
+                Categories.camera,
+                cameraSwayFrequency,
+                0.01f,
+                100.0f,
+                "Frequency of idle camera sway oscillation.");
+            cameraSwayFadeInDelay = config.getFloat(
+                "cameraSwayFadeInDelay",
+                Categories.camera,
+                cameraSwayFadeInDelay,
+                0.0f,
+                100.0f,
+                "Seconds of inactivity before camera sway begins fading in.");
+            cameraSwayFadeInLength = config.getFloat(
+                "cameraSwayFadeInLength",
+                Categories.camera,
+                cameraSwayFadeInLength,
+                0.0f,
+                100.0f,
+                "Duration in seconds for camera sway to fully fade in.");
+            cameraSwayFadeOutLength = config.getFloat(
+                "cameraSwayFadeOutLength",
+                Categories.camera,
+                cameraSwayFadeOutLength,
+                0.0f,
+                100.0f,
+                "Duration in seconds for camera sway to fade out when the player moves.");
+            cameraFallingShakeEnabled = config.getBoolean(
+                "cameraFallingShakeEnabled",
+                Categories.camera,
+                cameraFallingShakeEnabled,
+                "Add continuous shake while descending after falling past a threshold.");
+            cameraFallingShakeMinDistance = config.getFloat(
+                "cameraFallingShakeMinDistance",
+                Categories.camera,
+                cameraFallingShakeMinDistance,
+                0.0f,
+                1000.0f,
+                "Minimum fall distance before in-air fall shake starts.");
+            cameraFallingShakeMaxDistance = config.getFloat(
+                "cameraFallingShakeMaxDistance",
+                Categories.camera,
+                cameraFallingShakeMaxDistance,
+                0.1f,
+                1000.0f,
+                "Fall distance at which in-air fall shake reaches maximum intensity.");
+            cameraFallingShakeIntensity = config.getFloat(
+                "cameraFallingShakeIntensity",
+                Categories.camera,
+                cameraFallingShakeIntensity,
+                0.0f,
+                100.0f,
+                "Maximum intensity of in-air fall shake.");
+            cameraFallingShakeFrequency = config.getFloat(
+                "cameraFallingShakeFrequency",
+                Categories.camera,
+                cameraFallingShakeFrequency,
+                0.1f,
+                100.0f,
+                "Noise frequency of in-air fall shake.");
+            cameraShakeMaxIntensity = config.getFloat(
+                "cameraShakeMaxIntensity",
+                Categories.camera,
+                cameraShakeMaxIntensity,
+                0.0f,
+                100.0f,
+                "Maximum combined intensity of all active screen shakes.");
+            cameraShakeMaxFrequency = config.getFloat(
+                "cameraShakeMaxFrequency",
+                Categories.camera,
+                cameraShakeMaxFrequency,
+                0.1f,
+                100.0f,
+                "Maximum frequency of screen shake noise sampling.");
+            cameraExplosionTrauma = config.getFloat(
+                "cameraExplosionTrauma",
+                Categories.camera,
+                cameraExplosionTrauma,
+                0.0f,
+                1.0f,
+                "Trauma intensity for explosion screen shakes.");
+            cameraExplosionLength = config.getFloat(
+                "cameraExplosionLength",
+                Categories.camera,
+                cameraExplosionLength,
+                0.0f,
+                100.0f,
+                "Duration in seconds for explosion screen shakes.");
+            cameraThunderTrauma = config.getFloat(
+                "cameraThunderTrauma",
+                Categories.camera,
+                cameraThunderTrauma,
+                0.0f,
+                1.0f,
+                "Trauma intensity for lightning/thunder screen shakes.");
+            cameraHandSwingTrauma = config.getFloat(
+                "cameraHandSwingTrauma",
+                Categories.camera,
+                cameraHandSwingTrauma,
+                0.0f,
+                1.0f,
+                "Trauma intensity for hand swing screen shakes.");
+            cameraFallShakeEnabled = config.getBoolean(
+                "cameraFallShakeEnabled",
+                Categories.camera,
+                cameraFallShakeEnabled,
+                "Add a landing screen shake when falling from sufficient height.");
+            cameraFallShakeMinDistance = config.getFloat(
+                "cameraFallShakeMinDistance",
+                Categories.camera,
+                cameraFallShakeMinDistance,
+                0.0f,
+                1000.0f,
+                "Minimum fall distance before landing shake starts.");
+            cameraFallShakeMaxDistance = config.getFloat(
+                "cameraFallShakeMaxDistance",
+                Categories.camera,
+                cameraFallShakeMaxDistance,
+                0.1f,
+                1000.0f,
+                "Fall distance at which landing shake reaches maximum trauma.");
+            cameraFallShakeMaxTrauma = config.getFloat(
+                "cameraFallShakeMaxTrauma",
+                Categories.camera,
+                cameraFallShakeMaxTrauma,
+                0.0f,
+                1.0f,
+                "Maximum trauma applied by landing shake.");
+            cameraFallShakeFrequency = config.getFloat(
+                "cameraFallShakeFrequency",
+                Categories.camera,
+                cameraFallShakeFrequency,
+                0.1f,
+                100.0f,
+                "Noise frequency multiplier for landing shake.");
+            cameraFallShakeLength = config.getFloat(
+                "cameraFallShakeLength",
+                Categories.camera,
+                cameraFallShakeLength,
+                0.05f,
+                100.0f,
+                "Duration in seconds of landing shake.");
+            cameraWalkStrafingRoll = config.getFloat(
+                "cameraWalkStrafingRoll",
+                Categories.camera,
+                cameraWalkStrafingRoll,
+                0.0f,
+                100.0f,
+                "Strafing roll factor when walking.");
+            cameraWalkForwardPitch = config.getFloat(
+                "cameraWalkForwardPitch",
+                Categories.camera,
+                cameraWalkForwardPitch,
+                0.0f,
+                100.0f,
+                "Forward velocity pitch factor when walking.");
+            cameraWalkVerticalPitch = config.getFloat(
+                "cameraWalkVerticalPitch",
+                Categories.camera,
+                cameraWalkVerticalPitch,
+                0.0f,
+                100.0f,
+                "Vertical velocity pitch factor when walking.");
+            cameraWalkHorizSmoothing = config.getFloat(
+                "cameraWalkHorizSmoothing",
+                Categories.camera,
+                cameraWalkHorizSmoothing,
+                0.0f,
+                100.0f,
+                "Horizontal velocity smoothing factor when walking.");
+            cameraWalkVertSmoothing = config.getFloat(
+                "cameraWalkVertSmoothing",
+                Categories.camera,
+                cameraWalkVertSmoothing,
+                0.0f,
+                100.0f,
+                "Vertical velocity smoothing factor when walking.");
+            cameraFlyStrafingRoll = config.getFloat(
+                "cameraFlyStrafingRoll",
+                Categories.camera,
+                cameraFlyStrafingRoll,
+                -100.0f,
+                100.0f,
+                "Strafing roll factor when flying with Et Futurum Requiem's Elytra. Negative matches Camera Overhaul's vanilla Elytra context.");
+            cameraFlyForwardPitch = config.getFloat(
+                "cameraFlyForwardPitch",
+                Categories.camera,
+                cameraFlyForwardPitch,
+                0.0f,
+                100.0f,
+                "Forward velocity pitch factor when flying with Et Futurum Requiem's Elytra.");
+            cameraFlyVerticalPitch = config.getFloat(
+                "cameraFlyVerticalPitch",
+                Categories.camera,
+                cameraFlyVerticalPitch,
+                0.0f,
+                100.0f,
+                "Vertical velocity pitch factor when flying with Et Futurum Requiem's Elytra.");
+            cameraFlyHorizSmoothing = config.getFloat(
+                "cameraFlyHorizSmoothing",
+                Categories.camera,
+                cameraFlyHorizSmoothing,
+                0.0f,
+                100.0f,
+                "Horizontal velocity smoothing factor when flying with Et Futurum Requiem's Elytra.");
+            cameraFlyVertSmoothing = config.getFloat(
+                "cameraFlyVertSmoothing",
+                Categories.camera,
+                cameraFlyVertSmoothing,
+                0.0f,
+                100.0f,
+                "Vertical velocity smoothing factor when flying with Et Futurum Requiem's Elytra.");
+            cameraRideStrafingRoll = config.getFloat(
+                "cameraRideStrafingRoll",
+                Categories.camera,
+                cameraRideStrafingRoll,
+                0.0f,
+                100.0f,
+                "Strafing roll factor when riding.");
+            cameraRideForwardPitch = config.getFloat(
+                "cameraRideForwardPitch",
+                Categories.camera,
+                cameraRideForwardPitch,
+                0.0f,
+                100.0f,
+                "Forward velocity pitch factor when riding.");
+            cameraRideVerticalPitch = config.getFloat(
+                "cameraRideVerticalPitch",
+                Categories.camera,
+                cameraRideVerticalPitch,
+                0.0f,
+                100.0f,
+                "Vertical velocity pitch factor when riding.");
+            cameraRideHorizSmoothing = config.getFloat(
+                "cameraRideHorizSmoothing",
+                Categories.camera,
+                cameraRideHorizSmoothing,
+                0.0f,
+                100.0f,
+                "Horizontal velocity smoothing factor when riding.");
+            cameraRideVertSmoothing = config.getFloat(
+                "cameraRideVertSmoothing",
+                Categories.camera,
+                cameraRideVertSmoothing,
+                0.0f,
+                100.0f,
+                "Vertical velocity smoothing factor when riding.");
+
+            // camera clipping
+            cameraClippingSmoothing = config.getFloat(
+                "cameraClippingSmoothing",
+                Categories.camera,
+                cameraClippingSmoothing,
+                0.0f,
+                1.0f,
+                "Smoothing factor for third-person camera clipping prevention. 0 = instant snap (vanilla), higher = smoother transitions when the camera hits geometry.");
+            cameraFollowSmoothing = config.getFloat(
+                "cameraFollowSmoothing",
+                Categories.camera,
+                cameraFollowSmoothing,
+                0.0f,
+                1.0f,
+                "Smooth camera follow in third person. The camera trails behind the player's position instead of being rigidly attached. 0 = instant follow (vanilla), higher = more lag.");
+            cameraPlayerFadeEnabled = config.getBoolean(
+                "cameraPlayerFadeEnabled",
+                Categories.camera,
+                cameraPlayerFadeEnabled,
+                "Gradually fade out the player model as the third-person camera gets very close (e.g. clipping against walls).");
+            cameraPlayerFadeStartDistance = config.getFloat(
+                "cameraPlayerFadeStartDistance",
+                Categories.camera,
+                cameraPlayerFadeStartDistance,
+                0.0f,
+                10.0f,
+                "Camera-to-player distance at which the fade begins. At this distance the player is fully opaque.");
+            cameraPlayerFadeEndDistance = config.getFloat(
+                "cameraPlayerFadeEndDistance",
+                Categories.camera,
+                cameraPlayerFadeEndDistance,
+                0.0f,
+                10.0f,
+                "Camera-to-player distance at which the player is fully invisible.");
+            cameraSoundCentering = config.getBoolean(
+                "cameraSoundCentering",
+                Categories.camera,
+                cameraSoundCentering,
+                "Place the audio listener at the camera position instead of the player in third person. Makes positional audio match the camera perspective.");
+            cameraVerticalOffset = config.getFloat(
+                "cameraVerticalOffset",
+                Categories.camera,
+                cameraVerticalOffset,
+                -1.0f,
+                1.0f,
+                "Vertical offset applied to the third-person camera in blocks. Positive values raise the camera, negative lower it. Useful to compensate for mods that alter entity eye height during rendering (e.g. DBC/JBRA).");
+            cameraFovOverrideEnabled = config.getBoolean(
+                "cameraFovOverrideEnabled",
+                Categories.camera,
+                cameraFovOverrideEnabled,
+                "Override the camera FOV when in third person view.");
+            cameraFovOverride = config.getFloat(
+                "cameraFovOverride",
+                Categories.camera,
+                cameraFovOverride,
+                30.0f,
+                110.0f,
+                "Camera FOV when in third person view. Only applies when cameraFovOverrideEnabled is true.");
+            simplePerspectiveToggle = config.getBoolean(
+                "simplePerspectiveToggle",
+                Categories.camera,
+                simplePerspectiveToggle,
+                "Make F5 toggle between first person and third person back, skipping the third person front view.");
+
+            // decoupled camera
+            decoupledCameraEnabled = config.getBoolean(
+                "decoupledCameraEnabled",
+                Categories.camera,
+                decoupledCameraEnabled,
+                "Enable decoupled camera when Shoulder Surfing is active. Mouse rotates camera independently of player body.");
+            decoupledCameraOffsetDecay = config.getFloat(
+                "decoupledCameraOffsetDecay",
+                Categories.camera,
+                decoupledCameraOffsetDecay,
+                0.0f,
+                1.0f,
+                "How fast the camera goes back after releasing alt. 0 = instant snap back, 1 = no decay (offsets persist).");
+            decoupledCameraPlayerTurnSpeed = config.getFloat(
+                "decoupledCameraPlayerTurnSpeed",
+                Categories.camera,
+                decoupledCameraPlayerTurnSpeed,
+                0.0f,
+                1.0f,
+                "How fast the player body turns to face movement direction when decoupled. 0 = no turning, 1 = instant.");
+            decoupledCameraTurningLockTicks = config.getInt(
+                "decoupledCameraTurningLockTicks",
+                Categories.camera,
+                decoupledCameraTurningLockTicks,
+                0,
+                100,
+                "How many ticks the player body stays facing the interaction target after attacking or using. 0 = disabled.");
+            decoupledCameraAimingActions = config.getStringList(
+                "decoupledCameraAimingActions",
+                Categories.camera,
+                decoupledCameraAimingActions,
+                "Item use actions that trigger aiming mode (player body follows camera so projectiles fire at crosshair). Valid values: bow, eat, drink, block, none.");
+            decoupledCameraAimingItems = config.getStringList(
+                "decoupledCameraAimingItems",
+                Categories.camera,
+                decoupledCameraAimingItems,
+                "Items that couple the camera when held (for instant-throw projectiles like snowballs). Player body faces crosshair direction so projectiles fire accurately. Format: \"modid:itemname\" (any meta), \"modid:itemname@N\" (exact meta), \"modid:itemname@N-M\" (meta range). Splash potions use meta 16384-32767.");
+            decoupledCameraAimFirstPerson = config.getBoolean(
+                "decoupledCameraAimFirstPerson",
+                Categories.camera,
+                decoupledCameraAimFirstPerson,
+                "Switch to vanilla first person view when aiming in decoupled camera mode. Gives correct bow/projectile aiming for free.");
+            decoupledCameraAimTransitionTicks = config.getInt(
+                "decoupledCameraAimTransitionTicks",
+                Categories.camera,
+                decoupledCameraAimTransitionTicks,
+                1,
+                40,
+                "Duration of the aim-to-first-person transition in ticks (20 ticks = 1 second).");
+            decoupledCameraAimTransitionEasing = config.getString(
+                "decoupledCameraAimTransitionEasing",
+                Categories.camera,
+                decoupledCameraAimTransitionEasing,
+                "Easing curve for the aim transition. Options: linear, ease_in, ease_out, ease_in_out, smooth.",
+                new String[] { "linear", "ease_in", "ease_out", "ease_in_out", "smooth" });
+
+            // sound shakes
+            cameraSoundShakesEnabled = config.getBoolean(
+                "cameraSoundShakesEnabled",
+                Categories.camera,
+                cameraSoundShakesEnabled,
+                "Enable camera shakes triggered by specific sounds.");
+            cameraSoundShakes = config.getStringList(
+                "cameraSoundShakes",
+                Categories.camera,
+                cameraSoundShakes,
+                "Sounds that trigger camera shake. Format: \"sound=<name>;trauma=<0..1>;radius=<blocks>;frequency=<speed>;duration=<seconds>\". Only sound and trauma are required. trauma is scaled by the sound's effective volume (including category/master sliders). radius (default 16) is the distance falloff range. frequency (default 1.0) controls shake speed. duration (default 0.3) is shake length in seconds. Use the sound resource path (e.g. mob.zombie.step) or full name (e.g. minecraft:mob.zombie.step) to only match a specific domain. Examples: \"sound=mob.zombie.step;trauma=0.05\", \"sound=random.explode;trauma=0.8;radius=32;frequency=1.5;duration=2.0\".");
+
+            // misc
+            cakeEatingParticlesEnabled = config.getBoolean(
+                "cakeEatingParticlesEnabled",
+                Categories.misc,
+                cakeEatingParticlesEnabled,
+                "Enable Particular-style eating sound and crumbs when taking a bite of cake.");
+            blizzSnowTrailEnabled = config.getBoolean(
+                "blizzSnowTrailEnabled",
+                Categories.misc,
+                blizzSnowTrailEnabled,
+                "Allow Thermal Foundation Blizz mobs to leave a snow trail like vanilla snow golems.");
+
+            loadingProgressBarEnabled = config.getBoolean(
+                "loadingProgressBarEnabled",
+                Categories.misc,
+                loadingProgressBarEnabled,
+                "Bring back progress bar to the world loading screen.");
+
+            // Debug
+            debugMode = config.getBoolean("debugMode", Categories.debug, debugMode, "Enable debug logging");
+            printMobNames = config.getBoolean(
+                "printMobNames",
+                Categories.debug,
+                printMobNames,
+                "Print all registered mob class names to the log during postInit. Useful for configuring entityClassList and entityOverrides.");
+
+        } catch (Exception e) {
+            System.err.println("Error loading config: " + e.getMessage());
+        } finally {
+            if (save) {
+                config.save();
+            }
+        }
+    }
+
+    public static Configuration getRawConfig() {
+        return config;
+    }
+}

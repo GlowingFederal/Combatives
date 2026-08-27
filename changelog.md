@@ -233,3 +233,13 @@
   relying on a later animation path to overwrite them.
 - Documented the vanilla/Combatives sleep lifecycle, transition invariants, and
   additive An Extra Touch camera pipeline; no compatibility code is required.
+
+(ee707c3 Preserve mounted camera ownership)
+
+- Preserved the camera offset already selected by vanilla or a vehicle mod while
+  the view player is riding, rather than replacing a seat position with standing
+  Combatives geometry.
+- Returned mounted block/entity targeting to the native vehicle-compatible path
+  while retaining Combatives' authoritative pose ray when independently moving.
+- Added mount-transition camera diagnostics and documented the generic ownership
+  boundary, dismount behavior, compatibility risks, and in-game regression matrix.

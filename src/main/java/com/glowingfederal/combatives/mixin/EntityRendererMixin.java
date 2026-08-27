@@ -30,6 +30,7 @@ public abstract class EntityRendererMixin {
     private float combatives$partialTicks;
     private Pose combatives$lastLoggedPose;
     private boolean combatives$lastLoggedLowPose;
+    private Entity combatives$lastLoggedMount;
     private double combatives$lastBaseCameraY = Double.NaN;
 
     @Inject(method = "getMouseOver", at = @At("HEAD"))
@@ -128,18 +129,19 @@ public abstract class EntityRendererMixin {
         }
 
         EntityPlayer player = (EntityPlayer) entity;
-        float poseCameraOffset = this.combatives$getPoseCameraOffset(player, eyeHeight);
-        this.combatives$entityEyeHeight = poseCameraOffset;
+        float calculatedPoseOffset = this.combatives$getPoseCameraOffset(player, eyeHeight);
+        float selectedCameraOffset = player.isRiding() ? eyeHeight : calculatedPoseOffset;
+        this.combatives$entityEyeHeight = selectedCameraOffset;
 
-        this.combatives$eyeHeight = poseCameraOffset;
-        this.combatives$previousEyeHeight = poseCameraOffset;
-        this.combatives$logCameraOrigin(player, eyeHeight, poseCameraOffset);
-        TargetingDiagnostics.captureActualCameraOrigin(player, this.combatives$partialTicks, poseCameraOffset);
-        return poseCameraOffset;
+        this.combatives$eyeHeight = selectedCameraOffset;
+        this.combatives$previousEyeHeight = selectedCameraOffset;
+        this.combatives$logCameraOrigin(player, eyeHeight, calculatedPoseOffset, selectedCameraOffset);
+        TargetingDiagnostics.captureActualCameraOrigin(player, this.combatives$partialTicks, selectedCameraOffset);
+        return selectedCameraOffset;
     }
 
     private float combatives$getPoseCameraOffset(EntityPlayer player, float vanillaCameraOffset) {
-        if (!(player instanceof ICombativesPlayerPose) || player.isRiding()) {
+        if (!(player instanceof ICombativesPlayerPose)) {
             return vanillaCameraOffset;
         }
 
@@ -184,30 +186,41 @@ public abstract class EntityRendererMixin {
         return pose.getPose() == Pose.SWIMMING || pose.isSwimming() || pose.isCrawlKeyDown() || pose.isActuallySwimming();
     }
 
-    private void combatives$logCameraOrigin(EntityPlayer player, float vanillaCameraOffset, float poseCameraOffset) {
+    private void combatives$logCameraOrigin(EntityPlayer player, float incomingCameraOffset,
+                                             float calculatedPoseOffset, float selectedCameraOffset) {
         if (!CombativesConfig.debugCamera || Combatives.logger == null) {
             return;
         }
         Pose pose = player instanceof ICombativesPlayerPose ? ((ICombativesPlayerPose) player).getPose() : Pose.STANDING;
         boolean lowPose = this.combatives$isLowPose(player);
         double interpolatedPosY = player.prevPosY + (player.posY - player.prevPosY) * (double) this.combatives$partialTicks;
-        double vanillaBaseCameraY = interpolatedPosY - vanillaCameraOffset;
-        double baseCameraY = interpolatedPosY - poseCameraOffset;
+        double vanillaBaseCameraY = interpolatedPosY - incomingCameraOffset;
+        double baseCameraY = interpolatedPosY - selectedCameraOffset;
         float proceduralTranslationY = CameraController.INSTANCE.getLastTranslationY();
         double finalCameraY = baseCameraY + proceduralTranslationY;
+        boolean ownershipChanged = this.combatives$lastLoggedMount != player.ridingEntity;
         boolean poseChanged = this.combatives$lastLoggedPose != pose || this.combatives$lastLoggedLowPose != lowPose;
 
-        if (poseChanged) {
+        if (poseChanged || ownershipChanged) {
             Combatives.logger.info(
-                    "Combatives camera origin: playerClass={} pose={} partialTicks={} interpolatedPosY={} yOffset={} getEyeHeight={} baseCameraY={} poseCameraOffset={} proceduralTranslationY={} finalCameraY={}",
+                    "Combatives camera origin: riderClass={} ridingEntityClass={} pose={} partialTicks={} posY={} interpolatedPosY={} boundingBoxMinY={} yOffset={} getEyeHeight={} effectiveEyeAboveMinY={} incomingCameraOffset={} calculatedPoseOffset={} selectedCameraOffset={} owner={} baseCameraY={} proceduralTranslationY={} finalCameraY={}",
                     player.getClass().getName(),
+                    player.ridingEntity == null ? "none" : player.ridingEntity.getClass().getName(),
                     pose,
                     this.combatives$partialTicks,
+                    player.posY,
                     interpolatedPosY,
+                    player.boundingBox.minY,
                     player.yOffset,
                     player.getEyeHeight(),
+                    player instanceof ICombativesPlayerPose
+                            ? ((ICombativesPlayerPose) player).getEffectiveGeometry().eyeAboveMinY
+                            : Float.NaN,
+                    incomingCameraOffset,
+                    calculatedPoseOffset,
+                    selectedCameraOffset,
+                    player.isRiding() ? "mount" : "combatives_pose",
                     baseCameraY,
-                    poseCameraOffset,
                     proceduralTranslationY,
                     finalCameraY
             );
@@ -216,11 +229,12 @@ public abstract class EntityRendererMixin {
             }
             this.combatives$lastLoggedPose = pose;
             this.combatives$lastLoggedLowPose = lowPose;
+            this.combatives$lastLoggedMount = player.ridingEntity;
             this.combatives$lastBaseCameraY = baseCameraY;
         }
 
         if (this.combatives$isVanillaBaselinePose(player) && Math.abs(baseCameraY - vanillaBaseCameraY) > 1.0E-4D) {
-            Combatives.logger.warn("Combatives camera origin warning: STANDING base camera Y differs from vanilla; vanillaBaseCameraY={} combativesBaseCameraY={} vanillaOffset={} poseOffset={}", vanillaBaseCameraY, baseCameraY, vanillaCameraOffset, poseCameraOffset);
+            Combatives.logger.warn("Combatives camera origin warning: STANDING base camera Y differs from incoming value; incomingBaseCameraY={} combativesBaseCameraY={} incomingOffset={} selectedOffset={}", vanillaBaseCameraY, baseCameraY, incomingCameraOffset, selectedCameraOffset);
         }
     }
 

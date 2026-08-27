@@ -7,6 +7,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.Vec3;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.interaction.InteractionRay;
+import com.glowingfederal.combatives.compat.mcheli.MCHeliCameraCompat;
 
 /**
  * The non-presentational, first-person ray represented by the center pixel.
@@ -44,7 +45,7 @@ public final class AuthoritativeViewRay {
 
         // A vehicle may pair its orientCamera offset with its own targeting
         // mutations. Do not replace either half of that mounted-camera contract.
-        if (entity.isRiding()) {
+        if (entity.isRiding() || MCHeliCameraCompat.ownsCamera(entity)) {
             return;
         }
 

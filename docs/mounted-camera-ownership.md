@@ -41,8 +41,38 @@ ownership violation was possible for vanilla horses and any custom mount.
   player geometry. The existing dismount handoff remains responsible for standing clearance;
   there is no cached mounted offset to leak into the next frame.
 
-No MCHeli type, class name, reflection, or optional dependency is involved. The boundary is the
-vanilla riding relationship, so it applies equally to horses, MCHeli seats, and custom mounts.
+The normal boundary remains the vanilla riding relationship, so it applies equally to horses,
+MCHeli's direct rider view, and custom mounts. MCHeli also has a distinct gunner/always-camera
+path which cannot be identified by that relationship and is handled by the optional boundary
+below.
+
+## MCHeli's two camera paths
+
+The bundled MCHeli sources confirm that planes and tanks share the broad tick-handler pattern,
+but each can select one of two render view entities. In the ordinary pilot path,
+`MCP_ClientPlaneTickHandler` / `MCH_ClientTankTickHandler` restores the real client player as
+`renderViewEntity`. The player is directly riding the aircraft (or an MCHeli seat), so the
+generic mounted pass-through retains the offset which reaches vanilla `orientCamera`. This is
+the path on which the F-22 height was already corrected.
+
+In gunner mode, camera-id views, or a vehicle configured with `isAlwaysCameraView`, those tick
+handlers instead call `MCH_ViewEntityDummy.update(vehicle.camera)` and install that dummy as
+`renderViewEntity`. The tank updates `vehicle.camera` from its vehicle/seat transform before the
+client tick handler copies its exact position and rotation into the dummy. The dummy subclasses
+`EntityPlayerSP`, but deliberately has no `ridingEntity`. Consequently it enters vanilla
+`orientCamera`, where the old Combatives rule saw an unmounted player and replaced the incoming
+MCHeli camera local with standing player geometry. The resulting upward shift was not a tank
+renderer `glTranslate`: `MCH_RenderTank` only positions tank model geometry after the world
+camera has already been established.
+
+`compat.mcheli.MCHeliCameraCompat` now recognizes the exact discovered dummy class by name. It
+does not load, link, reflect over, or mix into any MCHeli class, so Combatives remains safe when
+MCHeli is absent. The check is centralized rather than scattered through general camera code.
+For that dummy, Combatives preserves the incoming `orientCamera` local just as it does for a
+direct rider and labels debug ownership `MCHELI`. Procedural transforms are still composed at
+the `orientCamera` tail, after MCHeli's base. Combatives also leaves `getMouseOver` on its native
+path for the dummy, avoiding an AABB-derived ray from a synthetic player; MCHeli weapon/gunner
+aiming remains entirely MCHeli-owned.
 
 ## Debugging
 
@@ -67,3 +97,7 @@ base camera Y, and procedural/final Y. Normal users receive no additional loggin
    disabled; effects should compose after, rather than replace, the mounted base camera.
 8. On a dedicated server, repeat interaction checks before and after riding and confirm server
    hit results agree with the client crosshair.
+9. Test an F-22 and another aircraft in pilot, camera-id, and gunner modes; switch first/third
+   person and enter/exit repeatedly while watching for a one-frame height jump.
+10. Repeat with a tank and another ground vehicle as driver and, where supported, passenger or
+    gunner. Exercise vehicle weapon aiming and confirm ordinary block targeting after dismount.

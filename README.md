@@ -55,8 +55,9 @@ pathological input spikes, but is separate from normal camera effects.
   than hard-coded mount classes. Rideable mods remain responsible for choosing
   valid dismount positions.
 - Compatibility is deliberately defensive, but universal mod compatibility is
-  not claimed. See the [player geometry and MPM compatibility notes](docs/player-geometry-and-mpm-compatibility.md)
-  and [riding/crawling camera notes](docs/riding-and-crawling-camera.md), plus the
+  not claimed. See the [player geometry and MPM compatibility notes](docs/player-geometry-and-mpm-compatibility.md),
+  [mounted camera ownership audit](docs/mounted-camera-ownership.md), and
+  [riding/crawling camera notes](docs/riding-and-crawling-camera.md), plus the
   [sleep/crawl render lifecycle audit](docs/sleep-pose-and-camera-lifecycle.md)
   for the currently documented boundaries, including the An Extra Touch camera
   composition analysis.

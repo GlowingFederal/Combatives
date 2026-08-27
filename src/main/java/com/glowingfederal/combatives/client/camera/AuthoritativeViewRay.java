@@ -42,6 +42,12 @@ public final class AuthoritativeViewRay {
             return;
         }
 
+        // A vehicle may pair its orientCamera offset with its own targeting
+        // mutations. Do not replace either half of that mounted-camera contract.
+        if (entity.isRiding()) {
+            return;
+        }
+
         if (entity instanceof EntityPlayer && entity instanceof ICombativesPlayerPose) {
             InteractionRay ray = InteractionRay.interpolated((EntityPlayer) entity, partialTicks);
             targetEntity = entity;

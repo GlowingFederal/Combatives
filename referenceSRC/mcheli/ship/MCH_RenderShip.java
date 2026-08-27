@@ -1,0 +1,149 @@
+package mcheli.ship;
+
+import mcheli.aircraft.MCH_BaseVehicleInfo;
+import mcheli.aircraft.MCH_EntityBaseVehicle;
+import mcheli.aircraft.MCH_RenderBaseVehicle;
+import mcheli.wrapper.W_Render;
+import net.minecraft.entity.Entity;
+import net.minecraft.util.ResourceLocation;
+import org.lwjgl.opengl.GL11;
+
+import java.util.Iterator;
+
+public class MCH_RenderShip extends MCH_RenderBaseVehicle {
+
+    public MCH_RenderShip() {
+        super.shadowSize = 2.0F;
+    }
+
+    public void renderBaseVehicle(MCH_EntityBaseVehicle entity, double posX, double posY, double posZ, float yaw, float pitch, float roll, float tickTime) {
+        MCH_ShipInfo shipInfo = null;
+        if(entity != null && entity instanceof MCH_EntityShip) {
+            MCH_EntityShip ship = (MCH_EntityShip)entity;
+            shipInfo = ship.getShipInfo();
+            if(shipInfo != null) {
+                this.renderDebugHitBox(ship, posX, posY, posZ, yaw, pitch, roll);
+                this.renderDebugPilotSeat(ship, posX, posY, posZ, yaw, pitch, roll);
+                GL11.glTranslated(posX, posY, posZ);
+                GL11.glRotatef(yaw, 0.0F, -1.0F, 0.0F);
+                GL11.glRotatef(pitch, 1.0F, 0.0F, 0.0F);
+                GL11.glRotatef(roll, 0.0F, 0.0F, 1.0F);
+                try {
+                    this.bindTexture(MCH_EntityBaseVehicle.getTexturePath("ships", ship.getTextureName()),
+                                     ship);
+                } catch (Exception var15) {
+                    System.out.println("Texture not found : " + ship.getTextureName());
+                    this.bindTexture(new ResourceLocation("textures/blocks/planks_oak.png"));
+                }
+                if(shipInfo.haveNozzle() && ship.partNozzle != null) {
+                    this.renderNozzle(ship, shipInfo, tickTime);
+                }
+
+                if(shipInfo.haveWing() && ship.partWing != null) {
+                    this.renderWing(ship, shipInfo, tickTime);
+                }
+
+                if(shipInfo.haveRotor() && ship.partNozzle != null) {
+                    this.renderRotor(ship, shipInfo, tickTime);
+                }
+
+                renderBody(shipInfo.model);
+            }
+        }
+    }
+
+    public void renderRotor(MCH_EntityShip ship, MCH_ShipInfo shipInfo, float tickTime) {
+        renderRotor(shipInfo, ship.getNozzleRotation(), ship.getPrevNozzleRotation(), ship.rotationRotor, ship.prevRotationRotor, tickTime);
+    }
+
+    public static void renderRotor(MCH_ShipInfo shipInfo, float rot, float prevRot, float rotorPhase, float prevRotorPhase, float tickTime) {
+        Iterator i$ = shipInfo.rotorList.iterator();
+
+        while(i$.hasNext()) {
+            MCH_ShipInfo.Rotor r = (MCH_ShipInfo.Rotor)i$.next();
+            GL11.glPushMatrix();
+            GL11.glTranslated(r.pos.xCoord, r.pos.yCoord, r.pos.zCoord);
+            GL11.glRotatef((prevRot + (rot - prevRot) * tickTime) * r.maxRotFactor, (float)r.rot.xCoord, (float)r.rot.yCoord, (float)r.rot.zCoord);
+            GL11.glTranslated(-r.pos.xCoord, -r.pos.yCoord, -r.pos.zCoord);
+            renderPart(r.model, shipInfo.model, r.modelName);
+            Iterator i$1 = r.blades.iterator();
+
+            while(i$1.hasNext()) {
+                MCH_ShipInfo.Blade b = (MCH_ShipInfo.Blade)i$1.next();
+                float br = prevRotorPhase + (rotorPhase - prevRotorPhase) * tickTime;
+                GL11.glPushMatrix();
+                GL11.glTranslated(b.pos.xCoord, b.pos.yCoord, b.pos.zCoord);
+                GL11.glRotatef(br, (float)b.rot.xCoord, (float)b.rot.yCoord, (float)b.rot.zCoord);
+                GL11.glTranslated(-b.pos.xCoord, -b.pos.yCoord, -b.pos.zCoord);
+
+                for(int i = 0; i < b.numBlade; ++i) {
+                    GL11.glTranslated(b.pos.xCoord, b.pos.yCoord, b.pos.zCoord);
+                    GL11.glRotatef((float)b.rotBlade, (float)b.rot.xCoord, (float)b.rot.yCoord, (float)b.rot.zCoord);
+                    GL11.glTranslated(-b.pos.xCoord, -b.pos.yCoord, -b.pos.zCoord);
+                    renderPart(b.model, shipInfo.model, b.modelName);
+                }
+
+                GL11.glPopMatrix();
+            }
+
+            GL11.glPopMatrix();
+        }
+
+    }
+
+    public void renderWing(MCH_EntityShip plane, MCH_ShipInfo planeInfo, float tickTime) {
+        renderWing(planeInfo, plane.getWingRotation(), plane.getPrevWingRotation(), tickTime);
+    }
+
+    public static void renderWing(MCH_ShipInfo planeInfo, float rot, float prevRot, float tickTime) {
+
+        for(Iterator i$ = planeInfo.wingList.iterator(); i$.hasNext(); GL11.glPopMatrix()) {
+            MCH_ShipInfo.Wing w = (MCH_ShipInfo.Wing)i$.next();
+            GL11.glPushMatrix();
+            GL11.glTranslated(w.pos.xCoord, w.pos.yCoord, w.pos.zCoord);
+            GL11.glRotatef((prevRot + (rot - prevRot) * tickTime) * w.maxRotFactor, (float)w.rot.xCoord, (float)w.rot.yCoord, (float)w.rot.zCoord);
+            GL11.glTranslated(-w.pos.xCoord, -w.pos.yCoord, -w.pos.zCoord);
+            renderPart(w.model, planeInfo.model, w.modelName);
+            if(w.pylonList != null) {
+                Iterator i$1 = w.pylonList.iterator();
+
+                while(i$1.hasNext()) {
+                    MCH_ShipInfo.Pylon p = (MCH_ShipInfo.Pylon)i$1.next();
+                    GL11.glPushMatrix();
+                    GL11.glTranslated(p.pos.xCoord, p.pos.yCoord, p.pos.zCoord);
+                    GL11.glRotatef((prevRot + (rot - prevRot) * tickTime) * p.maxRotFactor, (float)p.rot.xCoord, (float)p.rot.yCoord, (float)p.rot.zCoord);
+                    GL11.glTranslated(-p.pos.xCoord, -p.pos.yCoord, -p.pos.zCoord);
+                    renderPart(p.model, planeInfo.model, p.modelName);
+                    GL11.glPopMatrix();
+                }
+            }
+        }
+
+    }
+
+    public void renderNozzle(MCH_EntityShip ship, MCH_ShipInfo shipInfo, float tickTime) {
+        renderNozzle(shipInfo, ship.getNozzleRotation(), ship.getPrevNozzleRotation(), tickTime);
+    }
+
+    public static void renderNozzle(MCH_ShipInfo shipInfo, float rot, float prevRot, float tickTime) {
+        Iterator i$ = shipInfo.nozzles.iterator();
+
+        while(i$.hasNext()) {
+            MCH_BaseVehicleInfo.DrawnPart n = (MCH_BaseVehicleInfo.DrawnPart)i$.next();
+            GL11.glPushMatrix();
+            GL11.glTranslated(n.pos.xCoord, n.pos.yCoord, n.pos.zCoord);
+            GL11.glRotatef(prevRot + (rot - prevRot) * tickTime, (float)n.rot.xCoord, (float)n.rot.yCoord, (float)n.rot.zCoord);
+            GL11.glTranslated(-n.pos.xCoord, -n.pos.yCoord, -n.pos.zCoord);
+            renderPart(n.model, shipInfo.model, n.modelName);
+            GL11.glPopMatrix();
+        }
+
+    }
+
+    protected ResourceLocation getEntityTexture(Entity entity) {
+        return W_Render.TEX_DEFAULT;
+    }
+
+
+
+}

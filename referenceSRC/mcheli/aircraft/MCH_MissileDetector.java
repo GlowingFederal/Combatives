@@ -1,0 +1,297 @@
+package mcheli.aircraft;
+
+import mcheli.MCH_PacketNotifyLock;
+import mcheli.weapon.MCH_EntityBaseBullet;
+import mcheli.wrapper.W_Lib;
+import mcheli.wrapper.W_McClient;
+import mcheli.wrapper.W_WorldFunc;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.world.World;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class MCH_MissileDetector {
+
+    private final Map<Entity, Integer> flareDelayMap = new HashMap<Entity, Integer>();
+
+    private static java.lang.reflect.Field hmgHasVTField;
+    private static boolean hmgInit = false;
+
+    private static Class<?> hmgBulletClass = null;
+    private static java.lang.reflect.Field hasVTField = null;
+    private static boolean reflectionInitialized = false;
+
+    private static void initReflection() {
+        if (reflectionInitialized) return;
+        reflectionInitialized = true;
+
+        try {
+            hmgBulletClass = Class.forName("handmadeguns.entity.bullets.HMGEntityBulletBase");
+            hasVTField = hmgBulletClass.getDeclaredField("hasVT");
+            hasVTField.setAccessible(true);
+        } catch (Exception e) {
+            hmgBulletClass = null; // HMG not installed
+        }
+    }
+
+    public static final int SEARCH_RANGE = 60;
+    private MCH_EntityBaseVehicle ac;
+    private World world;
+    private int alertCount;
+
+
+    public MCH_MissileDetector(MCH_EntityBaseVehicle aircraft, World w) {
+        this.world = w;
+        this.ac = aircraft;
+        this.alertCount = 0;
+    }
+
+    public void update() {
+        if (!this.ac.canDetectWarning()) {
+            return;
+        }
+
+        if (this.alertCount > 0) {
+            --this.alertCount;
+        }
+
+        boolean isLocked = this.ac.getEntityData().getBoolean("Tracking");
+        if (isLocked) {
+            this.ac.getEntityData().setBoolean("Tracking", false);
+        }
+
+        if (this.ac.getEntityData().getBoolean("LockOn")) {
+            if (this.alertCount == 0 && this.ac.canNotifyLock() && !this.ac.isDestroyed()) {
+                this.alertCount = 10;
+                for (int rider = 0; rider < 2; ++rider) {
+                    Entity entity = this.ac.getEntityBySeatId(rider);
+                    if (entity instanceof EntityPlayerMP) {
+                        MCH_PacketNotifyLock.sendToPlayer((EntityPlayerMP) entity);
+                    }
+                }
+            }
+
+            this.ac.getEntityData().setBoolean("LockOn", false);
+        }
+
+            if (!this.ac.isDestroyed()) {
+                Entity var4 = this.ac.getRiddenByEntity();
+                if (var4 == null) {
+                    var4 = this.ac.getEntityBySeatId(1);
+                }
+
+                if (var4 != null) {
+                    if (this.ac.haveFlare() && this.ac.isFlareUsing()) {
+
+
+
+                        this.destroyMissile();
+                    } else if (!this.ac.isUAV() && !this.world.isRemote) {
+
+                        if (this.alertCount == 0 && ((isLocked || this.isLockedByMissile() || this.isLockedByHMGVT())) && this.ac.canPlayAlertSound()) {
+                            this.alertCount = 20;
+                            W_WorldFunc.MOD_playSoundAtEntity(this.ac, "alert", 50.0F, 1.0F);
+                        }
+                    } else if (this.ac.isUAV() && this.world.isRemote && this.alertCount == 0 && ((isLocked || this.isLockedByMissile() || this.isLockedByHMGVT())) && this.ac.canPlayAlertSound()) {
+                        this.alertCount = 20;
+                        if (W_Lib.isClientPlayer(var4)) {
+                            W_McClient.MOD_playSoundFX("alert", 50.0F, 1.0F);
+                        }
+                    }
+
+                }
+
+
+
+            }
+    }
+
+    private static void initHMG() {
+        if (hmgInit) return;
+        hmgInit = true;
+
+        try {
+            hmgBulletClass = Class.forName("handmadeguns.entity.bullets.HMGEntityBulletBase");
+            hmgHasVTField = hmgBulletClass.getDeclaredField("hasVT");
+            hmgHasVTField.setAccessible(true);
+        } catch (Exception e) {
+            hmgBulletClass = null;
+        }
+    }
+
+    public boolean isLockedByHMGVT() {
+
+        initReflection();
+
+        if (hmgBulletClass == null)
+            return false; // HMG not installed
+
+        List list = this.world.getEntitiesWithinAABB(
+                hmgBulletClass,
+                this.ac.boundingBox.expand(400.0D, 400.0D, 400.0D)
+        );
+
+        if (list == null || list.isEmpty())
+            return false;
+
+        for (Object obj : list) {
+
+            //System.out.println("Checking entity: " + obj.getClass().getName() + " (ID: " + ((Entity) obj).getEntityId() + ")");
+
+            if (obj == null)
+                continue;
+
+            try {
+                Boolean hasVT = (Boolean) hasVTField.get(obj);
+                if (hasVT == null || !hasVT)
+                    continue;
+
+                Entity bullet = (Entity) obj;
+
+                if (bullet.isDead)
+                    continue;
+
+                // Optional: check if moving toward aircraft
+                double dx = this.ac.posX - bullet.posX;
+                double dy = (this.ac.posY + this.ac.height * 0.5) - bullet.posY;
+                double dz = this.ac.posZ - bullet.posZ;
+
+                double dot =
+                        (bullet.motionX * dx) +
+                                (bullet.motionY * dy) +
+                                (bullet.motionZ * dz);
+
+                if (dot > 0) {
+                    return true;
+                }
+
+            } catch (Exception ignored) {}
+        }
+
+        return false;
+    }
+
+    public void destroyMissile() {
+
+        // ====== Handle MCH missiles (unchanged logic) ======
+        List list = this.world.getEntitiesWithinAABB(
+                MCH_EntityBaseBullet.class,
+                this.ac.boundingBox.expand(300.0D, 300.0D, 300.0D)
+        );
+
+        if (list != null) {
+            for (Object o : list) {
+                MCH_EntityBaseBullet msl = (MCH_EntityBaseBullet) o;
+
+                if (msl.targetEntity != null &&
+                        (this.ac.isMountedEntity(msl.targetEntity) || msl.targetEntity.equals(this.ac))) {
+
+                    if (msl.getInfo().isHeatSeekerMissile) {
+                        if (msl.getInfo().antiFlareCount > 0) {
+                            if (msl.antiFlareTick > msl.getInfo().antiFlareCount) {
+                                msl.targetEntity = null;
+                                msl.antiFlareTick = 0;
+                            } else {
+                                msl.antiFlareTick++;
+                            }
+                        } else {
+                            msl.targetEntity = null;
+                        }
+                    }
+                }
+            }
+        }
+
+        // ====== HMG projectile deletion ======
+
+        // Only run on server
+        if (this.world.isRemote)
+            return;
+
+        // Initialize reflection once
+        if (!reflectionInitialized) {
+            reflectionInitialized = true;
+            try {
+                hmgBulletClass = Class.forName("handmadeguns.entity.bullets.HMGEntityBulletBase");
+            } catch (Exception e) {
+                hmgBulletClass = null; // HMG not installed
+            }
+        }
+
+        if (hmgBulletClass == null)
+            return;
+
+        // Search nearby HMG bullets
+        double radius = 400.0D;
+
+        List list2 = this.world.getEntitiesWithinAABB(
+                hmgBulletClass,
+                this.ac.boundingBox.expand(radius, radius, radius)
+        );
+
+        if (list2 == null || list2.isEmpty())
+            return;
+
+        for (Object obj : list2) {
+
+            if (!(obj instanceof Entity))
+                continue;
+
+            Entity bullet = (Entity) obj;
+
+            if (bullet.isDead)
+                continue;
+
+            // Optional: only remove bullets heading toward aircraft
+            double dx = this.ac.posX - bullet.posX;
+            double dy = (this.ac.posY + this.ac.height * 0.5) - bullet.posY;
+            double dz = this.ac.posZ - bullet.posZ;
+
+            double dot =
+                    (bullet.motionX * dx) +
+                            (bullet.motionY * dy) +
+                            (bullet.motionZ * dz);
+
+            // Only delete if moving toward aircraft
+            if (dot > 0) {
+
+                int ticks = 0;
+
+                if (flareDelayMap.containsKey(bullet)) {
+                    ticks = flareDelayMap.get(bullet);
+                }
+
+                ticks++;
+
+                // 40–60 ticks = 2–3 seconds
+                if (ticks >= 50) {
+                    bullet.setDead();
+                    flareDelayMap.remove(bullet);
+                } else {
+                    flareDelayMap.put(bullet, ticks);
+                }
+
+            } else {
+                flareDelayMap.remove(bullet);
+            }
+        }
+    }
+
+    public boolean isLockedByMissile() {
+        List list = this.world.getEntitiesWithinAABB(MCH_EntityBaseBullet.class, this.ac.boundingBox.expand(300.0D, 300.0D, 300.0D));
+        if (list != null) {
+            for (int i = 0; i < list.size(); ++i) {
+                MCH_EntityBaseBullet msl = (MCH_EntityBaseBullet) list.get(i);
+                if (msl.targetEntity != null && (this.ac.isMountedEntity(msl.targetEntity) || msl.targetEntity.equals(this.ac))) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+}

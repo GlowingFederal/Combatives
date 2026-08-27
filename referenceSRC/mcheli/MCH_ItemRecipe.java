@@ -1,0 +1,471 @@
+package mcheli;
+
+import cpw.mods.fml.common.registry.GameRegistry;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+
+import mcheli.aircraft.MCH_BaseVehicleInfo;
+import mcheli.aircraft.MCH_BaseVehicleInfoManager;
+import mcheli.helicopter.MCH_HeliInfo;
+import mcheli.helicopter.MCH_HeliInfoManager;
+import mcheli.item.MCH_ItemInfo;
+import mcheli.item.MCH_ItemInfoManager;
+import mcheli.lweapon.MCH_ItemLightWeaponBullet;
+import mcheli.plane.MCP_PlaneInfo;
+import mcheli.plane.MCP_PlaneInfoManager;
+import mcheli.ship.MCH_ShipInfo;
+import mcheli.ship.MCH_ShipInfoManager;
+import mcheli.tank.MCH_TankInfo;
+import mcheli.tank.MCH_TankInfoManager;
+import mcheli.throwable.MCH_ThrowableInfo;
+import mcheli.throwable.MCH_ThrowableInfoManager;
+import mcheli.uav.MCH_ItemUavStation;
+import mcheli.vehicle.MCH_TurretInfo;
+import mcheli.vehicle.MCH_TurretInfoManager;
+import mcheli.wrapper.W_Block;
+import mcheli.wrapper.W_Item;
+
+import net.minecraft.block.Block;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.crafting.IRecipe;
+import net.minecraft.item.crafting.ShapelessRecipes;
+
+import net.minecraftforge.oredict.OreDictionary;
+import net.minecraftforge.oredict.ShapedOreRecipe;
+import net.minecraftforge.oredict.ShapelessOreRecipe;
+
+
+//Drafting table stuff and recipes for ALL vehicles/items
+public class MCH_ItemRecipe implements MCH_IRecipeList {
+
+   private static final MCH_ItemRecipe instance = new MCH_ItemRecipe();
+   private static List commonItemRecipe = new ArrayList();
+
+
+   public static MCH_ItemRecipe getInstance() {
+      return instance;
+   }
+
+   public int getRecipeListSize() {
+      return commonItemRecipe.size();
+   }
+
+   public IRecipe getRecipe(int index) {
+      return (IRecipe)commonItemRecipe.get(index);
+   }
+
+   private static void addRecipeList(IRecipe recipe) {
+      if(recipe != null) {
+         commonItemRecipe.add(recipe);
+      }
+
+   }
+
+   private static void registerCommonItemRecipe() {
+      commonItemRecipe.clear();
+      GameRegistry.addRecipe(new MCH_RecipeFuel());
+      MCH_Config var10001 = MCH_MOD.config;
+      addRecipeList(addRecipe(MCH_MOD.itemFuel, MCH_Config.ItemRecipe_Fuel.prmString));
+      var10001 = MCH_MOD.config;
+      addRecipeList(addRecipe(MCH_MOD.itemGLTD, MCH_Config.ItemRecipe_GLTD.prmString));
+      var10001 = MCH_MOD.config;
+      addRecipeList(addRecipe(MCH_MOD.itemChain, MCH_Config.ItemRecipe_Chain.prmString));
+      var10001 = MCH_MOD.config;
+      addRecipeList(addRecipe(MCH_MOD.itemParachute, MCH_Config.ItemRecipe_Parachute.prmString));
+      var10001 = MCH_MOD.config;
+      addRecipeList(addRecipe(MCH_MOD.itemContainer, MCH_Config.ItemRecipe_Container.prmString));
+
+      for(int i = 0; i < MCH_MOD.itemUavStation.length; ++i) {
+         MCH_ItemUavStation var10000 = MCH_MOD.itemUavStation[i];
+         var10001 = MCH_MOD.config;
+         addRecipeList(addRecipe(var10000, MCH_Config.ItemRecipe_UavStation[i].prmString));
+      }
+
+      var10001 = MCH_MOD.config;
+      addRecipeList(addRecipe(MCH_MOD.itemWrench, MCH_Config.ItemRecipe_Wrench.prmString));
+      var10001 = MCH_MOD.config;
+      addRecipeList(addRecipe(MCH_MOD.itemRangeFinder, MCH_Config.ItemRecipe_RangeFinder.prmString));
+      GameRegistry.addRecipe(new MCH_RecipeReloadRangeFinder());
+      if(MCH_Config.EnableHandheld.prmBool) {
+         var10001 = MCH_MOD.config;
+         addRecipeList(addRecipe(MCH_MOD.itemStinger, MCH_Config.ItemRecipe_Stinger.prmString));
+         MCH_ItemLightWeaponBullet var1 = MCH_MOD.itemStingerBullet;
+         StringBuilder var3 = (new StringBuilder()).append("2,");
+         MCH_Config var10002 = MCH_MOD.config;
+         addRecipeList(addRecipe(var1, var3.append(MCH_Config.ItemRecipe_StingerMissile.prmString).toString()));
+         var10001 = MCH_MOD.config;
+         addRecipeList(addRecipe(MCH_MOD.itemJavelin, MCH_Config.ItemRecipe_Javelin.prmString));
+         var1 = MCH_MOD.itemJavelinBullet;
+         var3 = (new StringBuilder()).append("2,");
+         var10002 = MCH_MOD.config;
+         addRecipeList(addRecipe(var1, var3.append(MCH_Config.ItemRecipe_JavelinMissile.prmString).toString()));
+         addRecipeList(addRecipe(MCH_MOD.itemRpg, MCH_Config.ItemRecipe_Rpg.prmString));
+         var1 = MCH_MOD.itemRpgBullet;
+         var3 = (new StringBuilder()).append("2,");
+         addRecipeList(addRecipe(var1, var3.append(MCH_Config.ItemRecipe_RpgMissile.prmString).toString()));
+      }
+
+      Item var2 = W_Item.getItemFromBlock(MCH_MOD.blockDraftingTable);
+      var10001 = MCH_MOD.config;
+      addRecipeList(addRecipe(var2, MCH_Config.ItemRecipe_DraftingTable.prmString));
+   }
+
+   //called in postInit
+   public static void registerItemRecipe() {
+      registerCommonItemRecipe();
+
+
+      //FOCUS ON THESE 'VEHICLE ITEMS', WE NEED TO OREDICT THE COMPONENTS FOR THESE RECIPES IF THE COMPONENTS HAVE A OREDICT.
+      //THATS THE MAIN GOAL
+
+      //HELICOPTERS
+      Iterator i$ = MCH_HeliInfoManager.map.keySet().iterator();
+      String name;
+      while(i$.hasNext()) {
+         name = (String)i$.next();
+         MCH_HeliInfo info = (MCH_HeliInfo)MCH_HeliInfoManager.map.get(name);
+         addRecipeAndRegisterList(info, info.item, MCH_HeliInfoManager.getInstance());
+      }
+
+      //PLANES
+      i$ = MCP_PlaneInfoManager.map.keySet().iterator();
+      while(i$.hasNext()) {
+         name = (String)i$.next();
+         MCP_PlaneInfo info1 = (MCP_PlaneInfo)MCP_PlaneInfoManager.map.get(name);
+         addRecipeAndRegisterList(info1, info1.item, MCP_PlaneInfoManager.getInstance());
+      }
+
+
+      //SHIPS
+      i$ = MCH_ShipInfoManager.map.keySet().iterator();
+      while(i$.hasNext()) {
+         name = (String)i$.next();
+         MCH_ShipInfo info1 = (MCH_ShipInfo)MCH_ShipInfoManager.map.get(name);
+         addRecipeAndRegisterList(info1, info1.item, MCH_ShipInfoManager.getInstance());
+      }
+
+
+      //TANKS
+      i$ = MCH_TankInfoManager.map.keySet().iterator();
+      while(i$.hasNext()) {
+         name = (String)i$.next();
+         MCH_TankInfo info2 = (MCH_TankInfo)MCH_TankInfoManager.map.get(name);
+         addRecipeAndRegisterList(info2, info2.item, MCH_TankInfoManager.getInstance());
+      }
+
+
+      //TURRETS
+      i$ = MCH_TurretInfoManager.map.keySet().iterator();
+      while(i$.hasNext()) {
+         name = (String)i$.next();
+         MCH_TurretInfo info3 = (MCH_TurretInfo)MCH_TurretInfoManager.map.get(name);
+         addRecipeAndRegisterList(info3, info3.item, MCH_TurretInfoManager.getInstance());
+      }
+
+      //END OF VEHICLE ITEMS REGISTRY
+
+      //THROWABLE ITEMS
+      MCH_ThrowableInfo info4;
+      for(i$ = MCH_ThrowableInfoManager.getKeySet().iterator(); i$.hasNext(); info4.recipeString = null) {
+         name = (String)i$.next();
+         info4 = MCH_ThrowableInfoManager.get(name);
+         Iterator i$1 = info4.recipeString.iterator();
+
+         while(i$1.hasNext()) {
+            String s = (String)i$1.next();
+            if(s.length() >= 3) {
+               IRecipe recipe = addRecipe(info4.item, s, info4.isShapedRecipe);
+               info4.recipe.add(recipe);
+               addRecipeList(recipe);
+            }
+         }
+      }
+
+
+      //CRAFT ITEMS - THESE HAVE ALREADY BEEN OREDICTED!
+      MCH_ItemInfo info5;
+      for(i$ = MCH_ItemInfoManager.getKeySet().iterator(); i$.hasNext(); info5.recipeString = null) {
+         name = (String)i$.next();
+         info5 = MCH_ItemInfoManager.get(name);
+         Iterator i$1 = info5.recipeString.iterator();
+
+         while(i$1.hasNext()) {
+            String s = (String)i$1.next();
+            if(s.length() >= 3) {
+               IRecipe recipe = addRecipe(info5.item, s, info5.isShapedRecipe);
+               info5.recipe.add(recipe);
+               addRecipeList(recipe);
+            }
+         }
+      }
+
+   }
+
+   private static Object autoOre(Object obj) {
+
+      if (!(obj instanceof ItemStack)) return obj;
+
+      ItemStack stack = (ItemStack)obj;
+      if (stack.getItem() == null) return obj;
+
+      int[] oreIDs = OreDictionary.getOreIDs(stack);
+      if (oreIDs != null && oreIDs.length > 0) {
+         return OreDictionary.getOreName(oreIDs[0]);
+      }
+
+      MCH_Lib.DbgLog(false, "AUTOORE CHECK: %s ORES=%s", stack, Arrays.toString(OreDictionary.getOreIDs(stack)));
+
+
+      return obj;
+   }
+
+
+   private static void addRecipeAndRegisterList(MCH_BaseVehicleInfo info, Item item, MCH_BaseVehicleInfoManager im) {
+      int count = 0;
+      Iterator i$ = info.recipeString.iterator();
+
+      while(i$.hasNext()) {
+         String s = (String)i$.next();
+         ++count;
+         if(s.length() >= 3) {
+            IRecipe recipe = addRecipe(item, s, info.isShapedRecipe);
+            info.recipe.add(recipe);
+            im.addRecipe(recipe, count, info.name, s);
+         }
+      }
+
+      info.recipeString = null;
+   }
+
+   public static IRecipe addRecipe(Item item, String data) {
+      return addShapedRecipe(item, data);
+   }
+
+   public static IRecipe addRecipe(Item item, String data, boolean isShaped) {
+      return isShaped?addShapedRecipe(item, data):addShapelessRecipe(item, data);
+   }
+
+   public static IRecipe addShapedRecipe(Item item, String data) {
+      ArrayList rcp = new ArrayList();
+      String[] s = data.split("\\s*,\\s*");
+      if(s.length < 3) {
+         return null;
+      } else {
+         byte start = 0;
+         int createNum = 1;
+         if(isNumber(s[0])) {
+            start = 1;
+            createNum = Integer.valueOf(s[0]).intValue();
+            if(createNum <= 0) {
+               createNum = 1;
+            }
+         }
+
+         int idx = start;
+
+         for(int isChar = start; isChar < 3 + start; ++isChar) {
+            if(s[idx].length() > 0 && s[idx].charAt(0) == 34 && s[idx].charAt(s[idx].length() - 1) == 34) {
+               rcp.add(s[idx].subSequence(1, s[idx].length() - 1));
+               ++idx;
+            }
+         }
+
+         if(idx == 0) {
+            return null;
+         } else {
+            int r;
+            for(boolean var11 = true; idx < s.length; ++idx) {
+               if(s[idx].length() <= 0) {
+                  return null;
+               }
+
+               if(var11) {
+                  if(s[idx].length() != 1) {
+                     return null;
+                  }
+
+                  char recipe = s[idx].toUpperCase().charAt(0);
+                  if(recipe < 65 || recipe > 90) {
+                     return null;
+                  }
+
+                  rcp.add(Character.valueOf(recipe));
+               } else {
+                  String var12 = s[idx].trim().toLowerCase();
+                  r = 0;
+                  if(idx + 1 < s.length && isNumber(s[idx + 1])) {
+                     ++idx;
+                     r = Integer.parseInt(s[idx]);
+                  }
+
+                  if(isNumber(var12)) {
+                     return null;
+                  }
+
+                  ItemStack stack = new ItemStack(W_Item.getItemByName(var12), 1, r);
+                  rcp.add(autoOre(stack));
+
+               }
+
+               var11 = !var11;
+            }
+
+            Object[] var13 = new Object[rcp.size()];
+
+            for(r = 0; r < var13.length; ++r) {
+               var13[r] = rcp.get(r);
+            }
+
+            boolean usesOre = false;
+            for (Object o : var13) {
+               if (o instanceof String) {
+                  usesOre = true;
+                  break;
+               }
+            }
+
+            IRecipe recipe;
+            if (usesOre) {
+               recipe = new ShapedOreRecipe(new ItemStack(item, createNum), var13);
+               GameRegistry.addRecipe(recipe);
+            } else {
+               recipe = GameRegistry.addShapedRecipe(new ItemStack(item, createNum), var13);
+            }
+
+            return recipe;
+
+            //for(int i = 0; i < var14.recipeItems.length; ++i) {
+            //   if(var14.recipeItems[i] != null && var14.recipeItems[i].getItem() == null) {
+            //      //throw new RuntimeException("Error: Invalid ShapedRecipes! " + item + " : " + data);
+            //      System.out.println("Error: Invalid ShapedRecipes! " + item + " : " + data);
+            //   }
+            //}
+
+            //return var14;
+         }
+      }
+   }
+
+   public static IRecipe addShapelessRecipe(Item item, String data) {
+      ArrayList rcp = new ArrayList();
+      String[] s = data.split("\\s*,\\s*");
+      if(s.length < 1) {
+         return null;
+      } else {
+         byte start = 0;
+         byte createNum = 1;
+         if(isNumber(s[0]) && createNum <= 0) {
+            createNum = 1;
+         }
+
+         int i;
+         for(int recipe = start; recipe < s.length; ++recipe) {
+            if(s[recipe].length() <= 0) {
+               return null;
+            }
+
+            String r = s[recipe].trim().toLowerCase();
+            i = 0;
+            if(recipe + 1 < s.length && isNumber(s[recipe + 1])) {
+               ++recipe;
+               i = Integer.parseInt(s[recipe]);
+            }
+
+            if(isNumber(r)) {
+               int is = Integer.parseInt(r);
+               if(is <= 255) {
+                  rcp.add(new ItemStack(W_Block.getBlockById(is), 1, i));
+               } else if(is <= 511) {
+                  rcp.add(new ItemStack(W_Item.getItemById(is), 1, i));
+               } else if(is <= 2255) {
+                  rcp.add(new ItemStack(W_Block.getBlockById(is), 1, i));
+               } else if(is <= 2267) {
+                  rcp.add(new ItemStack(W_Item.getItemById(is), 1, i));
+               } else if(is <= 4095) {
+                  rcp.add(new ItemStack(W_Block.getBlockById(is), 1, i));
+               } else if(is <= 31999) {
+                  rcp.add(new ItemStack(W_Item.getItemById(is + 256), 1, i));
+               }
+            } else {
+               ItemStack stack = new ItemStack(W_Item.getItemByName(r), 1, i);
+               rcp.add(autoOre(stack));
+
+            }
+         }
+
+         Object[] var10 = new Object[rcp.size()];
+
+         for(int var11 = 0; var11 < var10.length; ++var11) {
+            var10[var11] = rcp.get(var11);
+         }
+
+         boolean usesOre = false;
+         for (Object o : var10) {
+            if (o instanceof String) {
+               usesOre = true;
+               break;
+            }
+         }
+
+         IRecipe recipe;
+         if (usesOre) {
+            recipe = new ShapelessOreRecipe(new ItemStack(item, createNum), var10);
+            GameRegistry.addRecipe(recipe);
+         } else {
+            recipe = getShapelessRecipe(new ItemStack(item, createNum), var10);
+            GameRegistry.addRecipe(recipe);
+         }
+
+         return recipe;
+
+
+      }
+   }
+
+   public static ShapelessRecipes getShapelessRecipe(ItemStack par1ItemStack, Object ... par2ArrayOfObj) {
+      ArrayList arraylist = new ArrayList();
+      Object[] aobject = par2ArrayOfObj;
+      int i = par2ArrayOfObj.length;
+
+      for(int j = 0; j < i; ++j) {
+         Object object1 = aobject[j];
+         if(object1 instanceof ItemStack) {
+            arraylist.add(((ItemStack)object1).copy());
+         } else if(object1 instanceof Item) {
+            arraylist.add(new ItemStack((Item)object1));
+         } else {
+            if(!(object1 instanceof Block)) {
+               throw new RuntimeException("Invalid shapeless recipe!");
+            }
+
+            arraylist.add(new ItemStack((Block)object1));
+         }
+      }
+
+      return new ShapelessRecipes(par1ItemStack, arraylist);
+   }
+
+   public static boolean isNumber(String s) {
+      if(s != null && !s.isEmpty()) {
+         byte[] buf = s.getBytes();
+         byte[] arr$ = buf;
+         int len$ = buf.length;
+
+         for(int i$ = 0; i$ < len$; ++i$) {
+            byte b = arr$[i$];
+            if(b < 48 || b > 57) {
+               return false;
+            }
+         }
+
+         return true;
+      } else {
+         return false;
+      }
+   }
+
+}

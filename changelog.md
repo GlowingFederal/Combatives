@@ -243,3 +243,12 @@
   while retaining Combatives' authoritative pose ray when independently moving.
 - Added mount-transition camera diagnostics and documented the generic ownership
   boundary, dismount behavior, compatibility risks, and in-game regression matrix.
+
+(4e28df8 Preserve MCHeli synthetic camera ownership)
+
+- Preserved MCHeli's `MCH_ViewEntityDummy` camera origin for gunner,
+  always-camera, and camera-id vehicle views without linking against MCHeli.
+- Kept Combatives procedural effects additive after the MCHeli base transform
+  while returning synthetic-camera targeting to MCHeli's native path.
+- Documented the real-player aircraft path, synthetic tank/ground-vehicle path,
+  confirmed ownership failure, transform order, and expanded manual test matrix.

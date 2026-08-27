@@ -5,6 +5,7 @@ import com.glowingfederal.combatives.client.camera.CameraController;
 import com.glowingfederal.combatives.client.camera.AuthoritativeViewRay;
 import com.glowingfederal.combatives.client.camera.TargetingDiagnostics;
 import com.glowingfederal.combatives.config.CombativesConfig;
+import com.glowingfederal.combatives.compat.mcheli.MCHeliCameraCompat;
 import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.entity.player.EffectivePlayerGeometry;
@@ -130,7 +131,8 @@ public abstract class EntityRendererMixin {
 
         EntityPlayer player = (EntityPlayer) entity;
         float calculatedPoseOffset = this.combatives$getPoseCameraOffset(player, eyeHeight);
-        float selectedCameraOffset = player.isRiding() ? eyeHeight : calculatedPoseOffset;
+        boolean mcheliCamera = MCHeliCameraCompat.ownsCamera(player);
+        float selectedCameraOffset = player.isRiding() || mcheliCamera ? eyeHeight : calculatedPoseOffset;
         this.combatives$entityEyeHeight = selectedCameraOffset;
 
         this.combatives$eyeHeight = selectedCameraOffset;
@@ -219,7 +221,8 @@ public abstract class EntityRendererMixin {
                     incomingCameraOffset,
                     calculatedPoseOffset,
                     selectedCameraOffset,
-                    player.isRiding() ? "mount" : "combatives_pose",
+                    MCHeliCameraCompat.ownsCamera(player) ? "MCHELI"
+                            : player.isRiding() ? "MOUNT" : "COMBATIVES_POSE",
                     baseCameraY,
                     proceduralTranslationY,
                     finalCameraY

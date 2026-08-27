@@ -139,13 +139,26 @@ public abstract class EntityRendererMixin {
     }
 
     private float combatives$getPoseCameraOffset(EntityPlayer player, float vanillaCameraOffset) {
-        if (!(player instanceof ICombativesPlayerPose)) {
+        if (!(player instanceof ICombativesPlayerPose) || player.isRiding()) {
             return vanillaCameraOffset;
         }
-        EffectivePlayerGeometry geometry = ((ICombativesPlayerPose) player).getEffectiveGeometry();
-        double interpolatedPosY = player.prevPosY + (player.posY - player.prevPosY) * (double) this.combatives$partialTicks;
-        double interpolatedMinY = interpolatedPosY + (player.boundingBox.minY - player.posY);
-        return (float) (interpolatedPosY - (interpolatedMinY + geometry.eyeAboveMinY));
+
+        EffectivePlayerGeometry geometry =
+                ((ICombativesPlayerPose) player).getEffectiveGeometry();
+
+        double interpolatedPosY =
+                player.prevPosY
+                        + (player.posY - player.prevPosY)
+                        * (double) this.combatives$partialTicks;
+
+        double interpolatedMinY =
+                interpolatedPosY
+                        + (player.boundingBox.minY - player.posY);
+
+        return (float) (
+                interpolatedPosY
+                        - (interpolatedMinY + geometry.eyeAboveMinY)
+        );
     }
 
     private float combatives$getLowPoseCameraEyeHeight(EntityPlayer player, float vanillaEyeHeight) {

@@ -22,6 +22,15 @@ public final class PoseSync {
         Pose oldPose = state.getPose();
         boolean oldSwimming = state.isSwimming();
         boolean oldCrawlKeyDown = state.isCrawlKeyDown();
+        if (player.worldObj.isRemote && "server".equals(source) && pose == Pose.DYING) {
+            state.resetPoseState(Pose.DYING, "server death");
+            return;
+        }
+        if (player.worldObj.isRemote && "server".equals(source) && oldPose == Pose.DYING
+                && pose == Pose.STANDING && !swimming && !crawlKeyDown) {
+            state.resetPoseState(Pose.STANDING, source + " respawn");
+            return;
+        }
         boolean clientPrediction = "client".equals(source) && !player.worldObj.isRemote;
         boolean effectiveCrawlKeyDown = clientPrediction ? oldCrawlKeyDown : crawlKeyDown;
         boolean activeLowPose = (oldSwimming || oldCrawlKeyDown) && state.isPoseClear(Pose.SWIMMING);

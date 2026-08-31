@@ -1,6 +1,7 @@
 package com.glowingfederal.combatives.network;
 
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
+import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.PlayerStepHeight;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -42,6 +43,9 @@ public class PoseSyncEvents {
     @SubscribeEvent
     public void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
         PlayerStepHeight.restoreVanillaStepHeight(event.player, "server respawn");
+        if (event.player instanceof ICombativesPlayerPose) {
+            ((ICombativesPlayerPose) event.player).resetPoseState(Pose.STANDING, "server respawn");
+        }
         if (event.player instanceof EntityPlayerMP) {
             PoseSync.broadcastAuthoritativePose((EntityPlayerMP) event.player, true);
         }

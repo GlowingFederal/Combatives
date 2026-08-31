@@ -25,6 +25,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.PlayerCapabilities;
 import net.minecraft.potion.Potion;
 import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.DamageSource;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 import net.minecraftforge.fluids.IFluidBlock;
@@ -72,6 +73,11 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
 
     public EntityPlayerMixin(World world) {
         super(world);
+    }
+
+    @Inject(method = "onDeath", at = @At("HEAD"))
+    private void combatives$resetPoseOnDeath(DamageSource cause, CallbackInfo ci) {
+        this.resetPoseState(Pose.DYING, this.worldObj.isRemote ? "client death" : "server death");
     }
 
     @Inject(method = "<init>", at = @At("RETURN"))
@@ -245,6 +251,42 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
                 + this.combativesEyeHeight - this.posY);
         this.previousEyeHeight = this.eyeHeight;
         MovementDiagnostics.verbose(this.getPlayer(), "eye height recalculated for " + pose + ": " + this.combativesEyeHeight);
+    }
+
+    @Override
+    public void resetPoseState(Pose lifecyclePose, String reason) {
+        Pose resetPose = lifecyclePose == Pose.DYING ? Pose.DYING : Pose.STANDING;
+        this.crawlKeyDown = false;
+        this.combatives$setSwimming(false, reason);
+        this.combativesPose = resetPose;
+        this.combativesDismountHandoff = false;
+        this.combativesDismountedEntity = null;
+        this.combativesLastRidingEntity = this.ridingEntity;
+        this.combativesMovementSnapshot = MovementSnapshot.EMPTY;
+        this.swimAnimation = 0.0F;
+        this.lastSwimAnimation = 0.0F;
+
+        /* yOffset is part of 1.7.10's position/AABB anchor, not pose eye
+         * geometry.  A pose packet used to change it after resizing, leaving
+         * posY and minY in different coordinate frames.  The next resize then
+         * reapplied that difference as a vertical move.  Lifecycle reset is a
+         * forced transition, so establish the vanilla player anchor before
+         * rebuilding the box and all cached eye geometry. */
+        this.yOffset = 1.62F;
+        this.ySize = 0.0F;
+        EntitySize oldSize = this.combativesSize == null ? STANDING_SIZE : this.combativesSize;
+        EffectivePlayerGeometry geometry = this.combatives$resolveGeometry(resetPose);
+        EntitySize resetSize = new EntitySize(geometry.width, geometry.height, resetPose == Pose.DYING);
+        this.recalculateSize(oldSize, resetSize);
+        this.width = resetSize.width;
+        this.height = resetSize.height;
+        this.combativesSize = resetSize;
+        this.combativesAppliedPose = resetPose;
+        this.combativesAppliedGeometry = geometry;
+        if (!this.worldObj.isRemote) this.combativesGeometryRevision++;
+        this.recalculateEyeHeight();
+        this.previousEyeHeight = this.eyeHeight;
+        this.logGeometry("pose lifecycle reset", reason);
     }
 
     /**

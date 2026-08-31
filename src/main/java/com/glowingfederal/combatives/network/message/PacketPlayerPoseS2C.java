@@ -52,7 +52,6 @@ public class PacketPlayerPoseS2C implements IMessage {
             Entity entity = Minecraft.getMinecraft().theWorld == null ? null : Minecraft.getMinecraft().theWorld.getEntityByID(message.entityId);
             if (entity instanceof EntityPlayer) {
                 PoseSync.applyAuthoritativePose((EntityPlayer) entity, message.pose, message.swimming, message.crawlKeyDown, "server");
-                entity.yOffset = message.pose == Pose.SWIMMING ? 0.28F : 1.62F;
             }
             return null;
         }

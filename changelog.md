@@ -252,3 +252,18 @@
   while returning synthetic-camera targeting to MCHeli's native path.
 - Documented the real-player aircraft path, synthetic tank/ground-vehicle path,
   confirmed ownership failure, transform order, and expanded manual test matrix.
+
+2026-08-31 02:19 — Reset crawl geometry across death and respawn
+
+- Removed the pose packet's post-resize `yOffset` mutation, which broke the
+  legacy `posY`/bounding-box anchor and was reapplied as a downward displacement
+  during a later crawl resize.
+- Made player death clear crawl, swim, movement, animation, and geometry caches
+  on both logical sides, and made server respawn plus the matching client pose
+  transition forcibly restore canonical standing geometry and legacy anchors.
+- Kept the client remote-player zero-offset convention while making its one-time
+  normalization preserve the AABB floor and interpolation samples.
+- Left ordinary dimension changes, teleports, crawl clearance, and the existing
+  sleep/wake lifecycle unchanged. Dedicated-client and repeated respawn runtime
+  validation remains required because project execution was intentionally not
+  performed in this environment.

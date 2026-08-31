@@ -38,3 +38,27 @@ The throttled targeting line now includes `posY`, all interpolation samples, bot
 For standing, walking, sprinting, jumping, falling, landing, crawl enter/idle/move/exit, swimming, mounting, and dismounting, the numerical acceptance check is `actualVanillaOriginY - expectedTargetOriginY ~= 0` (apart from normal interpolation timing). Collision checks must retain a stable box floor while shrinking and reject expansion into blocks. Test the same matrix on an integrated client and dedicated server.
 
 MPM remains a separate compatibility layer: default or scaled MPM can still apply its intentional temporary POV translation around vanilla targeting. Combatives' existing low-pose wrapper neutralizes that MPM-owned translation only for Combatives physical crawl/swim geometry. It is not part of this core coordinate repair; any discrepancy with default/altered MPM after the invariant above passes must be reported as a second MPM issue.
+
+## Death and respawn reset boundary
+
+The pose S2C handler formerly assigned `yOffset = 0.28` after applying prone
+geometry. That assignment happened after the resize had established the
+`posY`/AABB invariant using the previous `yOffset`. The following resize used
+the new value and moved `posY` down by the difference while retaining the AABB
+floor. Death and respawn traffic could hide the mismatched anchor until the
+first post-respawn crawl recalculation, producing the apparent accumulated
+floor offset. Pose eye height must never be written into `yOffset`.
+
+`EntityPlayer#onDeath` is now a hard reset boundary on both logical sides: it
+clears crawl and swim requests, movement and animation transition caches, and
+rebuilds dying geometry from the vanilla player anchor. The server respawn
+event forcibly establishes standing pose, dimensions, AABB, `yOffset`, `ySize`,
+and cached eye geometry before broadcasting the authoritative state. Clients
+that retain a tracked player through the death/respawn exchange perform the
+same forced standing reset on the authoritative `DYING -> STANDING`
+transition; newly constructed client and server players already initialize
+with standing geometry. Dimension changes retain their existing synchronization
+only and ordinary teleport paths remain untouched. The legacy remote-player
+zero-`yOffset` normalization also now moves its position samples by the matching
+amount when it actually changes the offset, preserving the same AABB anchor for
+an observing client after a lifecycle reset.

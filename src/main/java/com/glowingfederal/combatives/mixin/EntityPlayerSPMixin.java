@@ -5,6 +5,7 @@ import com.glowingfederal.combatives.client.MovementInputStorage;
 import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
+import com.glowingfederal.combatives.movement.ICombativesLocomotion;
 import com.glowingfederal.combatives.network.NetworkHandler;
 import com.glowingfederal.combatives.network.message.PacketCrawlKeyState;
 import net.minecraft.client.Minecraft;
@@ -74,6 +75,7 @@ public abstract class EntityPlayerSPMixin implements ICombativesClientPlayerSwim
 
     @Inject(method = "onLivingUpdate", at = @At("HEAD"))
     private void combatives$onLivingUpdateHead(CallbackInfo ci) {
+        this.combatives$logClientVerticalState("client tick start");
         if (this.movementInput == null) {
             return;
         }
@@ -134,6 +136,7 @@ public abstract class EntityPlayerSPMixin implements ICombativesClientPlayerSwim
     @Inject(method = "onLivingUpdate", at = @At("TAIL"))
     private void combatives$onLivingUpdateTail(CallbackInfo ci) {
         EntityPlayerSP self = (EntityPlayerSP) (Object) this;
+        this.combatives$logClientVerticalState("client after movement");
         ICombativesPlayerPose pose = this.combatives$getPoseState(self);
         if (pose == null || this.movementInput == null) {
             return;
@@ -151,6 +154,19 @@ public abstract class EntityPlayerSPMixin implements ICombativesClientPlayerSwim
         this.combatives$startSprinting(isSaturated);
         this.combatives$stopSprinting(isSaturated);
         this.combatives$handleWaterSneaking();
+    }
+
+    private void combatives$logClientVerticalState(String phase) {
+        if (!MovementDiagnostics.isVerboseEnabled()) return;
+        EntityPlayerSP self = (EntityPlayerSP) (Object) this;
+        if (self.onGround || self.motionY >= -0.05D) return;
+        ICombativesPlayerPose pose = this.combatives$getPoseState(self);
+        ICombativesLocomotion locomotion = self instanceof ICombativesLocomotion ? (ICombativesLocomotion) self : null;
+        MovementDiagnostics.verbose(self, phase + " posY=" + self.posY + " bbox.minY=" + self.boundingBox.minY
+            + " motionY=" + self.motionY + " onGround=" + self.onGround
+            + " pose=" + (pose == null ? "unavailable" : pose.getPose())
+            + " crawlRequested=" + (pose != null && pose.isCrawlKeyDown())
+            + " locomotion=" + (locomotion == null ? "unavailable" : locomotion.getLocomotionState()));
     }
 
     private ICombativesPlayerPose combatives$getPoseState(EntityPlayerSP self) {

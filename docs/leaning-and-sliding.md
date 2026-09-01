@@ -20,9 +20,13 @@ It ends at the exit speed or duration limit, on ground loss, horizontal impact,
 water/restricted-state entry, or knockback. A held crawl request ends in crawl;
 otherwise existing standing clearance chooses standing or forced crawl.
 
-Death, respawn, dimension change, and server teleport use the existing forced
+Death, respawn, dimension change, and explicit server teleport use the existing forced
 pose reset, which now also clears slide ticks and lean. Mounts, sleep, flight,
 ladders, water, and damage terminate the state through the ordinary lifecycle.
+Low-level `NetHandlerPlayServer.setPlayerLocation` corrections are not pose
+lifecycle events: vanilla can use that path to reconcile an ordinary C03 packet.
+Explicit `EntityPlayerMP.setPositionAndUpdate` relocation still resets the pose
+and broadcasts the accepted standing state to the owning client and trackers.
 The low geometry continues through `PlayerGeometryResolver`, including optional
 MorePlayerModels scaling; sliding does not add a parallel bounding box.
 

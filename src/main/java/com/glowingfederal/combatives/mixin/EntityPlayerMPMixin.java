@@ -32,6 +32,15 @@ public abstract class EntityPlayerMPMixin extends EntityPlayer {
         PoseSync.broadcastAuthoritativePose((EntityPlayerMP) (Object) this, true);
     }
 
+    /** Explicit relocation is a lifecycle event; C03 movement correction is not. */
+    @Inject(method = "setPositionAndUpdate", at = @At("HEAD"))
+    private void combatives$resetPoseForTeleport(double x, double y, double z, CallbackInfo ci) {
+        ICombativesPlayerPose pose = this.combatives$getPoseState();
+        if (pose == null) return;
+        pose.resetPoseState(Pose.STANDING, "server explicit teleport");
+        PoseSync.broadcastAuthoritativePose((EntityPlayerMP) (Object) this, true);
+    }
+
     @Override
     public float getDefaultEyeHeight() {
         ICombativesPlayerPose pose = this.combatives$getPoseState();

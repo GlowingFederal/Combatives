@@ -309,3 +309,17 @@
   offset or forced ground state was added. Source inspection only was performed, so
   flat ground, edges, steps, lifecycle transitions, and multiplayer correction still
   require in-game validation.
+
+2026-09-01 23:10 — Separate movement correction from teleport lifecycle
+
+- Stopped classifying every server `setPlayerLocation` call as a teleport pose
+  lifecycle event; vanilla movement-packet correction can use that low-level path
+  and previously cleared server crawl/slide state without reconciling the owner.
+- Moved teleport reset to explicit `EntityPlayerMP.setPositionAndUpdate`
+  relocations and broadcast the resulting authoritative standing state to the
+  owning client as well as trackers.
+- Added verbose, threshold-gated C03 before/packet/after diagnostics and falling
+  client tick/packet diagnostics to identify whether a stale client AABB floor is
+  the writer restoring server Y. Source inspection confirms the candidate call
+  path, but the exact runtime writer and old/new values still require a new log;
+  no build or in-game validation was performed.

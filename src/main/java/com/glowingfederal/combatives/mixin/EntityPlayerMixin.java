@@ -117,7 +117,9 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     public void onEntityUpdate() {
         super.onEntityUpdate();
         if (this.combativesLocomotionState == LocomotionState.SLIDING && !SlidePhysics.tick(this.getPlayer()) && !this.worldObj.isRemote) {
-            this.combatives$finishSlide("termination rule");
+            String reason = SlidePhysics.terminationReason(this.getPlayer(), this.combativesSlideTicks,
+                SlidePhysics.horizontalSpeed(this.getPlayer()));
+            this.combatives$finishSlide(reason == null ? "termination rule" : reason);
         }
         if (this.isInWater()) {
             this.timeUnderwater = MathHelper.clamp_float(this.timeUnderwater + 1, 0, 600);
@@ -799,6 +801,8 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
 
     private void combatives$finishSlide(String reason) {
         if (!this.isSliding()) return;
+        int finishedTicks = this.combativesSlideTicks;
+        double finalSpeed = SlidePhysics.horizontalSpeed(this.getPlayer());
         this.combativesSlideTicks = 0;
         if (this.isCrawlKeyDown() || !this.isPoseClear(Pose.STANDING)) {
             this.combativesLocomotionState = LocomotionState.CRAWLING;
@@ -808,7 +812,8 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
             this.setPose(Pose.STANDING);
         }
         this.recalculateSize();
-        MovementDiagnostics.debug(this.getPlayer(), "slide ended: " + reason + " -> " + this.combativesLocomotionState);
+        MovementDiagnostics.debug(this.getPlayer(), "SLIDE END ticks=" + finishedTicks + " finalSpeed=" + finalSpeed
+            + " reason=" + reason + " nextState=" + this.combativesLocomotionState);
         if (!this.worldObj.isRemote && this.getPlayer() instanceof EntityPlayerMP) PoseSync.broadcastAuthoritativePose((EntityPlayerMP) this.getPlayer(), true);
     }
 }

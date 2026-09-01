@@ -15,23 +15,27 @@ import com.glowingfederal.combatives.movement.LocomotionState;
 
 public class PacketCrawlKeyState implements IMessage {
     private boolean sprintingAtRequest;
+    private boolean movingForwardAtRequest;
 
     public PacketCrawlKeyState() {
     }
 
     /** Packet semantics remain "toggle requested"; the flag snapshots sprint at that press edge. */
-    public PacketCrawlKeyState(boolean sprintingAtRequest) {
+    public PacketCrawlKeyState(boolean sprintingAtRequest, boolean movingForwardAtRequest) {
         this.sprintingAtRequest = sprintingAtRequest;
+        this.movingForwardAtRequest = movingForwardAtRequest;
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
         this.sprintingAtRequest = buf.readBoolean();
+        this.movingForwardAtRequest = buf.readBoolean();
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
         buf.writeBoolean(this.sprintingAtRequest);
+        buf.writeBoolean(this.movingForwardAtRequest);
     }
 
     public static class Handler implements IMessageHandler<PacketCrawlKeyState, IMessage> {
@@ -49,7 +53,7 @@ public class PacketCrawlKeyState implements IMessage {
                 ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
                 boolean before = pose.isCrawlKeyDown();
                 boolean next = !before;
-                if (!before && next && SlidePhysics.begin(player, message.sprintingAtRequest)) {
+                if (!before && next && SlidePhysics.begin(player, message.sprintingAtRequest, message.movingForwardAtRequest, before, next)) {
                     pose.setCrawlKeyDown(true);
                     pose.setPose(Pose.SWIMMING);
                     pose.recalculateSize();

@@ -43,7 +43,6 @@ public abstract class RenderPlayerMixin extends RendererLivingEntity {
             ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
             float animation = pose.getSwimAnimation(partialTicks);
             if (animation > 0.0F || pose.isActuallySwimming()) {
-                MovementDiagnostics.verbose(player, "Combatives crawl/swim render hook fired: crawl=" + pose.isCrawlKeyDown() + " swim=" + pose.isSwimming() + " pose=" + pose.getPose() + " animation=" + animation);
             }
             float targetPitch = player.isInWater() ? -90.0F - player.rotationPitch : -90.0F;
             float rotation = MathHelperNew.lerp(animation, 0.0F, targetPitch);

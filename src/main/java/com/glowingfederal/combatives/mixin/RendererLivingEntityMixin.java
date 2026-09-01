@@ -1,7 +1,6 @@
 package com.glowingfederal.combatives.mixin;
 
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
-import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import net.minecraft.client.renderer.entity.RendererLivingEntity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -24,15 +23,11 @@ public abstract class RendererLivingEntityMixin {
 
     private void combatives$debugAndCancelCrawlNameplate(String hook, EntityLivingBase entity, double distance, CallbackInfo ci) {
         if (!(entity instanceof EntityPlayer)) {
-            MovementDiagnostics.verbose(hook + " nameplate hook entity=" + entity.getClass().getName() + " player=false distance=" + distance + " cancelAttempt=false");
             return;
         }
 
         EntityPlayer player = (EntityPlayer) entity;
         boolean crawl = entity instanceof ICombativesPlayerPose && ((ICombativesPlayerPose) entity).isCrawlKeyDown();
-        boolean swim = entity instanceof ICombativesPlayerPose && ((ICombativesPlayerPose) entity).isSwimming();
-        String pose = entity instanceof ICombativesPlayerPose ? String.valueOf(((ICombativesPlayerPose) entity).getPose()) : "unknown";
-        MovementDiagnostics.verbose(player, hook + " nameplate hook entity=" + entity.getClass().getName() + " crawl=" + crawl + " swim=" + swim + " pose=" + pose + " distance=" + distance + " cancelAttempt=" + crawl);
         if (crawl) {
             ci.cancel();
         }

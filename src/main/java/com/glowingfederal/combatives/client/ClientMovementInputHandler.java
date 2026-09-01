@@ -41,6 +41,7 @@ public class ClientMovementInputHandler {
         // Preserve the movement state at the low-pose request edge. Vanilla may
         // send its sprint-stop action before this custom packet is handled.
         boolean sprintingAtRequest = player.isSprinting();
+        boolean movingForwardAtRequest = player.movementInput != null && player.movementInput.moveForward > 0.0F;
         if (player instanceof ICombativesPlayerPose) {
             ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
             pose.setCrawlKeyDown(!pose.isCrawlKeyDown());
@@ -51,6 +52,6 @@ public class ClientMovementInputHandler {
             MovementDiagnostics.warn(player, "client crawl packet send skipped because network channel is not initialized");
             return;
         }
-        NetworkHandler.channel.sendToServer(new PacketCrawlKeyState(sprintingAtRequest));
+        NetworkHandler.channel.sendToServer(new PacketCrawlKeyState(sprintingAtRequest, movingForwardAtRequest));
     }
 }

@@ -22,35 +22,40 @@ public final class SlidePhysics {
     }
 
     public static boolean begin(EntityPlayer player) {
-        return begin(player, player.isSprinting());
+        return begin(player, player.isSprinting(), player.moveForward > 0.0F, false, true);
     }
 
-    public static boolean begin(EntityPlayer player, boolean sprintingAtRequest) {
+    public static boolean begin(EntityPlayer player, boolean sprintingAtRequest, boolean movingForwardAtRequest,
+            boolean crawlRequestedBefore, boolean crawlRequestedAfter) {
         double speed = horizontalSpeed(player);
         boolean lowPoseClear = player instanceof ICombativesPlayerPose
             && ((ICombativesPlayerPose) player).isPoseClear(Pose.SWIMMING);
-        String rejectedReason = rejectionReason(player, sprintingAtRequest, speed, lowPoseClear);
-        MovementDiagnostics.debug(player, "slide attempt: enabled=" + CombativesConfig.enableSliding
-            + " crawlPressed/toggled=true onGround=" + player.onGround
-            + " sprinting=" + sprintingAtRequest + " serverSprinting=" + player.isSprinting()
-            + " horizontalSpeed=" + speed + " minimumEntrySpeed=" + CombativesConfig.slideMinimumEntrySpeed
-            + " lowPoseClear=" + lowPoseClear + " currentLocomotion="
+        String rejectedReason = rejectionReason(player, sprintingAtRequest, movingForwardAtRequest, speed, lowPoseClear);
+        MovementDiagnostics.debug(player, "SLIDE ATTEMPT crawlPressEdge=true"
+            + " crawlRequestedBefore=" + crawlRequestedBefore + " crawlRequestedAfter=" + crawlRequestedAfter
+            + " sprintSnapshot=" + sprintingAtRequest + " currentSprinting=" + player.isSprinting()
+            + " onGround=" + player.onGround + " forwardInput=" + movingForwardAtRequest
+            + " horizontalSpeed=" + speed + " lowPoseClear=" + lowPoseClear + " locomotionBefore="
             + (player instanceof ICombativesLocomotion ? ((ICombativesLocomotion) player).getLocomotionState() : "unavailable")
-            + " rejectedReason=" + rejectedReason);
+            + " result=" + (rejectedReason == null ? "SLIDING" : "CRAWLING")
+            + " rejectionReason=" + (rejectedReason == null ? "none" : rejectedReason));
         if (rejectedReason != null) return false;
-        ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
         ICombativesLocomotion movement = (ICombativesLocomotion) player;
         movement.setLocomotionState(LocomotionState.SLIDING);
         movement.setSlideTicks(0);
         player.setSprinting(false);
+        MovementDiagnostics.debug(player, "SLIDE START initialSpeed=" + speed + " motionX=" + player.motionX
+            + " motionZ=" + player.motionZ + " maxTicks=" + CombativesConfig.slideMaximumTicks);
         return true;
     }
 
-    private static String rejectionReason(EntityPlayer player, boolean sprintingAtRequest, double speed, boolean lowPoseClear) {
+    private static String rejectionReason(EntityPlayer player, boolean sprintingAtRequest, boolean movingForwardAtRequest,
+            double speed, boolean lowPoseClear) {
         if (!(player instanceof ICombativesLocomotion) || !(player instanceof ICombativesPlayerPose)) return "missing locomotion/pose state";
         if (!CombativesConfig.enableSliding) return "disabled";
         if (!player.onGround) return "not grounded";
         if (!sprintingAtRequest) return "not sprinting at crawl press";
+        if (!movingForwardAtRequest) return "no forward input at crawl press";
         if (speed < CombativesConfig.slideMinimumEntrySpeed) return "below entry speed";
         if (!lowPoseClear) return "low pose obstructed";
         if (player.isInWater()) return "in water";
@@ -65,15 +70,24 @@ public final class SlidePhysics {
         int ticks = movement.getSlideTicks() + 1;
         movement.setSlideTicks(ticks);
         double speed = horizontalSpeed(player);
-        boolean incompatible = !player.onGround || player.isInWater() || player.isCollidedHorizontally || player.hurtTime > 0 || MovementController.shouldBypassUnsafe(player)
-            || ticks >= CombativesConfig.slideMaximumTicks || speed < CombativesConfig.slideExitSpeed;
-        if (incompatible) return false;
+        if (terminationReason(player, ticks, speed) != null) return false;
         double next = Math.max(0.0D, speed - CombativesConfig.slideDeceleration);
         if (speed > 1.0E-6D) {
             player.motionX *= next / speed;
             player.motionZ *= next / speed;
         }
         return true;
+    }
+
+    public static String terminationReason(EntityPlayer player, int ticks, double speed) {
+        if (!player.onGround) return "left ground";
+        if (player.isCollidedHorizontally) return "horizontal obstruction";
+        if (player.isInWater()) return "entered water";
+        if (player.hurtTime > 0) return "damaged";
+        if (MovementController.shouldBypassUnsafe(player)) return "incompatible player state";
+        if (ticks >= CombativesConfig.slideMaximumTicks) return "duration expired";
+        if (speed < CombativesConfig.slideExitSpeed) return "crawl speed reached";
+        return null;
     }
 
     public static double horizontalSpeed(EntityPlayer player) {

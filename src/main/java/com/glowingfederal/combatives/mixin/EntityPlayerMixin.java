@@ -69,6 +69,11 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     private LocomotionState combativesLocomotionState = LocomotionState.NORMAL;
     private int combativesSlideTicks;
     private float combativesLean;
+    private LocomotionState combativesLastDiagnosticState = LocomotionState.NORMAL;
+    private Pose combativesLastDiagnosticPose = Pose.STANDING;
+    private boolean combativesLastDiagnosticGround;
+    private boolean combativesDiagnosticsInitialized;
+    private boolean combativesAnchorDisagreementLogged;
     private Entity combativesLastRidingEntity;
     private Entity combativesDismountedEntity;
     private boolean combativesDismountHandoff;
@@ -127,6 +132,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
             if (this.getPlayer() instanceof EntityPlayerMP) PoseSync.broadcastAuthoritativePose((EntityPlayerMP) this.getPlayer(), true);
         }
         this.recalculateSize();
+        this.combatives$diagnoseMovementTransitions();
         if (!this.worldObj.isRemote && this.getPlayer() instanceof EntityPlayerMP) {
             PlayerGeometrySync.sampleAndBroadcast((EntityPlayerMP) this.getPlayer());
         }
@@ -200,8 +206,14 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
                     requested.clearanceBox(this.posX, this.boundingBox.minY, this.posZ)).isEmpty();
         }
         if (accepted) {
-            boolean changed = oldSize.width != newSize.width || oldSize.height != newSize.height || this.width != newSize.width || this.height != newSize.height;
-            this.recalculateSize(oldSize, newSize);
+            boolean boxMatches = Math.abs((this.boundingBox.maxX - this.boundingBox.minX) - newSize.width) < 1.0E-6D
+                    && Math.abs((this.boundingBox.maxY - this.boundingBox.minY) - newSize.height) < 1.0E-6D;
+            boolean changed = oldSize.width != newSize.width || oldSize.height != newSize.height
+                    || this.width != newSize.width || this.height != newSize.height || !boxMatches;
+            /* Pose selection runs every tick, but physical geometry must not.
+             * Only a real geometry transition (or an externally altered box)
+             * may participate in Entity's position/collision lifecycle. */
+            if (changed) this.recalculateSize(oldSize, newSize);
             this.width = newSize.width;
             this.height = newSize.height;
             if (changed) {
@@ -225,6 +237,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
             this.combativesAppliedGeometry = requestedGeometry;
             if (geometryChanged && !this.worldObj.isRemote) this.combativesGeometryRevision++;
             this.recalculateEyeHeight();
+            if (changed) this.combatives$diagnoseMovementState("geometry changed", true);
         } else {
             MovementDiagnostics.verbose(this.getPlayer(), "resize rejected for " + this.getPose()
                     + " requested=" + newSize.width + "x" + newSize.height
@@ -250,6 +263,37 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         this.posY = anchoredPosY;
         this.prevPosY += deltaY;
         this.lastTickPosY += deltaY;
+    }
+
+    private void combatives$diagnoseMovementTransitions() {
+        this.combatives$diagnoseMovementState("movement transition", false);
+    }
+
+    private void combatives$diagnoseMovementState(String event, boolean force) {
+        if (!MovementDiagnostics.isGeneralEnabled()) return;
+        LocomotionState state = this.getLocomotionState();
+        Pose pose = this.getPose();
+        boolean transition = !this.combativesDiagnosticsInitialized || state != this.combativesLastDiagnosticState
+                || pose != this.combativesLastDiagnosticPose || this.onGround != this.combativesLastDiagnosticGround;
+        double expectedDelta = this.yOffset - this.ySize;
+        double actualDelta = this.posY - this.boundingBox.minY;
+        boolean disagreement = Math.abs(actualDelta - expectedDelta) > 1.0E-4D;
+        if (force || transition || (disagreement && !this.combativesAnchorDisagreementLogged)) {
+            MovementDiagnostics.debug(this.getPlayer(), event + (disagreement ? " ANCHOR DISAGREEMENT" : "")
+                    + " state=" + state + " pose=" + pose + " posY=" + this.posY + " prevPosY=" + this.prevPosY
+                    + " boundingBox.minY=" + this.boundingBox.minY + " boundingBox.maxY=" + this.boundingBox.maxY
+                    + " height=" + this.height + " yOffset=" + this.yOffset + " ySize=" + this.ySize
+                    + " motionY=" + this.motionY + " onGround=" + this.onGround + " fallDistance=" + this.fallDistance
+                    + " isCollidedVertically=" + this.isCollidedVertically
+                    + " isCollidedHorizontally=" + this.isCollidedHorizontally
+                    + " crawlRequested=" + this.crawlKeyDown + " slideTicks=" + this.combativesSlideTicks
+                    + " posY-boundingBox.minY=" + actualDelta + " expected=" + expectedDelta);
+        }
+        this.combativesDiagnosticsInitialized = true;
+        this.combativesLastDiagnosticState = state;
+        this.combativesLastDiagnosticPose = pose;
+        this.combativesLastDiagnosticGround = this.onGround;
+        this.combativesAnchorDisagreementLogged = disagreement;
     }
 
     private void recalculateEyeHeight() {

@@ -55,7 +55,7 @@ public final class MovementDiagnostics {
         Combatives.logger.info("[movement:verbose] {} for {}", message, player.getCommandSenderName());
     }
 
-    private static boolean isGeneralEnabled() {
+    public static boolean isGeneralEnabled() {
         return Combatives.logger != null && (CombativesConfig.debugMovement || CombativesConfig.verboseMovementDebug);
     }
 

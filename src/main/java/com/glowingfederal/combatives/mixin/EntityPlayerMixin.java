@@ -11,6 +11,9 @@ import com.glowingfederal.combatives.movement.ICombativesMovementState;
 import com.glowingfederal.combatives.movement.MovementController;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.movement.MovementSnapshot;
+import com.glowingfederal.combatives.movement.ICombativesLocomotion;
+import com.glowingfederal.combatives.movement.LocomotionState;
+import com.glowingfederal.combatives.movement.SlidePhysics;
 import com.glowingfederal.combatives.network.PoseSync;
 import com.glowingfederal.combatives.network.PlayerGeometrySync;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -38,7 +41,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(EntityPlayer.class)
-public abstract class EntityPlayerMixin extends EntityLivingBase implements ICombativesPlayerPose, ICombativesMovementState {
+public abstract class EntityPlayerMixin extends EntityLivingBase implements ICombativesPlayerPose, ICombativesMovementState, ICombativesLocomotion {
     private static final EntitySize STANDING_SIZE = EntitySize.flexible(0.6F, 1.8F);
 
     @Shadow public PlayerCapabilities capabilities;
@@ -63,6 +66,9 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     private int combativesGeometryRevision;
     private int combativesLastStepHeightWarningTick = -200;
     private MovementSnapshot combativesMovementSnapshot = MovementSnapshot.EMPTY;
+    private LocomotionState combativesLocomotionState = LocomotionState.NORMAL;
+    private int combativesSlideTicks;
+    private float combativesLean;
     private Entity combativesLastRidingEntity;
     private Entity combativesDismountedEntity;
     private boolean combativesDismountHandoff;
@@ -105,6 +111,9 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     @Override
     public void onEntityUpdate() {
         super.onEntityUpdate();
+        if (this.combativesLocomotionState == LocomotionState.SLIDING && !SlidePhysics.tick(this.getPlayer()) && !this.worldObj.isRemote) {
+            this.combatives$finishSlide("termination rule");
+        }
         if (this.isInWater()) {
             this.timeUnderwater = MathHelper.clamp_float(this.timeUnderwater + 1, 0, 600);
         } else if (this.timeUnderwater > 0) {
@@ -112,6 +121,11 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         }
         this.eyesInWater = this.isInsideOfMaterial(Material.water);
         this.updateSwimming();
+        if (!this.worldObj.isRemote && this.combativesLean != 0.0F
+                && (this.isSwimming() || this.getPose() == Pose.SWIMMING || !this.canCrawl())) {
+            this.combativesLean = 0.0F;
+            if (this.getPlayer() instanceof EntityPlayerMP) PoseSync.broadcastAuthoritativePose((EntityPlayerMP) this.getPlayer(), true);
+        }
         this.recalculateSize();
         if (!this.worldObj.isRemote && this.getPlayer() instanceof EntityPlayerMP) {
             PlayerGeometrySync.sampleAndBroadcast((EntityPlayerMP) this.getPlayer());
@@ -263,6 +277,9 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         this.combativesDismountedEntity = null;
         this.combativesLastRidingEntity = this.ridingEntity;
         this.combativesMovementSnapshot = MovementSnapshot.EMPTY;
+        this.combativesLocomotionState = LocomotionState.NORMAL;
+        this.combativesSlideTicks = 0;
+        this.combativesLean = 0.0F;
         this.swimAnimation = 0.0F;
         this.lastSwimAnimation = 0.0F;
 
@@ -408,6 +425,13 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     }
     @Override public float getSwimAnimation(float partialTicks) { return this.lastSwimAnimation + partialTicks * (this.swimAnimation - this.lastSwimAnimation); }
     @Override public boolean canCrawl() { return !this.isRiding() && !this.capabilities.isFlying && !this.isOnLadder() && !this.getShouldBeDead() && !this.isPlayerSleeping(); }
+    @Override public boolean isSliding() { return this.combativesLocomotionState == LocomotionState.SLIDING; }
+    @Override public LocomotionState getLocomotionState() { return this.combativesLocomotionState; }
+    @Override public void setLocomotionState(LocomotionState state) { this.combativesLocomotionState = state == null ? LocomotionState.NORMAL : state; }
+    @Override public int getSlideTicks() { return this.combativesSlideTicks; }
+    @Override public void setSlideTicks(int ticks) { this.combativesSlideTicks = Math.max(0, ticks); }
+    @Override public float getLean() { return this.combativesLean; }
+    @Override public void setLean(float lean) { this.combativesLean = MathHelper.clamp_float(lean, -1.0F, 1.0F); }
     @Override public boolean isCrawlKeyDown() { return this.canCrawl() && this.crawlKeyDown; }
     @Override public void setCrawlKeyDown(boolean down) {
         if (down && !this.canCrawl()) {
@@ -515,6 +539,13 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         Pose pose = this.getPose();
         boolean swimActive = this.isSwimming();
         boolean crawlActive = this.isCrawlKeyDown();
+
+        if (this.isSliding()) {
+            this.combatives$selectPose(Pose.SWIMMING);
+            return;
+        }
+        this.combativesLocomotionState = swimActive ? LocomotionState.SWIMMING
+            : crawlActive || this.getPose() == Pose.SWIMMING ? LocomotionState.CRAWLING : LocomotionState.NORMAL;
 
         if (swimActive || crawlActive) {
             pose = Pose.SWIMMING;
@@ -656,6 +687,13 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
 
 
     private void combatives$moveCrawlingWithHeading(float strafe, float forward) {
+        if (this.isSliding()) {
+            SlidePhysics.steer(this.getPlayer(), strafe, forward);
+            this.moveEntity(this.motionX, this.motionY, this.motionZ);
+            this.motionY = (this.motionY - 0.08D) * 0.9800000190734863D;
+            this.updateCombativesLimbSwing();
+            return;
+        }
         float friction = 0.91F;
         if (this.onGround) {
             friction = this.worldObj.getBlock(MathHelper.floor_double(this.posX), MathHelper.floor_double(this.boundingBox.minY) - 1, MathHelper.floor_double(this.posZ)).slipperiness * 0.91F;
@@ -714,4 +752,19 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     }
 
     private EntityPlayer getPlayer() { return (EntityPlayer)(Object)this; }
+
+    private void combatives$finishSlide(String reason) {
+        if (!this.isSliding()) return;
+        this.combativesSlideTicks = 0;
+        if (this.isCrawlKeyDown() || !this.isPoseClear(Pose.STANDING)) {
+            this.combativesLocomotionState = LocomotionState.CRAWLING;
+            this.setPose(Pose.SWIMMING);
+        } else {
+            this.combativesLocomotionState = LocomotionState.NORMAL;
+            this.setPose(Pose.STANDING);
+        }
+        this.recalculateSize();
+        MovementDiagnostics.debug(this.getPlayer(), "slide ended: " + reason + " -> " + this.combativesLocomotionState);
+        if (!this.worldObj.isRemote && this.getPlayer() instanceof EntityPlayerMP) PoseSync.broadcastAuthoritativePose((EntityPlayerMP) this.getPlayer(), true);
+    }
 }

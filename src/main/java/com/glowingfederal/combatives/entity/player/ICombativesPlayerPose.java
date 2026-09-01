@@ -37,4 +37,5 @@ public interface ICombativesPlayerPose {
     boolean canCrawl();
     boolean isCrawlKeyDown();
     void setCrawlKeyDown(boolean down);
+    boolean isSliding();
 }

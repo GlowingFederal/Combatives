@@ -3,6 +3,7 @@ package com.glowingfederal.combatives.mixin;
 import com.glowingfederal.combatives.client.model.ICombativesModelBipedSwimming;
 import com.glowingfederal.combatives.client.render.CombativesVisualPoseHelper;
 import com.glowingfederal.combatives.client.render.CrawlPoseAnimator;
+import com.glowingfederal.combatives.client.render.SlidePoseAnimator;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.util.math.MathHelperNew;
@@ -24,6 +25,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(ModelBiped.class)
 public abstract class ModelBipedMixin extends ModelBase implements ICombativesModelBipedSwimming {
     @Shadow public ModelRenderer bipedHead;
+    @Shadow public ModelRenderer bipedBody;
     @Shadow public ModelRenderer bipedRightArm;
     @Shadow public ModelRenderer bipedLeftArm;
     @Shadow public ModelRenderer bipedRightLeg;
@@ -60,6 +62,7 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
         float headPitch, float scaleFactor, Entity entity, CallbackInfo ci) {
         float swimAnimation = this.combatives$getSwimAnimationFor(entity);
         if (swimAnimation <= 0.0F) {
+            this.combatives$applyVisualLean(entity);
             return;
         }
         if (entity instanceof EntityPlayer && entity instanceof ICombativesPlayerPose) {
@@ -67,7 +70,10 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
             MovementDiagnostics.verbose((EntityPlayer) entity, "Combatives crawl/swim model hook fired: crawl=" + pose.isCrawlKeyDown() + " swim=" + pose.isSwimming() + " pose=" + pose.getPose() + " animation=" + this.combatives$swimAnimation);
             if (CombativesVisualPoseHelper.isLandCrawling((EntityPlayer) entity)) {
                 this.combatives$captureCrawlLegBase();
-                CrawlPoseAnimator.apply((ModelBiped) (Object) this, limbSwing, limbSwingAmount, swimAnimation);
+                ICombativesPlayerPose playerPose = (ICombativesPlayerPose) entity;
+                if (playerPose.isSliding()) SlidePoseAnimator.apply((ModelBiped) (Object) this, swimAnimation);
+                else CrawlPoseAnimator.apply((ModelBiped) (Object) this, limbSwing, limbSwingAmount, swimAnimation);
+                this.combatives$applyVisualLean(entity);
                 ci.cancel();
                 return;
             }
@@ -144,6 +150,14 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
 
     @Unique private float combatives$getArmAngleSq(float limbSwing) {
         return -65.0F * limbSwing + limbSwing * limbSwing;
+    }
+
+    @Unique private void combatives$applyVisualLean(Entity entity) {
+        if (entity instanceof com.glowingfederal.combatives.movement.ICombativesLocomotion) {
+            float visualLean = ((com.glowingfederal.combatives.movement.ICombativesLocomotion) entity).getLean() * 0.16F;
+            this.bipedBody.rotateAngleZ += visualLean;
+            this.bipedHead.rotateAngleZ -= visualLean * 0.35F;
+        }
     }
 
     @Unique private float combatives$rotLerpRad(float angle, float maxAngle, float target) {

@@ -13,7 +13,10 @@ public final class LeanGeometry {
     public static double legalOffset(EntityPlayer player, InteractionRay base, float lean) {
         if (!CombativesConfig.enableLeaning || lean == 0.0F) return 0.0D;
         double yaw = Math.toRadians(player.rotationYaw);
-        double desired = CombativesConfig.maxLeanDistance * lean;
+        // Gameplay lean uses negative=left, positive=right. Minecraft's
+        // yaw-relative lateral basis below points left, so convert the semantic
+        // value once here for both camera and interaction rays.
+        double desired = -CombativesConfig.maxLeanDistance * lean;
         double dx = Math.cos(yaw) * desired;
         double dz = Math.sin(yaw) * desired;
         Vec3 end = base.origin.addVector(dx, 0.0D, dz);

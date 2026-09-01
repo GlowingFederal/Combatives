@@ -11,21 +11,51 @@ public final class SlidePhysics {
     private SlidePhysics() {}
 
     public static boolean canEnter(EntityPlayer player) {
+        return canEnter(player, player.isSprinting());
+    }
+
+    private static boolean canEnter(EntityPlayer player, boolean sprintingAtRequest) {
         double speed = horizontalSpeed(player);
-        return CombativesConfig.enableSliding && player.onGround && player.isSprinting()
+        return CombativesConfig.enableSliding && player.onGround && sprintingAtRequest
             && speed >= CombativesConfig.slideMinimumEntrySpeed && !player.isInWater()
             && !MovementController.shouldBypassUnsafe(player);
     }
 
     public static boolean begin(EntityPlayer player) {
-        if (!(player instanceof ICombativesLocomotion) || !(player instanceof ICombativesPlayerPose) || !canEnter(player)) return false;
+        return begin(player, player.isSprinting());
+    }
+
+    public static boolean begin(EntityPlayer player, boolean sprintingAtRequest) {
+        double speed = horizontalSpeed(player);
+        boolean lowPoseClear = player instanceof ICombativesPlayerPose
+            && ((ICombativesPlayerPose) player).isPoseClear(Pose.SWIMMING);
+        String rejectedReason = rejectionReason(player, sprintingAtRequest, speed, lowPoseClear);
+        MovementDiagnostics.debug(player, "slide attempt: enabled=" + CombativesConfig.enableSliding
+            + " crawlPressed/toggled=true onGround=" + player.onGround
+            + " sprinting=" + sprintingAtRequest + " serverSprinting=" + player.isSprinting()
+            + " horizontalSpeed=" + speed + " minimumEntrySpeed=" + CombativesConfig.slideMinimumEntrySpeed
+            + " lowPoseClear=" + lowPoseClear + " currentLocomotion="
+            + (player instanceof ICombativesLocomotion ? ((ICombativesLocomotion) player).getLocomotionState() : "unavailable")
+            + " rejectedReason=" + rejectedReason);
+        if (rejectedReason != null) return false;
         ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
-        if (!pose.isPoseClear(Pose.SWIMMING)) return false;
         ICombativesLocomotion movement = (ICombativesLocomotion) player;
         movement.setLocomotionState(LocomotionState.SLIDING);
         movement.setSlideTicks(0);
         player.setSprinting(false);
         return true;
+    }
+
+    private static String rejectionReason(EntityPlayer player, boolean sprintingAtRequest, double speed, boolean lowPoseClear) {
+        if (!(player instanceof ICombativesLocomotion) || !(player instanceof ICombativesPlayerPose)) return "missing locomotion/pose state";
+        if (!CombativesConfig.enableSliding) return "disabled";
+        if (!player.onGround) return "not grounded";
+        if (!sprintingAtRequest) return "not sprinting at crawl press";
+        if (speed < CombativesConfig.slideMinimumEntrySpeed) return "below entry speed";
+        if (!lowPoseClear) return "low pose obstructed";
+        if (player.isInWater()) return "in water";
+        if (MovementController.shouldBypassUnsafe(player)) return "restricted player state";
+        return null;
     }
 
     public static boolean tick(EntityPlayer player) {

@@ -17,7 +17,7 @@ sensitivity, aiming input, player rotation, reach, or other gameplay mechanics.
   standing-clearance checks and matching collision and visual poses.
 - **Sprint sliding**, entered by toggling crawl while grounded and above the
   configured entry speed, with server-owned momentum and a dedicated pose.
-- **Tactical leaning**, held with `Q`/`E` by default, with wall-clamped camera,
+- **Tactical leaning**, held with `Z`/`X` by default, with wall-clamped camera,
   interaction-ray, and synchronized upper-body displacement.
 - **Multiplayer pose synchronization** between the owning player, server, and
   tracking clients across normal lifecycle changes.

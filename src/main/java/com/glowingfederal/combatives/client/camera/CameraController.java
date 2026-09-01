@@ -57,7 +57,7 @@ public final class CameraController {
                 double dx = ray.origin.xCoord - player.posX;
                 double dz = ray.origin.zCoord - player.posZ;
                 desiredLeanOffset = (float) (dx * Math.cos(yaw) + dz * Math.sin(yaw));
-                desiredLeanRoll = locomotion.getLean() * (float) CombativesConfig.maxLeanRoll;
+                desiredLeanRoll = -locomotion.getLean() * (float) CombativesConfig.maxLeanRoll;
             }
             float slideTarget = locomotion.getLocomotionState() == LocomotionState.SLIDING ? 1.0F : 0.0F;
             slideCameraBlend += (slideTarget - slideCameraBlend) * 0.35F;

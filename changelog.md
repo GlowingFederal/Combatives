@@ -295,3 +295,17 @@
   eligibility so vanilla sprint cancellation cannot erase a valid entry attempt.
 - Added one diagnostic record per slide attempt with predicate values and rejection
   reason. Changes were source-inspected only; runtime validation remains required.
+
+2026-09-01 22:15 — Anchor low-profile geometry to collision state
+
+- Made pose geometry application idempotent: unchanged crawl and slide geometry no
+  longer reconstructs the player AABB or rewrites vertical interpolation samples on
+  every pose-selection tick; real pose/scale changes still preserve the AABB floor
+  and the legacy `posY - minY == yOffset - ySize` entity anchor.
+- Added movement-debug transition records for locomotion, pose, ground state, and
+  one-shot anchor disagreements, including the complete vertical/collision state
+  needed to distinguish entity, AABB, and stale-ground failures.
+- Kept slide travel in the existing single collision-aware movement pass; no render
+  offset or forced ground state was added. Source inspection only was performed, so
+  flat ground, edges, steps, lifecycle transitions, and multiplayer correction still
+  require in-game validation.

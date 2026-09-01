@@ -39,6 +39,11 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
     @Unique private float combatives$rightLegBaseX;
     @Unique private float combatives$rightLegBaseY;
     @Unique private float combatives$rightLegBaseZ;
+    @Unique private boolean combatives$leanBaseCaptured;
+    @Unique private float combatives$bodyBaseZ;
+    @Unique private float combatives$headBaseZ;
+    @Unique private float combatives$leftArmBaseZ;
+    @Unique private float combatives$rightArmBaseZ;
 
     @Redirect(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/model/ModelBiped;setRotationAngles(FFFFFFLnet/minecraft/entity/Entity;)V"))
     private void combatives$setRotationAngles(ModelBiped model, float limbSwing, float limbSwingAmount, float ageInTicks,
@@ -112,6 +117,7 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
     @Inject(method = "render", at = @At("RETURN"))
     private void combatives$restoreCrawlLegBase(Entity entity, float limbSwing, float limbSwingAmount,
             float ageInTicks, float netHeadYaw, float headPitch, float scaleFactor, CallbackInfo ci) {
+        this.combatives$restoreLeanBase();
         if (!this.combatives$crawlLegBaseCaptured) return;
         this.bipedLeftLeg.rotateAngleX = this.combatives$leftLegBaseX;
         this.bipedLeftLeg.rotateAngleY = this.combatives$leftLegBaseY;
@@ -154,10 +160,31 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
 
     @Unique private void combatives$applyVisualLean(Entity entity) {
         if (entity instanceof com.glowingfederal.combatives.movement.ICombativesLocomotion) {
-            float visualLean = ((com.glowingfederal.combatives.movement.ICombativesLocomotion) entity).getLean() * 0.16F;
+            this.combatives$captureLeanBase();
+            float visualLean = -((com.glowingfederal.combatives.movement.ICombativesLocomotion) entity).getLean() * 0.16F;
             this.bipedBody.rotateAngleZ += visualLean;
-            this.bipedHead.rotateAngleZ -= visualLean * 0.35F;
+            this.bipedHead.rotateAngleZ += visualLean;
+            this.bipedLeftArm.rotateAngleZ += visualLean;
+            this.bipedRightArm.rotateAngleZ += visualLean;
         }
+    }
+
+    @Unique private void combatives$captureLeanBase() {
+        if (this.combatives$leanBaseCaptured) return;
+        this.combatives$bodyBaseZ = this.bipedBody.rotateAngleZ;
+        this.combatives$headBaseZ = this.bipedHead.rotateAngleZ;
+        this.combatives$leftArmBaseZ = this.bipedLeftArm.rotateAngleZ;
+        this.combatives$rightArmBaseZ = this.bipedRightArm.rotateAngleZ;
+        this.combatives$leanBaseCaptured = true;
+    }
+
+    @Unique private void combatives$restoreLeanBase() {
+        if (!this.combatives$leanBaseCaptured) return;
+        this.bipedBody.rotateAngleZ = this.combatives$bodyBaseZ;
+        this.bipedHead.rotateAngleZ = this.combatives$headBaseZ;
+        this.bipedLeftArm.rotateAngleZ = this.combatives$leftArmBaseZ;
+        this.bipedRightArm.rotateAngleZ = this.combatives$rightArmBaseZ;
+        this.combatives$leanBaseCaptured = false;
     }
 
     @Unique private float combatives$rotLerpRad(float angle, float maxAngle, float target) {

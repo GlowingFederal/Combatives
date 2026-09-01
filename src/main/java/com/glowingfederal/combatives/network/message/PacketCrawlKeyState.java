@@ -14,21 +14,24 @@ import com.glowingfederal.combatives.movement.ICombativesLocomotion;
 import com.glowingfederal.combatives.movement.LocomotionState;
 
 public class PacketCrawlKeyState implements IMessage {
+    private boolean sprintingAtRequest;
+
     public PacketCrawlKeyState() {
     }
 
-    /**
-     * Compatibility constructor for older call sites; packet semantics are always "toggle requested".
-     */
-    public PacketCrawlKeyState(boolean ignored) {
+    /** Packet semantics remain "toggle requested"; the flag snapshots sprint at that press edge. */
+    public PacketCrawlKeyState(boolean sprintingAtRequest) {
+        this.sprintingAtRequest = sprintingAtRequest;
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
+        this.sprintingAtRequest = buf.readBoolean();
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
+        buf.writeBoolean(this.sprintingAtRequest);
     }
 
     public static class Handler implements IMessageHandler<PacketCrawlKeyState, IMessage> {
@@ -46,7 +49,7 @@ public class PacketCrawlKeyState implements IMessage {
                 ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
                 boolean before = pose.isCrawlKeyDown();
                 boolean next = !before;
-                if (!before && next && SlidePhysics.begin(player)) {
+                if (!before && next && SlidePhysics.begin(player, message.sprintingAtRequest)) {
                     pose.setCrawlKeyDown(true);
                     pose.setPose(Pose.SWIMMING);
                     pose.recalculateSize();
@@ -54,7 +57,7 @@ public class PacketCrawlKeyState implements IMessage {
                     PoseSync.broadcastAuthoritativePose(player, true);
                     return null;
                 }
-                if (before && !next && !pose.isSliding() && !pose.isPoseClear(Pose.STANDING)) {
+                if (before && !next && !pose.isPoseClear(Pose.STANDING)) {
                     MovementDiagnostics.debug(player, "server crawl exit blocked: standing clearance unavailable");
                     PoseSync.broadcastAuthoritativePose(player, true);
                     return null;
@@ -68,6 +71,10 @@ public class PacketCrawlKeyState implements IMessage {
                 if (next && pose.isPoseClear(Pose.SWIMMING)) {
                     pose.setPose(Pose.SWIMMING);
                     MovementDiagnostics.debug(player, "crawl toggle selected SWIMMING pose immediately");
+                }
+                if (!next && !pose.isSliding() && pose.isPoseClear(Pose.STANDING)) {
+                    pose.setPose(Pose.STANDING);
+                    MovementDiagnostics.debug(player, "crawl toggle restored STANDING pose immediately");
                 }
                 pose.recalculateSize();
                 PoseSync.broadcastAuthoritativePose(player, true);

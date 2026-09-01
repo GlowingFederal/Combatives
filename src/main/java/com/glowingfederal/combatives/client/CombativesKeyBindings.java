@@ -17,8 +17,8 @@ public final class CombativesKeyBindings {
     public static void register() {
         crawl = new KeyBinding("key.combatives.crawl", Keyboard.KEY_C, "key.categories.combatives");
         ClientRegistry.registerKeyBinding(crawl);
-        leanLeft = new KeyBinding("key.combatives.leanLeft", Keyboard.KEY_Q, "key.categories.combatives");
-        leanRight = new KeyBinding("key.combatives.leanRight", Keyboard.KEY_E, "key.categories.combatives");
+        leanLeft = new KeyBinding("key.combatives.leanLeft", Keyboard.KEY_Z, "key.categories.combatives");
+        leanRight = new KeyBinding("key.combatives.leanRight", Keyboard.KEY_X, "key.categories.combatives");
         ClientRegistry.registerKeyBinding(leanLeft);
         ClientRegistry.registerKeyBinding(leanRight);
         Combatives.logger.info("Registered Combatives crawl keybind");

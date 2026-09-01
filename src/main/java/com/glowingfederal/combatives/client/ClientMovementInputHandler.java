@@ -38,6 +38,9 @@ public class ClientMovementInputHandler {
             MovementDiagnostics.verbose(player, "crawl key released: debounce reset only");
             return;
         }
+        // Preserve the movement state at the low-pose request edge. Vanilla may
+        // send its sprint-stop action before this custom packet is handled.
+        boolean sprintingAtRequest = player.isSprinting();
         if (player instanceof ICombativesPlayerPose) {
             ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
             pose.setCrawlKeyDown(!pose.isCrawlKeyDown());
@@ -48,6 +51,6 @@ public class ClientMovementInputHandler {
             MovementDiagnostics.warn(player, "client crawl packet send skipped because network channel is not initialized");
             return;
         }
-        NetworkHandler.channel.sendToServer(new PacketCrawlKeyState());
+        NetworkHandler.channel.sendToServer(new PacketCrawlKeyState(sprintingAtRequest));
     }
 }

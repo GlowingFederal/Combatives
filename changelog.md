@@ -282,3 +282,16 @@
 - Source paths and packet payloads were inspected without compiling or running
   the project; dedicated-server latency, visual tuning, slopes, and compatibility
   with installed mod combinations still require in-game validation.
+
+2026-09-01 21:30 — Correct lean, crawl toggle, and slide entry regressions
+
+- Standardized lean on negative-left/positive-right semantics, corrected the
+  shared camera/ray basis and roll direction, and changed defaults from conflicting
+  Q/E to configurable Z/X controls.
+- Made upper-body lean a once-per-render additive transform over the current body,
+  head, and arm animation, restoring base angles afterward to prevent accumulation.
+- Restored authoritative crawl-to-stand toggling with standing-clearance enforcement
+  and carried sprint state captured at the crawl press edge into server slide
+  eligibility so vanilla sprint cancellation cannot erase a valid entry attempt.
+- Added one diagnostic record per slide attempt with predicate values and rejection
+  reason. Changes were source-inspected only; runtime validation remains required.

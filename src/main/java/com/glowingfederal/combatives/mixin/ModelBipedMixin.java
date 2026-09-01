@@ -5,7 +5,6 @@ import com.glowingfederal.combatives.client.render.CombativesVisualPoseHelper;
 import com.glowingfederal.combatives.client.render.CrawlPoseAnimator;
 import com.glowingfederal.combatives.client.render.SlidePoseAnimator;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
-import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.util.math.MathHelperNew;
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.model.ModelBiped;
@@ -44,6 +43,8 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
     @Unique private float combatives$headBaseZ;
     @Unique private float combatives$leftArmBaseZ;
     @Unique private float combatives$rightArmBaseZ;
+    @Unique private float combatives$leftLegLeanBaseZ;
+    @Unique private float combatives$rightLegLeanBaseZ;
 
     @Redirect(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/model/ModelBiped;setRotationAngles(FFFFFFLnet/minecraft/entity/Entity;)V"))
     private void combatives$setRotationAngles(ModelBiped model, float limbSwing, float limbSwingAmount, float ageInTicks,
@@ -72,7 +73,6 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
         }
         if (entity instanceof EntityPlayer && entity instanceof ICombativesPlayerPose) {
             ICombativesPlayerPose pose = (ICombativesPlayerPose) entity;
-            MovementDiagnostics.verbose((EntityPlayer) entity, "Combatives crawl/swim model hook fired: crawl=" + pose.isCrawlKeyDown() + " swim=" + pose.isSwimming() + " pose=" + pose.getPose() + " animation=" + this.combatives$swimAnimation);
             if (CombativesVisualPoseHelper.isLandCrawling((EntityPlayer) entity)) {
                 this.combatives$captureCrawlLegBase();
                 ICombativesPlayerPose playerPose = (ICombativesPlayerPose) entity;
@@ -166,6 +166,11 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
             this.bipedHead.rotateAngleZ += visualLean;
             this.bipedLeftArm.rotateAngleZ += visualLean;
             this.bipedRightArm.rotateAngleZ += visualLean;
+            float lean = ((com.glowingfederal.combatives.movement.ICombativesLocomotion) entity).getLean();
+            float counterbalance = lean * 0.04F;
+            float brace = Math.abs(lean) * 0.012F;
+            this.bipedLeftLeg.rotateAngleZ += counterbalance + brace;
+            this.bipedRightLeg.rotateAngleZ += counterbalance - brace;
         }
     }
 
@@ -175,6 +180,8 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
         this.combatives$headBaseZ = this.bipedHead.rotateAngleZ;
         this.combatives$leftArmBaseZ = this.bipedLeftArm.rotateAngleZ;
         this.combatives$rightArmBaseZ = this.bipedRightArm.rotateAngleZ;
+        this.combatives$leftLegLeanBaseZ = this.bipedLeftLeg.rotateAngleZ;
+        this.combatives$rightLegLeanBaseZ = this.bipedRightLeg.rotateAngleZ;
         this.combatives$leanBaseCaptured = true;
     }
 
@@ -184,6 +191,8 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
         this.bipedHead.rotateAngleZ = this.combatives$headBaseZ;
         this.bipedLeftArm.rotateAngleZ = this.combatives$leftArmBaseZ;
         this.bipedRightArm.rotateAngleZ = this.combatives$rightArmBaseZ;
+        this.bipedLeftLeg.rotateAngleZ = this.combatives$leftLegLeanBaseZ;
+        this.bipedRightLeg.rotateAngleZ = this.combatives$rightLegLeanBaseZ;
         this.combatives$leanBaseCaptured = false;
     }
 

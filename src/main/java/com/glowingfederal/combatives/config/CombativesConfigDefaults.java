@@ -33,7 +33,7 @@ public final class CombativesConfigDefaults {
     public static final double MAX_LEAN_ROLL = 7.0D;
     public static final double LEAN_INTERPOLATION = 0.24D;
     public static final boolean ENABLE_SLIDING = true;
-    public static final double SLIDE_MINIMUM_ENTRY_SPEED = 0.18D;
+    public static final double SLIDE_MINIMUM_ENTRY_SPEED = 0.08D;
     public static final double SLIDE_EXIT_SPEED = 0.08D;
     public static final double SLIDE_DECELERATION = 0.012D;
     public static final double SLIDE_STEERING_INFLUENCE = 0.08D;

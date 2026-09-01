@@ -323,3 +323,14 @@
   the writer restoring server Y. Source inspection confirms the candidate call
   path, but the exact runtime writer and old/new values still require a new log;
   no build or in-game validation was performed.
+
+2026-09-01 23:45 — Make sprint-to-crawl slides forgiving and brace lean poses
+
+- Added a restrained, mirrored leg counterbalance on top of each frame's animated
+  leg pose, with the same render-once restoration lifecycle as the upper-body lean.
+- Carried forward-input state with the sprint snapshot on the crawl press edge,
+  lowered the default entry-speed safety floor to crawl-exit speed, and made slide
+  attempt, start, and end diagnostics concise event records.
+- Removed per-frame crawl model/render hook messages. Source inspection and packet,
+  state, and movement call-path tracing were performed; build and in-game visual,
+  timing, collision, and dedicated-server validation remain required.

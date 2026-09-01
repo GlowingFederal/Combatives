@@ -10,6 +10,7 @@ public final class CombativesConfig {
     private static final String CATEGORY_DEBUG = "debug";
     private static final String CATEGORY_CAMERA = "camera";
     private static final String CATEGORY_COMPATIBILITY = "compatibility";
+    private static final String CATEGORY_MOVEMENT = "movement";
 
     public static boolean enableCombativesCamera = CombativesConfigDefaults.ENABLE_COMBATIVES_CAMERA;
     public static boolean enableProceduralBob = CombativesConfigDefaults.ENABLE_PROCEDURAL_BOB;
@@ -38,6 +39,16 @@ public final class CombativesConfig {
     public static boolean enableCrawlCamera = CombativesConfigDefaults.ENABLE_CRAWL_CAMERA;
     public static double crawlCameraAmplitude = CombativesConfigDefaults.CRAWL_CAMERA_AMPLITUDE;
     public static int crawlTransitionMillis = CombativesConfigDefaults.CRAWL_TRANSITION_MILLIS;
+    public static boolean enableLeaning = CombativesConfigDefaults.ENABLE_LEANING;
+    public static double maxLeanDistance = CombativesConfigDefaults.MAX_LEAN_DISTANCE;
+    public static double maxLeanRoll = CombativesConfigDefaults.MAX_LEAN_ROLL;
+    public static double leanInterpolation = CombativesConfigDefaults.LEAN_INTERPOLATION;
+    public static boolean enableSliding = CombativesConfigDefaults.ENABLE_SLIDING;
+    public static double slideMinimumEntrySpeed = CombativesConfigDefaults.SLIDE_MINIMUM_ENTRY_SPEED;
+    public static double slideExitSpeed = CombativesConfigDefaults.SLIDE_EXIT_SPEED;
+    public static double slideDeceleration = CombativesConfigDefaults.SLIDE_DECELERATION;
+    public static double slideSteeringInfluence = CombativesConfigDefaults.SLIDE_STEERING_INFLUENCE;
+    public static int slideMaximumTicks = CombativesConfigDefaults.SLIDE_MAXIMUM_TICKS;
     public static boolean debugMovement = CombativesConfigDefaults.DEBUG;
     public static boolean verboseMovementDebug = CombativesConfigDefaults.VERBOSE_DEBUG;
     public static boolean debugCamera = CombativesConfigDefaults.DEBUG;
@@ -76,6 +87,16 @@ public final class CombativesConfig {
         enableCrawlCamera = CombativesConfigDefaults.ENABLE_CRAWL_CAMERA;
         crawlCameraAmplitude = CombativesConfigDefaults.CRAWL_CAMERA_AMPLITUDE;
         crawlTransitionMillis = CombativesConfigDefaults.CRAWL_TRANSITION_MILLIS;
+        enableLeaning = CombativesConfigDefaults.ENABLE_LEANING;
+        maxLeanDistance = CombativesConfigDefaults.MAX_LEAN_DISTANCE;
+        maxLeanRoll = CombativesConfigDefaults.MAX_LEAN_ROLL;
+        leanInterpolation = CombativesConfigDefaults.LEAN_INTERPOLATION;
+        enableSliding = CombativesConfigDefaults.ENABLE_SLIDING;
+        slideMinimumEntrySpeed = CombativesConfigDefaults.SLIDE_MINIMUM_ENTRY_SPEED;
+        slideExitSpeed = CombativesConfigDefaults.SLIDE_EXIT_SPEED;
+        slideDeceleration = CombativesConfigDefaults.SLIDE_DECELERATION;
+        slideSteeringInfluence = CombativesConfigDefaults.SLIDE_STEERING_INFLUENCE;
+        slideMaximumTicks = CombativesConfigDefaults.SLIDE_MAXIMUM_TICKS;
         enableMpmHitboxScaling = CombativesConfigDefaults.ENABLE_MPM_HITBOX_SCALING;
     }
 
@@ -137,6 +158,16 @@ public final class CombativesConfig {
         enableCrawlCamera = config.getBoolean("enableCrawlCamera", CATEGORY_CAMERA, enableCrawlCamera, "Enable restrained continuous crawling motion and crawl transitions.");
         crawlCameraAmplitude = config.getFloat("crawlCameraAmplitude", CATEGORY_CAMERA, (float)crawlCameraAmplitude, 0F, 3F, "Multiplier for crawl-cycle movement and pull impulses.");
         crawlTransitionMillis = config.getInt("crawlTransitionMillis", CATEGORY_CAMERA, crawlTransitionMillis, 150, 250, "Monotonic crawl enter/exit camera blend duration in milliseconds.");
+        enableLeaning = config.getBoolean("enableLeaning", CATEGORY_MOVEMENT, enableLeaning, "Enable authoritative tactical leaning.");
+        maxLeanDistance = config.getFloat("maxLeanDistance", CATEGORY_MOVEMENT, (float) maxLeanDistance, 0.0F, 0.5F, "Maximum first-person lean displacement in blocks.");
+        maxLeanRoll = config.getFloat("maxLeanRoll", CATEGORY_MOVEMENT, (float) maxLeanRoll, 0.0F, 15.0F, "Maximum first-person lean roll in degrees.");
+        leanInterpolation = config.getFloat("leanInterpolation", CATEGORY_MOVEMENT, (float) leanInterpolation, 0.05F, 1.0F, "Lean interpolation fraction per client tick.");
+        enableSliding = config.getBoolean("enableSliding", CATEGORY_MOVEMENT, enableSliding, "Enable sprint-to-crawl sliding.");
+        slideMinimumEntrySpeed = config.getFloat("slideMinimumEntrySpeed", CATEGORY_MOVEMENT, (float) slideMinimumEntrySpeed, 0.05F, 1.0F, "Minimum horizontal blocks per tick required to enter a slide.");
+        slideExitSpeed = config.getFloat("slideExitSpeed", CATEGORY_MOVEMENT, (float) slideExitSpeed, 0.01F, 0.5F, "Horizontal speed at which a slide ends.");
+        slideDeceleration = config.getFloat("slideDeceleration", CATEGORY_MOVEMENT, (float) slideDeceleration, 0.001F, 0.1F, "Horizontal speed removed each slide tick.");
+        slideSteeringInfluence = config.getFloat("slideSteeringInfluence", CATEGORY_MOVEMENT, (float) slideSteeringInfluence, 0.0F, 0.25F, "Maximum fraction of slide direction adjusted toward movement input each tick.");
+        slideMaximumTicks = config.getInt("slideMaximumTicks", CATEGORY_MOVEMENT, slideMaximumTicks, 5, 100, "Maximum authoritative slide duration in ticks.");
         enableMpmHitboxScaling = config.getBoolean("enableMpmHitboxScaling", CATEGORY_COMPATIBILITY,
                 enableMpmHitboxScaling, "Scale player collision width and height by MorePlayerModels+'s synchronized whole-model size. Independent of camera compatibility.");
         debugMovement = config.getBoolean(

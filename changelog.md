@@ -267,3 +267,18 @@
   sleep/wake lifecycle unchanged. Dedicated-client and repeated respawn runtime
   validation remains required because project execution was intentionally not
   performed in this environment.
+
+2026-09-01 00:00 — Add authoritative tactical lean and sprint sliding
+
+- Added explicit synchronized crawl/swim/slide locomotion state, server-owned
+  slide entry, inherited momentum, tick deceleration, deterministic termination,
+  and reuse of the existing low geometry and standing-clearance paths.
+- Added held lean controls, server validation, wall-clamped shared camera and
+  interaction-ray displacement, smooth camera roll, and synchronized remote
+  torso/head presentation without moving the player collision box.
+- Added a distinct asymmetric slide animation, restrained slide camera settling,
+  movement configuration, and lifecycle clearing for death, respawn, teleport,
+  dimension change, mounts, water, flight, ladders, falling, impacts, and damage.
+- Source paths and packet payloads were inspected without compiling or running
+  the project; dedicated-server latency, visual tuning, slopes, and compatibility
+  with installed mod combinations still require in-game validation.

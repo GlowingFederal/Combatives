@@ -11,21 +11,27 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
+import com.glowingfederal.combatives.movement.ICombativesLocomotion;
+import com.glowingfederal.combatives.movement.LocomotionState;
 
 public class PacketPlayerPoseS2C implements IMessage {
     private int entityId;
     private Pose pose;
     private boolean swimming;
     private boolean crawlKeyDown;
+    private LocomotionState locomotion = LocomotionState.NORMAL;
+    private float lean;
 
     public PacketPlayerPoseS2C() {
     }
 
-    public PacketPlayerPoseS2C(int entityId, Pose pose, boolean swimming, boolean crawlKeyDown) {
+    public PacketPlayerPoseS2C(int entityId, Pose pose, boolean swimming, boolean crawlKeyDown, LocomotionState locomotion, float lean) {
         this.entityId = entityId;
         this.pose = pose;
         this.swimming = swimming;
         this.crawlKeyDown = crawlKeyDown;
+        this.locomotion = locomotion == null ? LocomotionState.NORMAL : locomotion;
+        this.lean = lean;
     }
 
     @Override
@@ -35,6 +41,9 @@ public class PacketPlayerPoseS2C implements IMessage {
         this.pose = id >= 0 && id < Pose.values().length ? Pose.values()[id] : Pose.STANDING;
         this.swimming = buf.readBoolean();
         this.crawlKeyDown = buf.readBoolean();
+        int locomotionId = buf.readByte();
+        this.locomotion = locomotionId >= 0 && locomotionId < LocomotionState.values().length ? LocomotionState.values()[locomotionId] : LocomotionState.NORMAL;
+        this.lean = buf.readFloat();
     }
 
     @Override
@@ -43,6 +52,8 @@ public class PacketPlayerPoseS2C implements IMessage {
         buf.writeByte(this.pose == null ? Pose.STANDING.ordinal() : this.pose.ordinal());
         buf.writeBoolean(this.swimming);
         buf.writeBoolean(this.crawlKeyDown);
+        buf.writeByte(this.locomotion.ordinal());
+        buf.writeFloat(this.lean);
     }
 
     public static class Handler implements IMessageHandler<PacketPlayerPoseS2C, IMessage> {
@@ -52,6 +63,10 @@ public class PacketPlayerPoseS2C implements IMessage {
             Entity entity = Minecraft.getMinecraft().theWorld == null ? null : Minecraft.getMinecraft().theWorld.getEntityByID(message.entityId);
             if (entity instanceof EntityPlayer) {
                 PoseSync.applyAuthoritativePose((EntityPlayer) entity, message.pose, message.swimming, message.crawlKeyDown, "server");
+                if (entity instanceof ICombativesLocomotion) {
+                    ((ICombativesLocomotion) entity).setLocomotionState(message.locomotion);
+                    ((ICombativesLocomotion) entity).setLean(message.lean);
+                }
             }
             return null;
         }

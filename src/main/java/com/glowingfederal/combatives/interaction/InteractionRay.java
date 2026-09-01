@@ -7,6 +7,8 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
+import com.glowingfederal.combatives.movement.ICombativesLocomotion;
+import com.glowingfederal.combatives.movement.LeanGeometry;
 
 /**
  * The common-side definition of gameplay aim.  The anchor is always measured
@@ -26,8 +28,8 @@ public final class InteractionRay {
 
     /** Tick-authoritative ray used by server interaction validation. */
     public static InteractionRay authoritative(EntityPlayer player) {
-        return create(player, player.posX, player.boundingBox.minY, player.posZ,
-                player.rotationYaw, player.rotationPitch);
+        return applyLean(player, create(player, player.posX, player.boundingBox.minY, player.posZ,
+                player.rotationYaw, player.rotationPitch));
     }
 
     /** Same geometry semantics with position/orientation interpolation for rendering. */
@@ -39,7 +41,16 @@ public final class InteractionRay {
         float yaw = interpolateRotation(player.prevRotationYaw, player.rotationYaw, partialTicks);
         float pitch = player.prevRotationPitch
                 + (player.rotationPitch - player.prevRotationPitch) * partialTicks;
-        return create(player, x, floorY, z, yaw, pitch);
+        return applyLean(player, create(player, x, floorY, z, yaw, pitch));
+    }
+
+    private static InteractionRay applyLean(EntityPlayer player, InteractionRay base) {
+        if (!(player instanceof ICombativesLocomotion)) return base;
+        float lean = ((ICombativesLocomotion) player).getLean();
+        double offset = LeanGeometry.legalOffset(player, base, lean);
+        if (offset == 0.0D) return base;
+        double yaw = Math.toRadians(player.rotationYaw);
+        return new InteractionRay(base.origin.addVector(Math.cos(yaw) * offset, 0.0D, Math.sin(yaw) * offset), base.direction, base.geometryRevision);
     }
 
     private static InteractionRay create(EntityPlayer player, double x, double floorY,

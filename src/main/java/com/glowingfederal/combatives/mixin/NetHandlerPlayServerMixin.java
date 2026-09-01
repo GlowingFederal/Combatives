@@ -13,6 +13,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
+import com.glowingfederal.combatives.entity.Pose;
 
 /** Makes START_DESTROY_BLOCK consume the server's copy of the shared ray. */
 @Mixin(NetHandlerPlayServer.class)
@@ -20,6 +22,13 @@ public abstract class NetHandlerPlayServerMixin {
     @Shadow public EntityPlayerMP playerEntity;
     @Unique private MovingObjectPosition combatives$digTarget;
     @Unique private MovingObjectPosition combatives$useTarget;
+
+    @Inject(method = "setPlayerLocation", at = @At("HEAD"))
+    private void combatives$clearMovementForTeleport(double x, double y, double z, float yaw, float pitch, CallbackInfo ci) {
+        if (this.playerEntity instanceof ICombativesPlayerPose) {
+            ((ICombativesPlayerPose) this.playerEntity).resetPoseState(Pose.STANDING, "server teleport");
+        }
+    }
 
     @Inject(method = "processPlayerDigging", at = @At("HEAD"))
     private void combatives$resolveDigTarget(C07PacketPlayerDigging packet, CallbackInfo ci) {

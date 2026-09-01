@@ -15,6 +15,10 @@ sensitivity, aiming input, player rotation, reach, or other gameplay mechanics.
   bounds, eye height, and third-person animation.
 - **Crawling / prone movement**, toggled with `C` by default, including
   standing-clearance checks and matching collision and visual poses.
+- **Sprint sliding**, entered by toggling crawl while grounded and above the
+  configured entry speed, with server-owned momentum and a dedicated pose.
+- **Tactical leaning**, held with `Q`/`E` by default, with wall-clamped camera,
+  interaction-ray, and synchronized upper-body displacement.
 - **Multiplayer pose synchronization** between the owning player, server, and
   tracking clients across normal lifecycle changes.
 - **A physical first-person camera** with procedural movement bob, lean, and
@@ -67,8 +71,10 @@ pathological input spikes, but is separate from normal camera effects.
 Forge creates the standard configuration at `config/Combatives.cfg`. Its main
 categories cover:
 
-- camera features and strength multipliers (bob, lean, FOV, landing, freefall,
+- camera features and strength multipliers (bob, movement lean, FOV, landing, freefall,
   inertia, collision, explosion, horse riding, and experimental crawl motion);
+- gameplay movement values for tactical lean distance/roll/interpolation and
+  slide entry speed, deceleration, exit speed, and maximum duration;
 - camera safety limits and the optional raw mouse-delta clamp;
 - MorePlayerModels+ physical hitbox scaling; and
 - general or verbose movement/camera diagnostics.

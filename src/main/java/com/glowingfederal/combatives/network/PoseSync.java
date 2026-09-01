@@ -9,6 +9,8 @@ import cpw.mods.fml.common.network.NetworkRegistry;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import com.glowingfederal.combatives.movement.ICombativesLocomotion;
+import com.glowingfederal.combatives.movement.LocomotionState;
 
 public final class PoseSync {
     private PoseSync() {
@@ -61,7 +63,9 @@ public final class PoseSync {
             return;
         }
         ICombativesPlayerPose state = (ICombativesPlayerPose) player;
-        PacketPlayerPoseS2C packet = new PacketPlayerPoseS2C(player.getEntityId(), state.getPose(), state.isSwimming(), state.isCrawlKeyDown());
+        ICombativesLocomotion locomotion = player instanceof ICombativesLocomotion ? (ICombativesLocomotion) player : null;
+        PacketPlayerPoseS2C packet = new PacketPlayerPoseS2C(player.getEntityId(), state.getPose(), state.isSwimming(), state.isCrawlKeyDown(),
+            locomotion == null ? LocomotionState.NORMAL : locomotion.getLocomotionState(), locomotion == null ? 0.0F : locomotion.getLean());
         EntitySize size = state.getSize(state.getPose());
         NetworkHandler.channel.sendToAllAround(packet, new NetworkRegistry.TargetPoint(player.dimension, player.posX, player.posY, player.posZ, 512.0D));
         if (includeSelf) {
@@ -76,7 +80,9 @@ public final class PoseSync {
         }
         EntityPlayer player = (EntityPlayer) source;
         ICombativesPlayerPose state = (ICombativesPlayerPose) source;
-        NetworkHandler.channel.sendTo(new PacketPlayerPoseS2C(player.getEntityId(), state.getPose(), state.isSwimming(), state.isCrawlKeyDown()), target);
+        ICombativesLocomotion locomotion = source instanceof ICombativesLocomotion ? (ICombativesLocomotion) source : null;
+        NetworkHandler.channel.sendTo(new PacketPlayerPoseS2C(player.getEntityId(), state.getPose(), state.isSwimming(), state.isCrawlKeyDown(),
+            locomotion == null ? LocomotionState.NORMAL : locomotion.getLocomotionState(), locomotion == null ? 0.0F : locomotion.getLean()), target);
         MovementDiagnostics.verbose(player, "sent authoritative pose to tracker " + target.getCommandSenderName());
     }
 }

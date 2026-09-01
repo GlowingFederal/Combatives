@@ -54,6 +54,9 @@ public class PoseSyncEvents {
     @SubscribeEvent
     public void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
         PlayerStepHeight.restoreVanillaStepHeight(event.player, "server dimension change");
+        if (event.player instanceof ICombativesPlayerPose) {
+            ((ICombativesPlayerPose) event.player).resetPoseState(Pose.STANDING, "server dimension change");
+        }
         if (event.player instanceof EntityPlayerMP) {
             PoseSync.broadcastAuthoritativePose((EntityPlayerMP) event.player, true);
         }

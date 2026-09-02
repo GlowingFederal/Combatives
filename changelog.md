@@ -334,3 +334,24 @@
 - Removed per-frame crawl model/render hook messages. Source inspection and packet,
   state, and movement call-path tracing were performed; build and in-game visual,
   timing, collision, and dedicated-server validation remain required.
+
+2026-09-02 00:00 — Strengthen leg lean and synchronize gameplay configuration
+
+- Changed both animated legs from a slight opposite brace to 75% of the torso's
+  lateral roll, retained only a small asymmetric stance, and added/restored a
+  subtle lateral leg-pivot shift so body and armor models form a coherent lean
+  without replacing vanilla walk-axis animation.
+- Added a versioned server-to-client gameplay-config snapshot at login and a
+  small runtime access boundary. Lean enablement, physical lean distance, and
+  optional MPM hitbox scaling now come from server configuration in gameplay
+  paths, while cosmetic roll/interpolation and other camera preferences remain
+  local. The local configuration file is never overwritten; runtime config
+  reload is not supported, so reconnecting refreshes the snapshot.
+- Removed slide entry from crawl requests and disabled sliding by default, so
+  sprint plus crawl behaves as ordinary crawl. Gated continuous targeting and
+  rendered-camera diagnostics behind verbose flags.
+- Changes were validated through source inspection, call-site searches, and
+  packet/config tracing only. Compilation and Minecraft runtime validation were
+  intentionally not performed; pose appearance, armor alignment, wall clamps,
+  reconnects, and dedicated/integrated multiplayer behavior still require
+  in-game testing.

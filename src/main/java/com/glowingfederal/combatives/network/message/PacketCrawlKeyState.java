@@ -9,33 +9,17 @@ import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
 import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayerMP;
-import com.glowingfederal.combatives.movement.SlidePhysics;
-import com.glowingfederal.combatives.movement.ICombativesLocomotion;
-import com.glowingfederal.combatives.movement.LocomotionState;
 
 public class PacketCrawlKeyState implements IMessage {
-    private boolean sprintingAtRequest;
-    private boolean movingForwardAtRequest;
-
     public PacketCrawlKeyState() {
-    }
-
-    /** Packet semantics remain "toggle requested"; the flag snapshots sprint at that press edge. */
-    public PacketCrawlKeyState(boolean sprintingAtRequest, boolean movingForwardAtRequest) {
-        this.sprintingAtRequest = sprintingAtRequest;
-        this.movingForwardAtRequest = movingForwardAtRequest;
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        this.sprintingAtRequest = buf.readBoolean();
-        this.movingForwardAtRequest = buf.readBoolean();
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
-        buf.writeBoolean(this.sprintingAtRequest);
-        buf.writeBoolean(this.movingForwardAtRequest);
     }
 
     public static class Handler implements IMessageHandler<PacketCrawlKeyState, IMessage> {
@@ -53,14 +37,6 @@ public class PacketCrawlKeyState implements IMessage {
                 ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
                 boolean before = pose.isCrawlKeyDown();
                 boolean next = !before;
-                if (!before && next && SlidePhysics.begin(player, message.sprintingAtRequest, message.movingForwardAtRequest, before, next)) {
-                    pose.setCrawlKeyDown(true);
-                    pose.setPose(Pose.SWIMMING);
-                    pose.recalculateSize();
-                    MovementDiagnostics.debug(player, "server entered SLIDING from crawl activation");
-                    PoseSync.broadcastAuthoritativePose(player, true);
-                    return null;
-                }
                 if (before && !next && !pose.isPoseClear(Pose.STANDING)) {
                     MovementDiagnostics.debug(player, "server crawl exit blocked: standing clearance unavailable");
                     PoseSync.broadcastAuthoritativePose(player, true);
@@ -68,10 +44,6 @@ public class PacketCrawlKeyState implements IMessage {
                 }
                 MovementDiagnostics.debug(player, "server crawl " + before + " -> " + next);
                 pose.setCrawlKeyDown(next);
-                if (!next && player instanceof ICombativesLocomotion && ((ICombativesLocomotion) player).getLocomotionState() == LocomotionState.SLIDING) {
-                    // Keep the low authoritative geometry until SlidePhysics terminates this tick.
-                    pose.setPose(Pose.SWIMMING);
-                }
                 if (next && pose.isPoseClear(Pose.SWIMMING)) {
                     pose.setPose(Pose.SWIMMING);
                     MovementDiagnostics.debug(player, "crawl toggle selected SWIMMING pose immediately");

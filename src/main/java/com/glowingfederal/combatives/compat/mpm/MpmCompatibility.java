@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Collections;
 import java.util.WeakHashMap;
 
-import com.glowingfederal.combatives.config.CombativesConfig;
+import com.glowingfederal.combatives.config.AuthoritativeGameplaySettings;
 import cpw.mods.fml.common.Loader;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -35,7 +35,7 @@ public final class MpmCompatibility {
 
     /** Resolve MPM's local cache. On a server this is the authoritative saved model data. */
     public static Geometry resolveLocal(EntityPlayer player) {
-        if (!CombativesConfig.enableMpmHitboxScaling || player == null || !isAvailable()) {
+        if (!AuthoritativeGameplaySettings.isMpmHitboxScalingEnabled(player) || player == null || !isAvailable()) {
             return Geometry.DEFAULT;
         }
         try {

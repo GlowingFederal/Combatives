@@ -6,6 +6,7 @@ import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.network.NetworkHandler;
 import com.glowingfederal.combatives.network.message.PacketCrawlKeyState;
 import com.glowingfederal.combatives.network.message.PacketLeanState;
+import com.glowingfederal.combatives.config.AuthoritativeGameplaySettings;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
 import net.minecraft.client.Minecraft;
@@ -47,6 +48,7 @@ public class ClientMovementInputHandler {
         } else {
             leanDirection = leanLeft ? -1 : 1;
         }
+        if (!AuthoritativeGameplaySettings.isLeaningEnabled(player)) leanDirection = 0;
 
         if (leanDirection == this.lastLeanDirection) {
             return;
@@ -87,18 +89,6 @@ public class ClientMovementInputHandler {
             return;
         }
 
-        /*
-         * Capture movement state BEFORE applying the predicted crawl toggle.
-         *
-         * Entering the low pose may cause vanilla sprint cancellation, so the
-         * server needs to know whether this press originated while the local
-         * player was genuinely sprinting forward.
-         */
-        boolean sprintingAtRequest = player.isSprinting();
-        boolean movingForwardAtRequest =
-                player.movementInput != null
-                        && player.movementInput.moveForward > 0.0F;
-
         if (player instanceof ICombativesPlayerPose) {
             ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
 
@@ -114,8 +104,6 @@ public class ClientMovementInputHandler {
         MovementDiagnostics.debug(
                 player,
                 "client sends crawl toggle request"
-                        + " sprintingAtRequest=" + sprintingAtRequest
-                        + " movingForwardAtRequest=" + movingForwardAtRequest
         );
 
         if (NetworkHandler.channel == null) {
@@ -126,11 +114,6 @@ public class ClientMovementInputHandler {
             return;
         }
 
-        NetworkHandler.channel.sendToServer(
-                new PacketCrawlKeyState(
-                        sprintingAtRequest,
-                        movingForwardAtRequest
-                )
-        );
+        NetworkHandler.channel.sendToServer(new PacketCrawlKeyState());
     }
 }

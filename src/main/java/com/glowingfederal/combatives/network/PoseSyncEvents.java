@@ -4,6 +4,8 @@ import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.PlayerStepHeight;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
+import com.glowingfederal.combatives.config.AuthoritativeGameplaySettings;
+import com.glowingfederal.combatives.network.message.PacketAuthoritativeGameplayConfig;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.PlayerEvent;
 import net.minecraft.entity.player.EntityPlayer;
@@ -36,6 +38,8 @@ public class PoseSyncEvents {
         PlayerStepHeight.restoreVanillaStepHeight(event.player, "server login");
         this.logPoseStateCheck(event.player, "server login");
         if (event.player instanceof EntityPlayerMP) {
+            NetworkHandler.channel.sendTo(new PacketAuthoritativeGameplayConfig(
+                    AuthoritativeGameplaySettings.serverSnapshot()), (EntityPlayerMP) event.player);
             PoseSync.broadcastAuthoritativePose((EntityPlayerMP) event.player, true);
         }
     }

@@ -1,24 +1,10 @@
-# Leaning and sliding architecture
+# Leaning architecture (sliding deferred)
 
-Minecraft 1.7.10 has no useful vanilla pose state for these features. Combatives
-therefore keeps `Pose.SWIMMING` as the established low collision geometry while
-`LocomotionState` distinguishes a crawl, swim, and time-bounded slide. The
-server accepts slide entry from the existing crawl activation packet, changes
-to low geometry immediately, owns deceleration and termination, and broadcasts
-the locomotion value alongside the existing pose packet.
-
-A slide requires enabled configuration, sprinting at the crawl-key press edge,
-ground contact, at least the
-minimum horizontal speed, clear low geometry, and no water, ladder, flight,
-mount, sleep, death, or noclip restriction. It inherits current horizontal
-motion without a boost. Each tick removes the configured speed amount; normal
-sprint acceleration is skipped and input may only blend the travel direction by
-the configured, tightly capped steering influence without increasing speed.
-Speed settings are blocks per tick: nominal unobstructed vanilla sprint settles
-near 0.28 blocks/tick, while the default slide entry threshold remains 0.18.
-It ends at the exit speed or duration limit, on ground loss, horizontal impact,
-water/restricted-state entry, or knockback. A held crawl request ends in crawl;
-otherwise existing standing clearance chooses standing or forced crawl.
+Minecraft 1.7.10 has no useful vanilla pose state for crawling. Combatives keeps
+`Pose.SWIMMING` as the established low collision geometry. Sprint plus crawl is
+an ordinary crawl request: the crawl packet has no slide-entry path. Legacy
+slide state/configuration remains readable for compatibility but cannot begin a
+new slide; sliding is deferred and its default is disabled.
 
 Death, respawn, dimension change, and explicit server teleport use the existing forced
 pose reset, which now also clears slide ticks and lean. Mounts, sleep, flight,
@@ -41,12 +27,28 @@ center-to-desired-position block trace reserves a small wall margin and clamps
 the offset, so the server's authoritative dig/use ray cannot originate beyond
 the blocking wall. Lean never moves or resizes the player's collision box.
 
-Client presentation interpolates lateral camera travel and modest roll. Slide
-uses the existing physical low eye height plus a restrained entry settling
-offset. Remote pose packets drive an asymmetric, non-stroking slide animation;
-lean applies one bounded additive roll to the animated body, head, and both arms,
-then restores their base angles after rendering. These visual blends do
-not own collision or momentum.
+On login the server sends one versioned gameplay-config snapshot containing
+lean enablement, maximum physical lean distance, and MPM hitbox-scaling
+enablement. Common gameplay access reads the local configuration on the server
+and the snapshot in a remote client world. It never writes the client's config
+file. There is no config hot-reload hook, so updates take effect for a client on
+its next connection. This path is identical for dedicated and integrated
+servers; shared JVM statics are not used as the client authority.
+
+`maxLeanRoll` and `leanInterpolation` remain client-only presentation settings.
+All other camera, bob, shake, FOV, mouse, horse, and diagnostic settings are
+also presentation-only. Lean enablement and distance affect aim and are server
+authoritative. Player pose dimensions/eye anchors are fixed gameplay rules,
+while optional MPM hitbox scaling is server authoritative and its resolved
+geometry continues to use the existing geometry packet.
+
+Client presentation interpolates the server-approved lateral camera travel and
+adds cosmetic roll. Lean applies one bounded additive roll to the animated
+body, head, arms, and legs. Each leg receives 75% of the torso roll, a very
+small mirrored brace, and a subtle lateral X-pivot shift. Existing X-axis walk
+animation is untouched. Every changed angle and pivot is captured after vanilla
+animation and restored after the model render, including armor `ModelBiped`
+instances, so transforms do not accumulate.
 
 Dedicated-server, latency, modded-block collision, and animation appearance
 still require in-game validation; this implementation was validated by source

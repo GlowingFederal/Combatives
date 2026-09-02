@@ -73,8 +73,8 @@ categories cover:
 
 - camera features and strength multipliers (bob, movement lean, FOV, landing, freefall,
   inertia, collision, explosion, horse riding, and experimental crawl motion);
-- gameplay movement values for tactical lean distance/roll/interpolation and
-  slide entry speed, deceleration, exit speed, and maximum duration;
+- server-authoritative tactical lean enablement and physical distance, with
+  client-only cosmetic roll/interpolation preferences; sliding is deferred;
 - camera safety limits and the optional raw mouse-delta clamp;
 - MorePlayerModels+ physical hitbox scaling; and
 - general or verbose movement/camera diagnostics.

@@ -53,3 +53,20 @@ instances, so transforms do not accumulate.
 Dedicated-server, latency, modded-block collision, and animation appearance
 still require in-game validation; this implementation was validated by source
 inspection and call-path tracing only.
+
+## Player-local lean basis and Flan's armour
+
+Gameplay lean keeps the semantic contract `lean < 0 = player left` and `lean > 0 = player right`. `PlayerLocalBasis` is the canonical Minecraft-yaw conversion used by both wall clamping and interaction/camera origins. Its right vector is `(-cos(yaw), -sin(yaw))` (with forward `(-sin(yaw), cos(yaw))`). Therefore the expected horizontal vectors are:
+
+| Yaw | LEFT (X, Z) | RIGHT (X, Z) |
+| --- | --- | --- |
+| 0° | (+1, 0) | (-1, 0) |
+| 90° | (0, +1) | (0, -1) |
+| 180° | (-1, 0) | (+1, 0) |
+| 270° / -90° | (0, -1) | (0, +1) |
+
+The authoritative ray uses the server player's current `rotationYaw`. The interpolated client ray and camera projection use the same interpolated yaw and position, preventing current-tick and render-tick coordinate spaces from being mixed.
+
+Flan's `ItemTeamArmour#getArmorModel` returns a reusable `ModelCustomArmour`. That class extends `ModelBiped`, but overrides `render`: it calls inherited `setRotationAngles`, then copies each biped parent part's rotations and pivots into its `ModelRendererTurbo` head/body/arm/leg arrays before rendering them independently. Thus the normal `ModelBiped.render` return hook does not run for Flan's armour. Combatives applies its one shared biped lean pose before those copies and a narrow optional Flan's adapter restores the captured animated biped state when the custom render returns. This supports armour using Flan's `ModelCustomArmour` architecture without item-name checks, leaves custom child geometry/animation intact, and prevents reusable model state from accumulating lean.
+
+Sliding remains disabled by default and is unchanged by this compatibility path.

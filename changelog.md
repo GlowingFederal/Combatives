@@ -355,3 +355,10 @@
   intentionally not performed; pose appearance, armor alignment, wall clamps,
   reconnects, and dedicated/integrated multiplayer behavior still require
   in-game testing.
+
+2026-09-02 00:46 — Correct cardinal lean geometry and Flan's armour pose lifecycle
+
+- Centralized Minecraft-yaw forward/right basis conversion so authoritative wall clamps, interaction rays, interpolated client rays, and camera projection use the same player-relative convention (`negative = left`, `positive = right`) at every heading.
+- Kept server interaction geometry on current authoritative yaw while making interpolated client geometry consistently use interpolated yaw and position.
+- Extracted the shared visual lean pose and added an optional generic `ModelCustomArmour` render-lifecycle adapter. Flan's independently rendered TurboModel part arrays now consume the biped parent pose and restore reusable model state after rendering without item-specific checks or accumulated transforms.
+- Source-level call-site and cardinal-vector validation was performed; dedicated-server and Tyrants and Plebians in-game validation remains required.

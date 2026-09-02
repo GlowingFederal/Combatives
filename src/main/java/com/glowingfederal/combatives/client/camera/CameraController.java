@@ -2,6 +2,7 @@ package com.glowingfederal.combatives.client.camera;
 
 import com.glowingfederal.combatives.Combatives;
 import com.glowingfederal.combatives.config.CombativesConfig;
+import com.glowingfederal.combatives.config.AuthoritativeGameplaySettings;
 import com.glowingfederal.combatives.client.camera.internal.CameraEffectManager;
 import com.glowingfederal.combatives.client.camera.internal.EntityCameraBehaviorManager;
 import net.minecraft.client.Minecraft;
@@ -51,7 +52,7 @@ public final class CameraController {
         float desiredLeanRoll = 0.0F;
         if (player instanceof ICombativesLocomotion) {
             ICombativesLocomotion locomotion = (ICombativesLocomotion) player;
-            if (CombativesConfig.enableLeaning) {
+            if (AuthoritativeGameplaySettings.isLeaningEnabled(player)) {
                 InteractionRay ray = InteractionRay.interpolated(player, partialTicks);
                 double yaw = Math.toRadians(player.rotationYaw);
                 double dx = ray.origin.xCoord - player.posX;

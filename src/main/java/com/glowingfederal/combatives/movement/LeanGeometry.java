@@ -1,6 +1,6 @@
 package com.glowingfederal.combatives.movement;
 
-import com.glowingfederal.combatives.config.CombativesConfig;
+import com.glowingfederal.combatives.config.AuthoritativeGameplaySettings;
 import com.glowingfederal.combatives.interaction.InteractionRay;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.MovingObjectPosition;
@@ -11,12 +11,12 @@ public final class LeanGeometry {
     private LeanGeometry() {}
 
     public static double legalOffset(EntityPlayer player, InteractionRay base, float lean) {
-        if (!CombativesConfig.enableLeaning || lean == 0.0F) return 0.0D;
+        if (!AuthoritativeGameplaySettings.isLeaningEnabled(player) || lean == 0.0F) return 0.0D;
         double yaw = Math.toRadians(player.rotationYaw);
         // Gameplay lean uses negative=left, positive=right. Minecraft's
         // yaw-relative lateral basis below points left, so convert the semantic
         // value once here for both camera and interaction rays.
-        double desired = -CombativesConfig.maxLeanDistance * lean;
+        double desired = -AuthoritativeGameplaySettings.getMaxLeanDistance(player) * lean;
         double dx = Math.cos(yaw) * desired;
         double dz = Math.sin(yaw) * desired;
         Vec3 end = base.origin.addVector(dx, 0.0D, dz);

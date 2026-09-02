@@ -6,6 +6,7 @@ import com.glowingfederal.combatives.network.message.PacketPlayerPoseC2S;
 import com.glowingfederal.combatives.network.message.PacketPlayerPoseS2C;
 import com.glowingfederal.combatives.network.message.PacketPlayerGeometryS2C;
 import com.glowingfederal.combatives.network.message.PacketLeanState;
+import com.glowingfederal.combatives.network.message.PacketAuthoritativeGameplayConfig;
 import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import cpw.mods.fml.relauncher.Side;
@@ -16,6 +17,7 @@ public final class NetworkHandler {
     private static final int PACKET_PLAYER_POSE_S2C = 2;
     private static final int PACKET_PLAYER_GEOMETRY_S2C = 3;
     private static final int PACKET_LEAN_STATE = 4;
+    private static final int PACKET_AUTHORITATIVE_GAMEPLAY_CONFIG = 5;
 
     public static SimpleNetworkWrapper channel;
 
@@ -38,5 +40,6 @@ public final class NetworkHandler {
         channel.registerMessage(PacketPlayerPoseS2C.Handler.class, PacketPlayerPoseS2C.class, PACKET_PLAYER_POSE_S2C, Side.CLIENT);
         channel.registerMessage(PacketPlayerGeometryS2C.Handler.class, PacketPlayerGeometryS2C.class, PACKET_PLAYER_GEOMETRY_S2C, Side.CLIENT);
         channel.registerMessage(PacketLeanState.Handler.class, PacketLeanState.class, PACKET_LEAN_STATE, Side.SERVER);
+        channel.registerMessage(PacketAuthoritativeGameplayConfig.Handler.class, PacketAuthoritativeGameplayConfig.class, PACKET_AUTHORITATIVE_GAMEPLAY_CONFIG, Side.CLIENT);
     }
 }

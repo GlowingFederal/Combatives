@@ -38,7 +38,7 @@ public final class TargetingDiagnostics {
         loggingPass = false;
         Minecraft mc = Minecraft.getMinecraft();
         Entity view = mc.renderViewEntity;
-        if ((!CombativesConfig.debugCamera && !CombativesConfig.debugMovement)
+        if ((!CombativesConfig.verboseCameraDebug && !CombativesConfig.verboseMovementDebug)
                 || Combatives.logger == null || !(view instanceof EntityPlayer)
                 || view.ticksExisted % 20 != 0) {
             return;
@@ -132,7 +132,7 @@ public final class TargetingDiagnostics {
 
     private static boolean focused(Entity entity) {
         return Combatives.logger != null && entity instanceof EntityPlayer
-                && (CombativesConfig.debugCamera || CombativesConfig.debugMpmPov);
+                && (CombativesConfig.verboseCameraDebug || CombativesConfig.debugMpmPov);
     }
 
     private static String vector(Vec3 value) {
@@ -140,7 +140,7 @@ public final class TargetingDiagnostics {
     }
 
     public static void logRenderedCamera(EntityPlayer player, float partialTicks, double renderedBaseY) {
-        if ((!CombativesConfig.debugCamera && !CombativesConfig.debugMovement) || Combatives.logger == null
+        if ((!CombativesConfig.verboseCameraDebug && !CombativesConfig.verboseMovementDebug) || Combatives.logger == null
                 || player == null || player.ticksExisted % 20 != 0) return;
         double x = player.prevPosX + (player.posX - player.prevPosX) * partialTicks;
         double z = player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks;

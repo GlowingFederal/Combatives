@@ -16,7 +16,8 @@
     "RenderPlayerMixin",
     "RenderMixin",
     "RendererLivingEntityMixin",
-    "PlayerControllerMPMixin"
+    "PlayerControllerMPMixin",
+    "compat.flans.FlansCustomArmourMixin"
   ],
   "server": []
 }

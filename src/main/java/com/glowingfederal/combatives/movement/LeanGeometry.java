@@ -10,20 +10,19 @@ import net.minecraft.util.Vec3;
 public final class LeanGeometry {
     private LeanGeometry() {}
 
-    public static double legalOffset(EntityPlayer player, InteractionRay base, float lean) {
-        if (!AuthoritativeGameplaySettings.isLeaningEnabled(player) || lean == 0.0F) return 0.0D;
-        double yaw = Math.toRadians(player.rotationYaw);
-        // Gameplay lean uses negative=left, positive=right. Minecraft's
-        // yaw-relative lateral basis below points left, so convert the semantic
-        // value once here for both camera and interaction rays.
-        double desired = -AuthoritativeGameplaySettings.getMaxLeanDistance(player) * lean;
-        double dx = Math.cos(yaw) * desired;
-        double dz = Math.sin(yaw) * desired;
-        Vec3 end = base.origin.addVector(dx, 0.0D, dz);
+    public static Vec3 legalOffset(EntityPlayer player, InteractionRay base, float lean, float yaw) {
+        if (!AuthoritativeGameplaySettings.isLeaningEnabled(player) || lean == 0.0F) {
+            return Vec3.createVectorHelper(0.0D, 0.0D, 0.0D);
+        }
+        double desiredDistance = AuthoritativeGameplaySettings.getMaxLeanDistance(player) * lean;
+        PlayerLocalBasis basis = PlayerLocalBasis.fromYaw(yaw);
+        Vec3 desiredOffset = basis.lateralOffset(desiredDistance);
+        Vec3 end = base.origin.addVector(desiredOffset.xCoord, 0.0D, desiredOffset.zCoord);
         MovingObjectPosition hit = player.worldObj.rayTraceBlocks(base.origin, end, false);
-        if (hit == null || hit.hitVec == null) return desired;
+        if (hit == null || hit.hitVec == null) return desiredOffset;
         double available = base.origin.distanceTo(hit.hitVec) - 0.05D;
-        if (available <= 0.0D) return 0.0D;
-        return Math.copySign(Math.min(Math.abs(desired), available), desired);
+        if (available <= 0.0D) return Vec3.createVectorHelper(0.0D, 0.0D, 0.0D);
+        double acceptedDistance = Math.copySign(Math.min(Math.abs(desiredDistance), available), desiredDistance);
+        return basis.lateralOffset(acceptedDistance);
     }
 }

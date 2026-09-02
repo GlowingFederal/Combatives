@@ -1,6 +1,8 @@
 package com.glowingfederal.combatives.mixin;
 
 import com.glowingfederal.combatives.client.model.ICombativesModelBipedSwimming;
+import com.glowingfederal.combatives.client.model.ICombativesLeanModel;
+import com.glowingfederal.combatives.client.model.LeanVisualPose;
 import com.glowingfederal.combatives.client.render.CombativesVisualPoseHelper;
 import com.glowingfederal.combatives.client.render.CrawlPoseAnimator;
 import com.glowingfederal.combatives.client.render.SlidePoseAnimator;
@@ -22,7 +24,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(ModelBiped.class)
-public abstract class ModelBipedMixin extends ModelBase implements ICombativesModelBipedSwimming {
+public abstract class ModelBipedMixin extends ModelBase implements ICombativesModelBipedSwimming, ICombativesLeanModel {
     @Shadow public ModelRenderer bipedHead;
     @Shadow public ModelRenderer bipedBody;
     @Shadow public ModelRenderer bipedRightArm;
@@ -163,19 +165,16 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
     @Unique private void combatives$applyVisualLean(Entity entity) {
         if (entity instanceof com.glowingfederal.combatives.movement.ICombativesLocomotion) {
             this.combatives$captureLeanBase();
-            float visualLean = -((com.glowingfederal.combatives.movement.ICombativesLocomotion) entity).getLean() * 0.16F;
-            this.bipedBody.rotateAngleZ += visualLean;
-            this.bipedHead.rotateAngleZ += visualLean;
-            this.bipedLeftArm.rotateAngleZ += visualLean;
-            this.bipedRightArm.rotateAngleZ += visualLean;
-            float lean = ((com.glowingfederal.combatives.movement.ICombativesLocomotion) entity).getLean();
-            float legLean = visualLean * 0.75F;
-            float brace = Math.abs(lean) * 0.01F;
-            float pivotShift = lean * 0.45F;
-            this.bipedLeftLeg.rotateAngleZ += legLean + brace;
-            this.bipedRightLeg.rotateAngleZ += legLean - brace;
-            this.bipedLeftLeg.rotationPointX += pivotShift;
-            this.bipedRightLeg.rotationPointX += pivotShift;
+            LeanVisualPose pose = LeanVisualPose.fromSemanticLean(
+                    ((com.glowingfederal.combatives.movement.ICombativesLocomotion) entity).getLean());
+            this.bipedBody.rotateAngleZ += pose.bodyRoll;
+            this.bipedHead.rotateAngleZ += pose.headRoll;
+            this.bipedLeftArm.rotateAngleZ += pose.armRoll;
+            this.bipedRightArm.rotateAngleZ += pose.armRoll;
+            this.bipedLeftLeg.rotateAngleZ += pose.legRoll + pose.leftLegBrace;
+            this.bipedRightLeg.rotateAngleZ += pose.legRoll + pose.rightLegBrace;
+            this.bipedLeftLeg.rotationPointX += pose.legPivotOffset;
+            this.bipedRightLeg.rotationPointX += pose.legPivotOffset;
         }
     }
 
@@ -190,6 +189,11 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
         this.combatives$leftLegLeanBasePointX = this.bipedLeftLeg.rotationPointX;
         this.combatives$rightLegLeanBasePointX = this.bipedRightLeg.rotationPointX;
         this.combatives$leanBaseCaptured = true;
+    }
+
+    @Override
+    public void combatives$restoreVisualLean() {
+        this.combatives$restoreLeanBase();
     }
 
     @Unique private void combatives$restoreLeanBase() {

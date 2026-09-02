@@ -10,6 +10,7 @@ import net.minecraft.client.entity.EntityPlayerSP;
 import org.lwjgl.opengl.GL11;
 import com.glowingfederal.combatives.movement.ICombativesLocomotion;
 import com.glowingfederal.combatives.movement.LocomotionState;
+import com.glowingfederal.combatives.movement.PlayerLocalBasis;
 import com.glowingfederal.combatives.interaction.InteractionRay;
 
 public final class CameraController {
@@ -54,10 +55,12 @@ public final class CameraController {
             ICombativesLocomotion locomotion = (ICombativesLocomotion) player;
             if (AuthoritativeGameplaySettings.isLeaningEnabled(player)) {
                 InteractionRay ray = InteractionRay.interpolated(player, partialTicks);
-                double yaw = Math.toRadians(player.rotationYaw);
-                double dx = ray.origin.xCoord - player.posX;
-                double dz = ray.origin.zCoord - player.posZ;
-                desiredLeanOffset = (float) (dx * Math.cos(yaw) + dz * Math.sin(yaw));
+                float renderYaw = player.prevRotationYaw
+                        + net.minecraft.util.MathHelper.wrapAngleTo180_float(player.rotationYaw - player.prevRotationYaw) * partialTicks;
+                double baseX = player.prevPosX + (player.posX - player.prevPosX) * partialTicks;
+                double baseZ = player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks;
+                desiredLeanOffset = (float) PlayerLocalBasis.fromYaw(renderYaw).projectRight(
+                        ray.origin.xCoord - baseX, ray.origin.zCoord - baseZ);
                 desiredLeanRoll = -locomotion.getLean() * (float) CombativesConfig.maxLeanRoll;
             }
             float slideTarget = locomotion.getLocomotionState() == LocomotionState.SLIDING ? 1.0F : 0.0F;
@@ -78,7 +81,7 @@ public final class CameraController {
         float impactX = clamp(shakeLateral + CameraEffectManager.getX(), -MAX_IMPACT_X_OFFSET, MAX_IMPACT_X_OFFSET);
         float impactY = clamp(shakeVertical + CameraEffectManager.getY(), -MAX_IMPACT_Y_OFFSET, MAX_IMPACT_Y_OFFSET);
         float impactZ = clamp(shakeForward + CameraEffectManager.getZ(), -MAX_IMPACT_Z_OFFSET, MAX_IMPACT_Z_OFFSET);
-        float xOffset = ambientX + impactX - tacticalLeanOffset;
+        float xOffset = ambientX + impactX + tacticalLeanOffset;
         float yOffset = ambientY + impactY - slideCameraBlend * 0.035F;
         this.lastTranslationY = yOffset;
         float zOffset = impactZ;
@@ -145,11 +148,11 @@ public final class CameraController {
             if (Combatives.logger != null && CombativesConfig.verboseCameraDebug) Combatives.logger.info("Combatives explosion impulse rejected: reason=outside_radius_or_zero_response, distance={}, radius={}, strength={}", distance, radius, strength);
             return;
         }
-        float yawRad = (float) Math.toRadians(player.rotationYaw);
-        double forwardX = -Math.sin(yawRad);
-        double forwardZ = Math.cos(yawRad);
-        double rightX = forwardZ;
-        double rightZ = -forwardX;
+        PlayerLocalBasis basis = PlayerLocalBasis.fromYaw(player.rotationYaw);
+        double forwardX = basis.forwardX;
+        double forwardZ = basis.forwardZ;
+        double rightX = basis.rightX;
+        double rightZ = basis.rightZ;
         double invDistance = 1.0D / Math.max(0.001D, distance);
         double dirX = dx * invDistance;
         double dirY = dy * invDistance;

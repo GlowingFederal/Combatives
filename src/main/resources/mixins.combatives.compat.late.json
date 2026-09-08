@@ -1,0 +1,12 @@
+{
+  "required": false,
+  "minVersion": "0.7.11",
+  "package": "com.glowingfederal.combatives.compat.flans",
+  "refmap": "mixins.combatives.refmap.json",
+  "target": "@env(DEFAULT)",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [],
+  "client": [],
+  "server": [],
+  "injectors": { "defaultRequire": 1 }
+}

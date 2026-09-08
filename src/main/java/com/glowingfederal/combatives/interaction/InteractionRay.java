@@ -4,11 +4,11 @@ import com.glowingfederal.combatives.entity.player.EffectivePlayerGeometry;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import com.glowingfederal.combatives.movement.ICombativesLocomotion;
 import com.glowingfederal.combatives.movement.LeanGeometry;
+import com.glowingfederal.combatives.movement.PlayerLocalBasis;
 
 /**
  * The common-side definition of gameplay aim.  The anchor is always measured
@@ -38,7 +38,7 @@ public final class InteractionRay {
         double z = interpolate(player.prevPosZ, player.posZ, partialTicks);
         double positionY = interpolate(player.prevPosY, player.posY, partialTicks);
         double floorY = positionY + player.boundingBox.minY - player.posY;
-        float yaw = interpolateRotation(player.prevRotationYaw, player.rotationYaw, partialTicks);
+        float yaw = PlayerLocalBasis.interpolateYaw(player.prevRotationYaw, player.rotationYaw, partialTicks);
         float pitch = player.prevRotationPitch
                 + (player.rotationPitch - player.prevRotationPitch) * partialTicks;
         return applyLean(player, create(player, x, floorY, z, yaw, pitch), yaw);
@@ -57,11 +57,11 @@ public final class InteractionRay {
             double z, float yaw, float pitch) {
         ICombativesPlayerPose state = (ICombativesPlayerPose) player;
         EffectivePlayerGeometry geometry = state.getEffectiveGeometry();
-        float yawRadians = -yaw * 0.017453292F - (float) Math.PI;
-        float pitchRadians = -pitch * 0.017453292F;
-        float horizontal = -MathHelper.cos(pitchRadians);
-        Vec3 direction = Vec3.createVectorHelper(MathHelper.sin(yawRadians) * horizontal,
-                MathHelper.sin(pitchRadians), MathHelper.cos(yawRadians) * horizontal);
+        PlayerLocalBasis basis = PlayerLocalBasis.fromYaw(yaw);
+        double pitchRadians = Math.toRadians(pitch);
+        double horizontal = Math.cos(pitchRadians);
+        Vec3 direction = Vec3.createVectorHelper(basis.forwardX * horizontal,
+                -Math.sin(pitchRadians), basis.forwardZ * horizontal);
         return new InteractionRay(Vec3.createVectorHelper(x, floorY + geometry.eyeAboveMinY, z),
                 direction, state.getGeometryRevision());
     }
@@ -79,7 +79,4 @@ public final class InteractionRay {
         return previous + (current - previous) * partialTicks;
     }
 
-    private static float interpolateRotation(float previous, float current, float partialTicks) {
-        return previous + MathHelper.wrapAngleTo180_float(current - previous) * partialTicks;
-    }
 }

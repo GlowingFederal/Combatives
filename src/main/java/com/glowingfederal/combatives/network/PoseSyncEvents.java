@@ -15,6 +15,12 @@ import net.minecraftforge.event.entity.player.PlayerEvent.StartTracking;
 
 public class PoseSyncEvents {
     @SubscribeEvent
+    public void onServerTick(cpw.mods.fml.common.gameevent.TickEvent.ServerTickEvent event) {
+        if (event.phase == cpw.mods.fml.common.gameevent.TickEvent.Phase.START) {
+            com.glowingfederal.combatives.network.message.PacketLeanState.applyPending();
+        }
+    }
+    @SubscribeEvent
     public void onEntityJoinWorld(EntityJoinWorldEvent event) {
         if (event.entity instanceof EntityPlayerMP) {
             PlayerStepHeight.restoreVanillaStepHeight((EntityPlayer) event.entity, "server join world");

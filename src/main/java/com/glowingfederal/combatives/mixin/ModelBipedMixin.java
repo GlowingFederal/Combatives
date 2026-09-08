@@ -25,7 +25,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(ModelBiped.class)
 public abstract class ModelBipedMixin extends ModelBase implements ICombativesModelBipedSwimming, ICombativesLeanModel {
+    @Inject(method = "setRotationAngles", at = @At("HEAD"))
+    private void combatives$beginAngles(float limbSwing, float limbSwingAmount, float ageInTicks,
+            float netHeadYaw, float headPitch, float scaleFactor, Entity entity, CallbackInfo ci) {
+        // Keep the pose through arm.postRender, then remove it before vanilla recomputes angles.
+        this.combatives$restoreLeanBase();
+    }
     @Shadow public ModelRenderer bipedHead;
+    @Shadow public ModelRenderer bipedHeadwear;
     @Shadow public ModelRenderer bipedBody;
     @Shadow public ModelRenderer bipedRightArm;
     @Shadow public ModelRenderer bipedLeftArm;
@@ -43,6 +50,7 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
     @Unique private boolean combatives$leanBaseCaptured;
     @Unique private float combatives$bodyBaseZ;
     @Unique private float combatives$headBaseZ;
+    @Unique private float combatives$headwearBaseZ;
     @Unique private float combatives$leftArmBaseZ;
     @Unique private float combatives$rightArmBaseZ;
     @Unique private float combatives$leftLegLeanBaseZ;
@@ -121,7 +129,6 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
     @Inject(method = "render", at = @At("RETURN"))
     private void combatives$restoreCrawlLegBase(Entity entity, float limbSwing, float limbSwingAmount,
             float ageInTicks, float netHeadYaw, float headPitch, float scaleFactor, CallbackInfo ci) {
-        this.combatives$restoreLeanBase();
         if (!this.combatives$crawlLegBaseCaptured) return;
         this.bipedLeftLeg.rotateAngleX = this.combatives$leftLegBaseX;
         this.bipedLeftLeg.rotateAngleY = this.combatives$leftLegBaseY;
@@ -163,12 +170,16 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
     }
 
     @Unique private void combatives$applyVisualLean(Entity entity) {
+        if (com.glowingfederal.combatives.client.camera.TacticalLeanCamera.isRenderingHand()) return;
         if (entity instanceof com.glowingfederal.combatives.movement.ICombativesLocomotion) {
             this.combatives$captureLeanBase();
             LeanVisualPose pose = LeanVisualPose.fromSemanticLean(
-                    ((com.glowingfederal.combatives.movement.ICombativesLocomotion) entity).getLean());
+                    entity instanceof EntityPlayer
+                        ? com.glowingfederal.combatives.movement.LeanGeometry.acceptedLean((EntityPlayer) entity)
+                        : ((com.glowingfederal.combatives.movement.ICombativesLocomotion) entity).getLean());
             this.bipedBody.rotateAngleZ += pose.bodyRoll;
             this.bipedHead.rotateAngleZ += pose.headRoll;
+            this.bipedHeadwear.rotateAngleZ += pose.headRoll;
             this.bipedLeftArm.rotateAngleZ += pose.armRoll;
             this.bipedRightArm.rotateAngleZ += pose.armRoll;
             this.bipedLeftLeg.rotateAngleZ += pose.legRoll + pose.leftLegBrace;
@@ -182,6 +193,7 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
         if (this.combatives$leanBaseCaptured) return;
         this.combatives$bodyBaseZ = this.bipedBody.rotateAngleZ;
         this.combatives$headBaseZ = this.bipedHead.rotateAngleZ;
+        this.combatives$headwearBaseZ = this.bipedHeadwear.rotateAngleZ;
         this.combatives$leftArmBaseZ = this.bipedLeftArm.rotateAngleZ;
         this.combatives$rightArmBaseZ = this.bipedRightArm.rotateAngleZ;
         this.combatives$leftLegLeanBaseZ = this.bipedLeftLeg.rotateAngleZ;
@@ -200,6 +212,7 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
         if (!this.combatives$leanBaseCaptured) return;
         this.bipedBody.rotateAngleZ = this.combatives$bodyBaseZ;
         this.bipedHead.rotateAngleZ = this.combatives$headBaseZ;
+        this.bipedHeadwear.rotateAngleZ = this.combatives$headwearBaseZ;
         this.bipedLeftArm.rotateAngleZ = this.combatives$leftArmBaseZ;
         this.bipedRightArm.rotateAngleZ = this.combatives$rightArmBaseZ;
         this.bipedLeftLeg.rotateAngleZ = this.combatives$leftLegLeanBaseZ;

@@ -12,7 +12,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Pseudo
 @Mixin(targets = "com.flansmod.client.model.ModelCustomArmour", remap = false)
 public abstract class FlansCustomArmourMixin {
-    @Inject(method = "render(Lnet/minecraft/entity/Entity;FFFFFF)V", at = @At("RETURN"), remap = false)
+    @Inject(method = {"render(Lnet/minecraft/entity/Entity;FFFFFF)V",
+            "func_78088_a(Lnet/minecraft/entity/Entity;FFFFFF)V"}, at = @At("RETURN"), remap = false)
     private void combatives$restoreLeanAfterCustomArmourRender(Entity entity, float limbSwing,
             float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch,
             float scaleFactor, CallbackInfo ci) {

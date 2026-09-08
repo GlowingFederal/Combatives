@@ -23,6 +23,14 @@ public final class PlayerLocalBasis {
         return new PlayerLocalBasis(-sin, cos, -cos, -sin);
     }
 
+    /** Interpolate the same entity yaw on either side, including the wrap seam. */
+    public static float interpolateYaw(float previous, float current, float partialTicks) {
+        float delta = (current - previous) % 360.0F;
+        if (delta >= 180.0F) delta -= 360.0F;
+        if (delta < -180.0F) delta += 360.0F;
+        return previous + delta * partialTicks;
+    }
+
     public Vec3 lateralOffset(double semanticLeanDistance) {
         return Vec3.createVectorHelper(this.rightX * semanticLeanDistance, 0.0D,
                 this.rightZ * semanticLeanDistance);

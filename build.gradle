@@ -436,3 +436,10 @@ task fairplayJar(
 fairplayJar.mustRunAfter reobf
 
 assemble.dependsOn fairplayJar
+
+// Exercise the production yaw helper without needing a running client/server.
+task verifyLeanBasis(type: JavaExec, dependsOn: testClasses) {
+    classpath = sourceSets.test.runtimeClasspath
+    main = 'com.glowingfederal.combatives.movement.PlayerLocalBasisTest'
+}
+check.dependsOn verifyLeanBasis

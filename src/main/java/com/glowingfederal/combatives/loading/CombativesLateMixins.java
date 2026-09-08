@@ -1,6 +1,6 @@
 package com.glowingfederal.combatives.loading;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -14,8 +14,7 @@ import org.apache.logging.log4j.Logger;
 @LateMixin
 @SuppressWarnings("unused")
 public final class CombativesLateMixins implements ILateMixinLoader {
-    private static final String CONFIG = "mixins.combatives.mpm.late.json";
-    private static final String MPM_MOD_ID = "moreplayermodels";
+    private static final String CONFIG = "mixins.combatives.compat.late.json";
     private static final Logger LOGGER = LogManager.getLogger("Combatives");
 
     @Override
@@ -25,16 +24,15 @@ public final class CombativesLateMixins implements ILateMixinLoader {
 
     @Override
     public List<String> getMixins(Set<String> loadedMods) {
-        if (!FMLLaunchHandler.side().isClient()) {
-            LOGGER.debug("Skipping client-only MorePlayerModels+ compatibility on the dedicated server");
-            return Collections.emptyList();
+        List<String> mixins = new ArrayList<String>();
+        if (loadedMods.contains("flansmod")) {
+            mixins.add("FlansBulletMixin");
+            mixins.add("FlansGunFireMixin");
+            mixins.add("FlansSnapshotMixin");
+            mixins.add("FlansItemGunMixin");
+            if (FMLLaunchHandler.side().isClient()) mixins.add("FlansCustomArmourMixin");
+            LOGGER.info("Flan's detected; enabling authoritative lean compatibility: {}", mixins);
         }
-        if (!loadedMods.contains(MPM_MOD_ID)) {
-            LOGGER.debug("MorePlayerModels+ is not installed; its optional targeting hook is disabled");
-            return Collections.emptyList();
-        }
-
-        LOGGER.info("MorePlayerModels+ detected; using the renderer-independent authoritative view ray");
-        return Collections.emptyList();
+        return mixins;
     }
 }

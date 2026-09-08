@@ -10,6 +10,15 @@ import net.minecraft.util.Vec3;
 public final class LeanGeometry {
     private LeanGeometry() {}
 
+    /** Wall-limited semantic amount for pose consumers; no separate collision trigonometry. */
+    public static float acceptedLean(EntityPlayer player) {
+        double max = AuthoritativeGameplaySettings.getMaxLeanDistance(player);
+        if (max <= 0.0D) return 0.0F;
+        InteractionRay ray = InteractionRay.authoritative(player);
+        return (float) (PlayerLocalBasis.fromYaw(player.rotationYaw).projectRight(
+                ray.origin.xCoord - player.posX, ray.origin.zCoord - player.posZ) / max);
+    }
+
     public static Vec3 legalOffset(EntityPlayer player, InteractionRay base, float lean, float yaw) {
         if (!AuthoritativeGameplaySettings.isLeaningEnabled(player) || lean == 0.0F) {
             return Vec3.createVectorHelper(0.0D, 0.0D, 0.0D);

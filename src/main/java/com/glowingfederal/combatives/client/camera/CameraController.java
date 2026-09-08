@@ -2,7 +2,6 @@ package com.glowingfederal.combatives.client.camera;
 
 import com.glowingfederal.combatives.Combatives;
 import com.glowingfederal.combatives.config.CombativesConfig;
-import com.glowingfederal.combatives.config.AuthoritativeGameplaySettings;
 import com.glowingfederal.combatives.client.camera.internal.CameraEffectManager;
 import com.glowingfederal.combatives.client.camera.internal.EntityCameraBehaviorManager;
 import net.minecraft.client.Minecraft;
@@ -11,7 +10,6 @@ import org.lwjgl.opengl.GL11;
 import com.glowingfederal.combatives.movement.ICombativesLocomotion;
 import com.glowingfederal.combatives.movement.LocomotionState;
 import com.glowingfederal.combatives.movement.PlayerLocalBasis;
-import com.glowingfederal.combatives.interaction.InteractionRay;
 
 public final class CameraController {
     public static final CameraController INSTANCE = new CameraController();
@@ -35,7 +33,7 @@ public final class CameraController {
     private float leanRoll, leanPitch, bobVertical, bobSway, bobPitch, bobRoll, shakeVertical, shakeForward, shakeLateral, shakePitch, shakeRoll, fovModifier;
     private float lastTranslationX, lastTranslationY, lastTranslationZ;
     private float lastPitch, lastYaw, lastRoll;
-    private float tacticalLeanOffset, tacticalLeanRoll, slideCameraBlend;
+    private float slideCameraBlend;
 
     private CameraController() {}
 
@@ -49,25 +47,11 @@ public final class CameraController {
         if (CombativesConfig.enableCameraShake) shake.update(movement, partialTicks); else shake.reset();
         EntityCameraBehaviorManager.INSTANCE.update(player, partialTicks);
         CameraEffectManager.update(player);
-        float desiredLeanOffset = 0.0F;
-        float desiredLeanRoll = 0.0F;
         if (player instanceof ICombativesLocomotion) {
             ICombativesLocomotion locomotion = (ICombativesLocomotion) player;
-            if (AuthoritativeGameplaySettings.isLeaningEnabled(player)) {
-                InteractionRay ray = InteractionRay.interpolated(player, partialTicks);
-                float renderYaw = player.prevRotationYaw
-                        + net.minecraft.util.MathHelper.wrapAngleTo180_float(player.rotationYaw - player.prevRotationYaw) * partialTicks;
-                double baseX = player.prevPosX + (player.posX - player.prevPosX) * partialTicks;
-                double baseZ = player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks;
-                desiredLeanOffset = (float) PlayerLocalBasis.fromYaw(renderYaw).projectRight(
-                        ray.origin.xCoord - baseX, ray.origin.zCoord - baseZ);
-                desiredLeanRoll = -locomotion.getLean() * (float) CombativesConfig.maxLeanRoll;
-            }
             float slideTarget = locomotion.getLocomotionState() == LocomotionState.SLIDING ? 1.0F : 0.0F;
             slideCameraBlend += (slideTarget - slideCameraBlend) * 0.35F;
         }
-        tacticalLeanOffset += (desiredLeanOffset - tacticalLeanOffset) * (float) CombativesConfig.leanInterpolation;
-        tacticalLeanRoll += (desiredLeanRoll - tacticalLeanRoll) * (float) CombativesConfig.leanInterpolation;
         leanRoll = lean.getRoll(); leanPitch = lean.getPitch(); bobVertical = bob.getVertical(); bobSway = bob.getSway(); bobPitch = bob.getPitch(); bobRoll = bob.getRoll();
         shakeVertical = shake.getVertical(); shakeForward = shake.getForward(); shakeLateral = shake.getLateral(); shakePitch = shake.getPitch(); shakeRoll = shake.getRoll(); fovModifier = fov.getModifier();
     }
@@ -81,7 +65,7 @@ public final class CameraController {
         float impactX = clamp(shakeLateral + CameraEffectManager.getX(), -MAX_IMPACT_X_OFFSET, MAX_IMPACT_X_OFFSET);
         float impactY = clamp(shakeVertical + CameraEffectManager.getY(), -MAX_IMPACT_Y_OFFSET, MAX_IMPACT_Y_OFFSET);
         float impactZ = clamp(shakeForward + CameraEffectManager.getZ(), -MAX_IMPACT_Z_OFFSET, MAX_IMPACT_Z_OFFSET);
-        float xOffset = ambientX + impactX + tacticalLeanOffset;
+        float xOffset = ambientX + impactX;
         float yOffset = ambientY + impactY - slideCameraBlend * 0.035F;
         this.lastTranslationY = yOffset;
         float zOffset = impactZ;
@@ -97,7 +81,7 @@ public final class CameraController {
             float ambientRoll = clamp(bobRoll * bobScale + leanRoll, -MAX_CAMERA_ROLL_DEGREES, MAX_CAMERA_ROLL_DEGREES);
             yaw = clamp(CameraEffectManager.getYaw(), -CombativesConfig.maxCameraYawDegrees, CombativesConfig.maxCameraYawDegrees);
             pitch = ambientPitch + clamp(shakePitch + CameraEffectManager.getPitch(), -MAX_IMPACT_PITCH_DEGREES, MAX_IMPACT_PITCH_DEGREES);
-            roll = ambientRoll + tacticalLeanRoll + clamp(shakeRoll + CameraEffectManager.getRoll(), -MAX_IMPACT_ROLL_DEGREES, MAX_IMPACT_ROLL_DEGREES);
+            roll = ambientRoll + clamp(shakeRoll + CameraEffectManager.getRoll(), -MAX_IMPACT_ROLL_DEGREES, MAX_IMPACT_ROLL_DEGREES);
             GL11.glRotatef(pitch, 1.0F, 0.0F, 0.0F);
             GL11.glRotatef(yaw, 0.0F, 1.0F, 0.0F);
             GL11.glRotatef(roll, 0.0F, 0.0F, 1.0F);
@@ -129,7 +113,7 @@ public final class CameraController {
         return value < min ? min : value > max ? max : value;
     }
 
-    public void reset() { EntityCameraBehaviorManager.INSTANCE.reset(Minecraft.getMinecraft() == null ? null : Minecraft.getMinecraft().thePlayer); lean.reset(); bob.reset(); fov.reset(); shake.reset(); CameraEffectManager.reset(); leanRoll = leanPitch = bobVertical = bobSway = bobPitch = bobRoll = shakeVertical = shakeForward = shakeLateral = shakePitch = shakeRoll = fovModifier = lastTranslationX = lastTranslationY = lastTranslationZ = lastPitch = lastYaw = lastRoll = tacticalLeanOffset = tacticalLeanRoll = slideCameraBlend = 0.0F; }
+    public void reset() { EntityCameraBehaviorManager.INSTANCE.reset(Minecraft.getMinecraft() == null ? null : Minecraft.getMinecraft().thePlayer); lean.reset(); bob.reset(); fov.reset(); shake.reset(); CameraEffectManager.reset(); leanRoll = leanPitch = bobVertical = bobSway = bobPitch = bobRoll = shakeVertical = shakeForward = shakeLateral = shakePitch = shakeRoll = fovModifier = lastTranslationX = lastTranslationY = lastTranslationZ = lastPitch = lastYaw = lastRoll = slideCameraBlend = 0.0F; }
 
     public void addExplosionFeedback(EntityPlayerSP player, double x, double y, double z, float strength) {
         if (!CombativesConfig.enableCombativesCamera || !CombativesConfig.enableCameraShake || !CombativesConfig.enableExplosionCameraFeedback || player == null) {

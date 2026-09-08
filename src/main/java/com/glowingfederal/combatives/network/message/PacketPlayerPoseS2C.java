@@ -59,15 +59,19 @@ public class PacketPlayerPoseS2C implements IMessage {
     public static class Handler implements IMessageHandler<PacketPlayerPoseS2C, IMessage> {
         @Override
         @SideOnly(Side.CLIENT)
-        public IMessage onMessage(PacketPlayerPoseS2C message, MessageContext ctx) {
-            Entity entity = Minecraft.getMinecraft().theWorld == null ? null : Minecraft.getMinecraft().theWorld.getEntityByID(message.entityId);
-            if (entity instanceof EntityPlayer) {
-                PoseSync.applyAuthoritativePose((EntityPlayer) entity, message.pose, message.swimming, message.crawlKeyDown, "server");
-                if (entity instanceof ICombativesLocomotion) {
-                    ((ICombativesLocomotion) entity).setLocomotionState(message.locomotion);
-                    ((ICombativesLocomotion) entity).setLean(message.lean);
+        public IMessage onMessage(final PacketPlayerPoseS2C message, MessageContext ctx) {
+            Minecraft.getMinecraft().func_152344_a(new Runnable() {
+                @Override public void run() {
+                    Entity entity = Minecraft.getMinecraft().theWorld == null ? null : Minecraft.getMinecraft().theWorld.getEntityByID(message.entityId);
+                    if (entity instanceof EntityPlayer) {
+                        PoseSync.applyAuthoritativePose((EntityPlayer) entity, message.pose, message.swimming, message.crawlKeyDown, "server");
+                        if (entity instanceof ICombativesLocomotion) {
+                            ((ICombativesLocomotion) entity).setLocomotionState(message.locomotion);
+                            ((ICombativesLocomotion) entity).setLean(message.lean);
+                        }
+                    }
                 }
-            }
+            });
             return null;
         }
     }

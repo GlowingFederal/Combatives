@@ -2,6 +2,7 @@ package com.glowingfederal.combatives.mixin;
 
 import com.glowingfederal.combatives.Combatives;
 import com.glowingfederal.combatives.client.camera.CameraController;
+import com.glowingfederal.combatives.client.camera.TacticalLeanCamera;
 import com.glowingfederal.combatives.client.camera.AuthoritativeViewRay;
 import com.glowingfederal.combatives.client.camera.TargetingDiagnostics;
 import com.glowingfederal.combatives.config.CombativesConfig;
@@ -25,6 +26,17 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(EntityRenderer.class)
 public abstract class EntityRendererMixin {
+    @Redirect(method = "orientCamera", at = @At(value = "FIELD",
+            target = "Lnet/minecraft/entity/EntityLivingBase;rotationYaw:F"))
+    private float combatives$continuousLeanYaw(EntityLivingBase entity) {
+        if (Minecraft.getMinecraft().gameSettings.thirdPersonView == 0 && !entity.isRiding()
+                && entity instanceof com.glowingfederal.combatives.movement.ICombativesLocomotion
+                && ((com.glowingfederal.combatives.movement.ICombativesLocomotion) entity).getLean() != 0.0F) {
+            return com.glowingfederal.combatives.movement.PlayerLocalBasis.interpolateYaw(
+                    entity.prevRotationYaw, entity.rotationYaw, 1.0F);
+        }
+        return entity.rotationYaw;
+    }
     private float combatives$eyeHeight;
     private float combatives$previousEyeHeight;
     private float combatives$entityEyeHeight;
@@ -65,6 +77,7 @@ public abstract class EntityRendererMixin {
 
     @Inject(method = "orientCamera", at = @At("HEAD"))
     private void combatives$capturePartialTicks(float partialTicks, CallbackInfo ci) {
+        TacticalLeanCamera.applyRoll(partialTicks);
         this.combatives$partialTicks = partialTicks;
         Minecraft mc = Minecraft.getMinecraft();
         EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
@@ -77,6 +90,7 @@ public abstract class EntityRendererMixin {
 
     @Inject(method = "orientCamera", at = @At("TAIL"))
     private void combatives$applyCameraTransforms(float partialTicks, CallbackInfo ci) {
+        TacticalLeanCamera.applyOffset(partialTicks);
         CameraController.INSTANCE.applyTransforms(partialTicks);
         Entity entity = Minecraft.getMinecraft().renderViewEntity;
         if (entity instanceof EntityPlayer) {
@@ -96,7 +110,18 @@ public abstract class EntityRendererMixin {
             )
     )
     private void combatives$applyHandBobbing(float partialTicks, int pass, CallbackInfo ci) {
+        TacticalLeanCamera.applyRoll(partialTicks);
         CameraController.INSTANCE.applyHandTransforms(partialTicks);
+    }
+
+    @Inject(method = "renderHand", at = @At("HEAD"))
+    private void combatives$beginHand(float partialTicks, int pass, CallbackInfo ci) {
+        TacticalLeanCamera.beginHand();
+    }
+
+    @Inject(method = "renderHand", at = @At("RETURN"))
+    private void combatives$endHand(float partialTicks, int pass, CallbackInfo ci) {
+        TacticalLeanCamera.endHand();
     }
 
     @Inject(method = "setupViewBobbing", at = @At("HEAD"), cancellable = true)

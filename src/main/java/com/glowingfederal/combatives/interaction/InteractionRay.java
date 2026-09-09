@@ -34,14 +34,21 @@ public final class InteractionRay {
 
     /** Same geometry semantics with position/orientation interpolation for rendering. */
     public static InteractionRay interpolated(EntityPlayer player, float partialTicks) {
-        double x = interpolate(player.prevPosX, player.posX, partialTicks);
-        double z = interpolate(player.prevPosZ, player.posZ, partialTicks);
-        double positionY = interpolate(player.prevPosY, player.posY, partialTicks);
+        InteractionRay base = interpolatedBase(player, partialTicks);
+        float yaw = PlayerLocalBasis.interpolateYaw(player.prevRotationYaw, player.rotationYaw, partialTicks);
+        return applyLean(player, base, yaw);
+    }
+
+    /** Vanilla render-timeline eye before tactical lean is applied. */
+    public static InteractionRay interpolatedBase(EntityPlayer player, float partialTicks) {
+        double x = interpolate(player.lastTickPosX, player.posX, partialTicks);
+        double z = interpolate(player.lastTickPosZ, player.posZ, partialTicks);
+        double positionY = interpolate(player.lastTickPosY, player.posY, partialTicks);
         double floorY = positionY + player.boundingBox.minY - player.posY;
         float yaw = PlayerLocalBasis.interpolateYaw(player.prevRotationYaw, player.rotationYaw, partialTicks);
         float pitch = player.prevRotationPitch
                 + (player.rotationPitch - player.prevRotationPitch) * partialTicks;
-        return applyLean(player, create(player, x, floorY, z, yaw, pitch), yaw);
+        return create(player, x, floorY, z, yaw, pitch);
     }
 
     private static InteractionRay applyLean(EntityPlayer player, InteractionRay base, float yaw) {

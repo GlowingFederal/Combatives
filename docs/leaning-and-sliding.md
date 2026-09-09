@@ -28,9 +28,11 @@ the offset, so the server's authoritative dig/use ray cannot originate beyond
 the blocking wall. Lean never moves or resizes the player's collision box.
 
 The first-person transforms intentionally do not reuse identical numeric signs.
-The interpolated ray origin is a world-space camera position, so the view matrix
-translates the world by the negative of that displacement after vanilla yaw and
-pitch. The roll is installed before vanilla orientation and likewise rotates the
+The render collision sample is based on vanilla's `lastTickPos` interpolation,
+but the resulting tactical displacement remains a player-relative vector. The
+view matrix translates the world by the negative of that vector after vanilla
+yaw and pitch; it never recovers the vector by subtracting absolute world-space
+camera coordinates. The roll is installed before vanilla orientation and likewise rotates the
 world: its OpenGL angle uses the semantic lean sign so that the resulting visible
 camera orientation is the inverse, matching the requested side. Model-part roll
 is a model-space pose instead and retains its existing opposite scalar sign.
@@ -50,8 +52,9 @@ authoritative. Player pose dimensions/eye anchors are fixed gameplay rules,
 while optional MPM hitbox scaling is server authoritative and its resolved
 geometry continues to use the existing geometry packet.
 
-Client presentation interpolates the server-approved lateral camera travel and
-adds cosmetic roll. Lean applies one bounded additive roll to the animated
+Client presentation evaluates the same server-approved wall limit from the
+smooth vanilla render-timeline eye and adds cosmetic roll. Authoritative gameplay
+continues to evaluate the current-tick eye. Lean applies one bounded additive roll to the animated
 body, head, arms, and legs. Each leg receives 75% of the torso roll, a very
 small mirrored brace, and a subtle lateral X-pivot shift. Existing X-axis walk
 animation is untouched. Every changed angle and pivot is captured after vanilla

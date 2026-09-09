@@ -386,3 +386,17 @@
   numeric signs in their respective coordinate spaces. Validation was limited to
   source tracing, call-site searches, and cardinal/diagonal vector calculations;
   in-game visual and integrated/dedicated multiplayer checks remain required.
+
+2026-09-09 07:39 — Keep tactical lean on the vanilla render timeline
+
+- Changed interpolated interaction geometry to use Minecraft's render position
+  samples (`lastTickPos` to `pos`) rather than the independent `prevPos` samples.
+- Kept the camera lean as a player-relative legal offset through collision
+  validation and OpenGL translation instead of reconstructing that small value
+  by subtracting two absolute world origins. Authoritative current-tick rays,
+  lean direction, wall margins, server settings, models, and compatibility paths
+  are unchanged.
+- Validation was limited to source inspection, call-site tracing, diff checks,
+  and render/authority invariant reasoning. Walking, sprinting, diagonal/yaw
+  movement, block-boundary crossings, and wall transitions still require the
+  requested integrated- and dedicated-server runtime checks.

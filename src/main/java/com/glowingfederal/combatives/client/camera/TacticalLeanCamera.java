@@ -3,9 +3,12 @@ package com.glowingfederal.combatives.client.camera;
 import com.glowingfederal.combatives.config.CombativesConfig;
 import com.glowingfederal.combatives.config.AuthoritativeGameplaySettings;
 import com.glowingfederal.combatives.interaction.InteractionRay;
+import com.glowingfederal.combatives.movement.ICombativesLocomotion;
+import com.glowingfederal.combatives.movement.LeanGeometry;
 import com.glowingfederal.combatives.movement.PlayerLocalBasis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.Vec3;
 import org.lwjgl.opengl.GL11;
 
 /** Gameplay eye displacement and view-space roll, independent of cosmetic camera effects. */
@@ -30,13 +33,12 @@ public final class TacticalLeanCamera {
     public static void applyRoll(float partialTicks) {
         EntityPlayer player = player();
         if (player == null || !CombativesConfig.enableCameraRotations) return;
-        InteractionRay ray = InteractionRay.interpolated(player, partialTicks);
-        double x = player.prevPosX + (player.posX - player.prevPosX) * partialTicks;
-        double z = player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks;
         float yaw = PlayerLocalBasis.interpolateYaw(player.prevRotationYaw, player.rotationYaw, partialTicks);
+        Vec3 offset = leanOffset(player, partialTicks, yaw);
         double max = AuthoritativeGameplaySettings.getMaxLeanDistance(player);
-        double accepted = max > 0.0D ? PlayerLocalBasis.fromYaw(yaw).projectRight(
-                ray.origin.xCoord - x, ray.origin.zCoord - z) / max : 0.0D;
+        double accepted = max > 0.0D
+                ? PlayerLocalBasis.fromYaw(yaw).projectRight(offset.xCoord, offset.zCoord) / max
+                : 0.0D;
         GL11.glRotatef((float) (accepted * CombativesConfig.maxLeanRoll), 0.0F, 0.0F, 1.0F);
     }
 
@@ -44,10 +46,16 @@ public final class TacticalLeanCamera {
     public static void applyOffset(float partialTicks) {
         EntityPlayer player = player();
         if (player == null) return;
-        InteractionRay ray = InteractionRay.interpolated(player, partialTicks);
-        double x = player.prevPosX + (player.posX - player.prevPosX) * partialTicks;
-        double z = player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks;
-        GL11.glTranslated(x - ray.origin.xCoord, 0.0D, z - ray.origin.zCoord);
+        float yaw = PlayerLocalBasis.interpolateYaw(player.prevRotationYaw, player.rotationYaw, partialTicks);
+        Vec3 offset = leanOffset(player, partialTicks, yaw);
+        GL11.glTranslated(-offset.xCoord, 0.0D, -offset.zCoord);
+    }
+
+    private static Vec3 leanOffset(EntityPlayer player, float partialTicks, float yaw) {
+        float requested = player instanceof ICombativesLocomotion
+                ? ((ICombativesLocomotion) player).getLean() : 0.0F;
+        return LeanGeometry.legalOffset(player, InteractionRay.interpolatedBase(player, partialTicks),
+                requested, yaw);
     }
 
     public static void beginHand() { renderingHand = true; }

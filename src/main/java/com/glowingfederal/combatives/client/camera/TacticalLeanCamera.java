@@ -22,7 +22,11 @@ public final class TacticalLeanCamera {
         return player.isRiding() || player.isPlayerSleeping() ? null : player;
     }
 
-    /** Before vanilla yaw/pitch: Z is the view axis, so roll preserves the center ray. */
+    /**
+     * Before vanilla yaw/pitch: Z is the view axis, so roll preserves the center ray.
+     * This rotates the world/view matrix, not the camera model, and therefore uses
+     * the semantic lean sign directly: the visible camera roll is its inverse.
+     */
     public static void applyRoll(float partialTicks) {
         EntityPlayer player = player();
         if (player == null || !CombativesConfig.enableCameraRotations) return;
@@ -33,7 +37,7 @@ public final class TacticalLeanCamera {
         double max = AuthoritativeGameplaySettings.getMaxLeanDistance(player);
         double accepted = max > 0.0D ? PlayerLocalBasis.fromYaw(yaw).projectRight(
                 ray.origin.xCoord - x, ray.origin.zCoord - z) / max : 0.0D;
-        GL11.glRotatef((float) (-accepted * CombativesConfig.maxLeanRoll), 0.0F, 0.0F, 1.0F);
+        GL11.glRotatef((float) (accepted * CombativesConfig.maxLeanRoll), 0.0F, 0.0F, 1.0F);
     }
 
     /** After vanilla orientation: translate the world by the inverse camera displacement. */

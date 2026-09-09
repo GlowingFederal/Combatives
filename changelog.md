@@ -375,3 +375,14 @@
 - Move existing head-pitch preparation from ModelBiped.render into inherited setRotationAngles so Flan's override receives it too, including the head pose used by ADS. Preserve movement-before-ADS and lean-after-ADS ordering.
 - Confirmed the previous lifecycle change already fixes the skipped crawl-leg cleanup and stale roll capture; all Turbo limb/skirt fields are overwritten before each draw. No redundant leg reset or Flan's-specific pose angles were added.
 - Java 8 compileJava and Mixin annotation processing passed. Inspected reference source and supplied Turbo bytecode, checked matrix composition and repeated-call state transitions. Reobfuscation, runtime injection matching and in-game crawl/swim/standing transitions on integrated/dedicated servers remain untested.
+
+2026-09-09 07:24 — Correct first-person tactical lean roll direction
+
+- Corrected the first-person view-matrix roll so negative/left and positive/right
+  semantic lean now produce the same visible side as the established player model.
+  The already-correct inverse world translation, shared player-local basis,
+  wall-clamped interaction-ray origin, packet sign, and model pose were preserved.
+- Documented why camera translation, camera roll, and model roll require different
+  numeric signs in their respective coordinate spaces. Validation was limited to
+  source tracing, call-site searches, and cardinal/diagonal vector calculations;
+  in-game visual and integrated/dedicated multiplayer checks remain required.

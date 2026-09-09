@@ -27,6 +27,14 @@ center-to-desired-position block trace reserves a small wall margin and clamps
 the offset, so the server's authoritative dig/use ray cannot originate beyond
 the blocking wall. Lean never moves or resizes the player's collision box.
 
+The first-person transforms intentionally do not reuse identical numeric signs.
+The interpolated ray origin is a world-space camera position, so the view matrix
+translates the world by the negative of that displacement after vanilla yaw and
+pitch. The roll is installed before vanilla orientation and likewise rotates the
+world: its OpenGL angle uses the semantic lean sign so that the resulting visible
+camera orientation is the inverse, matching the requested side. Model-part roll
+is a model-space pose instead and retains its existing opposite scalar sign.
+
 On login the server sends one versioned gameplay-config snapshot containing
 lean enablement, maximum physical lean distance, and MPM hitbox-scaling
 enablement. Common gameplay access reads the local configuration on the server

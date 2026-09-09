@@ -61,6 +61,11 @@ animation is untouched. Every changed angle and pivot is captured after vanilla
 animation and restored after the model render, including armor `ModelBiped`
 instances, so transforms do not accumulate.
 
+These pose values remain entirely in `ModelBiped` local space. The living-entity
+renderer retains vanilla's interpolated body and head yaw and supplies the one
+model-to-world orientation; leaning does not replace that render orientation
+with entity-facing yaw or otherwise apply yaw to model-local limb pivots.
+
 Dedicated-server, latency, modded-block collision, and animation appearance
 still require in-game validation; this implementation was validated by source
 inspection and call-path tracing only.

@@ -400,3 +400,16 @@
   and render/authority invariant reasoning. Walking, sprinting, diagonal/yaw
   movement, block-boundary crossings, and wall transitions still require the
   requested integrated- and dedicated-server runtime checks.
+
+2026-09-09 08:02 — Keep third-person lean in model-local space
+
+- Removed the lean-only replacement of the living renderer's interpolated body
+  and head yaw. The authored biped roll and pivot values now receive only
+  vanilla's existing model-to-world body orientation instead of mixing entity
+  facing into the renderer while the model is already locally posed.
+- Preserved the complete authored body/head/arm/leg pose, accepted lean amount,
+  animation and armour cleanup, and all camera, interaction, collision,
+  networking, and authority paths.
+- Source inspection confirms that all eight headings now feed identical scalar
+  pose values into `ModelBiped`; visual appearance, body/head turning during a
+  lean, and optional armour rendering still require in-game verification.

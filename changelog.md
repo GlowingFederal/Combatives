@@ -362,3 +362,16 @@
 - Kept server interaction geometry on current authoritative yaw while making interpolated client geometry consistently use interpolated yaw and position.
 - Extracted the shared visual lean pose and added an optional generic `ModelCustomArmour` render-lifecycle adapter. Flan's independently rendered TurboModel part arrays now consume the biped parent pose and restore reusable model state after rendering without item-specific checks or accumulated transforms.
 - Source-level call-site and cardinal-vector validation was performed; dedicated-server and Tyrants and Plebians in-game validation remains required.
+
+2026-09-09 02:59 — Resolve ADS arms after crawl and swim animation
+
+- Apply movement animation before ModelBiped's existing aimedBow block, then apply visual lean. HMG's bow-style ADS arms now survive crawl/swim animation and Flan's armour copies the resolved biped pose without duplicate weapon angles.
+- Restore captured lean followed by crawl legs at the existing renderer cleanup boundary and before the next angle calculation, including Flan's render override; retain the pose through held-item rendering.
+- Java 8 Gradle compileJava succeeded; generated refmap maps the aimedBow injection target to field_78118_o. No reobfuscation, packaging or in-game validation was performed. Standing/leaning, crawl transitions, optional-mod absence and integrated/dedicated testing remain required; a separate standing-only armour mismatch was not established by source inspection.
+
+2026-09-09 03:07 — Align custom armour crawl and swim draw transforms
+
+- Correct Flan's Turbo Y-Z-X draw order to the resolved biped Z-Y-X order around the copied pivot during crawl/swim/lean. The optional armour adapter scopes the correction to its own parts and skirts, preserves copied fields and balances the added matrix in finally; ordinary unposed rendering is unchanged.
+- Move existing head-pitch preparation from ModelBiped.render into inherited setRotationAngles so Flan's override receives it too, including the head pose used by ADS. Preserve movement-before-ADS and lean-after-ADS ordering.
+- Confirmed the previous lifecycle change already fixes the skipped crawl-leg cleanup and stale roll capture; all Turbo limb/skirt fields are overwritten before each draw. No redundant leg reset or Flan's-specific pose angles were added.
+- Java 8 compileJava and Mixin annotation processing passed. Inspected reference source and supplied Turbo bytecode, checked matrix composition and repeated-call state transitions. Reobfuscation, runtime injection matching and in-game crawl/swim/standing transitions on integrated/dedicated servers remain untested.

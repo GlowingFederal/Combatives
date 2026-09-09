@@ -243,3 +243,102 @@ eye-origin displacement, not a rigid translation of the whole player AABB.
 The existing collision check is a point ray, not a swept head-volume test.
 Other Flan's forks or mods replacing Forge's hand-render entry point need
 runtime testing; the source trace here covers the supplied reference version.
+
+## HMG ADS follow-up (2026-09-09)
+
+The current GvCEXOverdrive HMG source uses `LivingEventHooks.renderLiving` to
+set synthetic bow-style item use for ADS. It previously left that state active
+after rendering. Minecraft 1.7.10 `runTick` consumes input while `isUsingItem`
+and gates repeated right-click use on its negation: the normal firing path stops
+before `PlayerControllerMP.sendUseItem` sends C08 and before HMG's
+`onItemRightClick` sets the trigger. The swapped-key tick path reads the held
+attack key directly and sends `PacketTriggerHeld`, so this finding does not
+explain a failure confined to that layout. No camera-mode or packet-yaw check
+was found in HMG's trigger/readiness path. The authoritative-ray bridge is
+common-side and camera-independent; its existing spread, elevation and fallback
+paths remain unchanged. HMG now restores the prior item-use state at player Post.
+
+The armour cleanup is after Turbo part copying, not before it. The confirmed
+ordering defect is that Combatives' TAIL crawl/swim animation overwrote the
+bow-style arms established earlier by vanilla. Movement now runs immediately
+before vanilla's `aimedBow` read; the existing ADS block resolves arms from the
+posed head, and visual lean is composed at TAIL. Flan's inherited angle call
+therefore supplies its existing Turbo copy with the final arms and pivots.
+Main-player arms remain posed through Specials and arm `postRender`. Cleanup
+restores lean first, then captured crawl legs; the next angle call also clears
+both captures. Flan's override uses that same existing cleanup interface.
+There are no duplicate HMG angles or new optional-mod dependencies.
+
+Java 8 `compileJava` succeeded and the generated refmap includes the `aimedBow`
+field mapping. HMG's compile was blocked by uncached offline dependencies.
+No in-game reproduction or reobfuscated package was tested. Source inspection
+does not establish a separate standing-only armour mismatch.
+
+Manual validation on both integrated and dedicated servers remains:
+
+- HMG first-person hip fire/ADS and third-person hip fire/ADS with Combatives,
+  in both normal and swapped fire-key layouts.
+- Flan's armour with HMG ADS standing, leaning left/right, crawling when ADS
+  is allowed, and after crawl-to-stand; repeat without Combatives and without
+  Flan's armour equipped. Check any supported off-hand weapon path.
+- Check non-ADS movement, held-item attachment, skirts/legs/head/body, repeated
+  armour passes and alternating players for stale pose state.
+
+## Crawl/swim armour follow-up (2026-09-09)
+
+The preceding ADS change already fixed movement overwriting aimed arms, and
+extended Flan's RETURN cleanup to captured crawl legs. Before that change,
+Flan's bypassed the ModelBiped.render-only crawl cleanup. Vanilla resets leg
+pitch/yaw but not leg roll; a captured crawl roll could consequently become
+the next base. The current HEAD and RETURN cleanup remove that source of
+persistence. Crawl/slide change leg angles, not leg pivots; lean captures and
+restores leg X pivots, while vanilla rewrites leg Y/Z pivots on both sneak and
+standing branches. No additional zeroing or Turbo-state reset is needed.
+
+A remaining arm mismatch is in drawing, even with equal copied values:
+ModelRenderer uses Z-Y-X rotations but ModelRendererTurbo.render(float) uses
+Y-Z-X. Crawl arms have simultaneous large Y and Z rotations. The armour
+adapter now prepends the pivot-relative correction Rz Ry Rz^-1 Ry^-1, giving
+the existing Turbo draw the same Z-Y-X transform as its resolved biped source.
+This applies only during crawl/swim (including transition blend) or lean, only
+when both Y and Z are nonzero, and covers limbs and independently drawn skirts.
+Copied angles/pivots, visibility, geometry and child rendering remain intact;
+the extra matrix is popped in finally. Ordinary unposed standing/walking uses
+the original draw. No global Turbo rendering behavior is changed.
+
+Also, head-pitch preparation previously lived in ModelBiped.render's redirected
+angle call, which custom armour bypasses. It now modifies the head-pitch
+argument at the inherited setRotationAngles HEAD. The existing interpolation
+formula is retained; ADS consumes this prepared head after movement. Partial
+blend appearance with shared armour models still requires runtime checking.
+
+Static repeated-call trace (standing means the transition blend has reached 0):
+
+| Call | Parent state consumed | Turbo state immediately before drawing |
+| --- | --- | --- |
+| Standing 1 | Fresh vanilla base; no crawl capture | All XYZ angles and scaled XYZ pivots overwritten |
+| Crawl 1 | Fresh base, movement, ADS if active, lean | Same resolved limb values; corrected draw order |
+| Crawl 2 | Previous captures cleared before recomputation | All six fields overwritten again |
+| Standing 2 | Crawl captures cleared; vanilla leg Y=12, Z=0.1 when not sneaking | Fresh standing fields replace crawl values before any draw |
+| Standing 3 | Fresh standing base again | No crawl transform reused |
+
+Skirts rewrite all three pivots from the legs, derive pitch via min/max and
+copy leg yaw/roll each render. Hidden Turbo parts also receive fresh values
+before their draw routine checks visibility. Their fields may still contain
+the last drawn pose between renders, but they are never drawn before the next
+copy. The crawl-to-standing ADS sequence uses the same movement-before-ADS
+boundary and does not require a second arm-pose implementation.
+
+Runtime checks remain: standing, enter/sustain/exit crawl, repeated transitions,
+several facing directions, swim and swim-to-stand, standing ADS, crawl ADS when
+allowed, crawl-to-stand-to-ADS, standing lean and lean after crawl, with and
+without HMG. Check the first exit frame on integrated and dedicated servers,
+plus optional-mod absence. Static inspection is not an in-game validation.
+
+Validation: Java 8 compileJava and Mixin annotation processing succeeded after
+the final implementation. The generated refmap maps setRotationAngles and the
+ADS field; the adapter lists development and SRG Turbo draw names explicitly.
+The supplied TapNato Turbo bytecode confirms the SRG entry and rotation sequence.
+A direct, file-free matrix check over 20 Y/Z combinations matched the corrected
+composition to vanilla within floating-point precision. Production injection
+matching, reobfuscation and Minecraft execution were not performed.

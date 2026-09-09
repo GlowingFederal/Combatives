@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(ModelBiped.class)
@@ -30,6 +30,7 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
             float netHeadYaw, float headPitch, float scaleFactor, Entity entity, CallbackInfo ci) {
         // Keep the pose through arm.postRender, then remove it before vanilla recomputes angles.
         this.combatives$restoreLeanBase();
+        this.combatives$restoreCrawlLegBase();
     }
     @Shadow public ModelRenderer bipedHead;
     @Shadow public ModelRenderer bipedHeadwear;
@@ -58,9 +59,10 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
     @Unique private float combatives$leftLegLeanBasePointX;
     @Unique private float combatives$rightLegLeanBasePointX;
 
-    @Redirect(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/model/ModelBiped;setRotationAngles(FFFFFFLnet/minecraft/entity/Entity;)V"))
-    private void combatives$setRotationAngles(ModelBiped model, float limbSwing, float limbSwingAmount, float ageInTicks,
-        float netHeadYaw, float headPitch, float scaleFactor, Entity entity) {
+    // Custom armour calls setRotationAngles directly, bypassing ModelBiped.render.
+    @ModifyVariable(method = "setRotationAngles", at = @At("HEAD"), argsOnly = true, ordinal = 4)
+    private float combatives$resolveHeadPitch(float headPitch, float limbSwing, float limbSwingAmount, float ageInTicks,
+        float netHeadYaw, float originalHeadPitch, float scaleFactor, Entity entity) {
         if (entity instanceof ICombativesPlayerPose && this.combatives$getSwimAnimationFor(entity) > 0.0F) {
             ICombativesPlayerPose pose = (ICombativesPlayerPose) entity;
             float swimAnimation = this.combatives$getSwimAnimationFor(entity);
@@ -72,15 +74,15 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
                 headPitch = this.combatives$rotLerpRad(swimAnimation, this.bipedHead.rotateAngleX, headPitch * ((float) Math.PI / 180.0F)) / 0.017453292F;
             }
         }
-        model.setRotationAngles(limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch, scaleFactor, entity);
+        return headPitch;
     }
 
-    @Inject(method = "setRotationAngles", at = @At("TAIL"), cancellable = true)
+    @Inject(method = "setRotationAngles", at = @At(value = "FIELD",
+        target = "Lnet/minecraft/client/model/ModelBiped;aimedBow:Z", ordinal = 0))
     private void combatives$setRotationAnglesPost(float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw,
         float headPitch, float scaleFactor, Entity entity, CallbackInfo ci) {
         float swimAnimation = this.combatives$getSwimAnimationFor(entity);
         if (swimAnimation <= 0.0F) {
-            this.combatives$applyVisualLean(entity);
             return;
         }
         if (entity instanceof EntityPlayer && entity instanceof ICombativesPlayerPose) {
@@ -90,8 +92,6 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
                 ICombativesPlayerPose playerPose = (ICombativesPlayerPose) entity;
                 if (playerPose.isSliding()) SlidePoseAnimator.apply((ModelBiped) (Object) this, swimAnimation);
                 else CrawlPoseAnimator.apply((ModelBiped) (Object) this, limbSwing, limbSwingAmount, swimAnimation);
-                this.combatives$applyVisualLean(entity);
-                ci.cancel();
                 return;
             }
         }
@@ -123,12 +123,20 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
         }
         this.bipedLeftLeg.rotateAngleX = MathHelperNew.lerp(swimAnimation, this.bipedLeftLeg.rotateAngleX, 0.3F * MathHelper.cos(limbSwing * 0.33333334F + (float) Math.PI));
         this.bipedRightLeg.rotateAngleX = MathHelperNew.lerp(swimAnimation, this.bipedRightLeg.rotateAngleX, 0.3F * MathHelper.cos(limbSwing * 0.33333334F));
-        ci.cancel();
     }
 
-    @Inject(method = "render", at = @At("RETURN"))
-    private void combatives$restoreCrawlLegBase(Entity entity, float limbSwing, float limbSwingAmount,
-            float ageInTicks, float netHeadYaw, float headPitch, float scaleFactor, CallbackInfo ci) {
+    // Vanilla's aimedBow block resolves weapon arms after movement, before consumers copy them.
+    @Inject(method = "setRotationAngles", at = @At("TAIL"))
+    private void combatives$finishAngles(float limbSwing, float limbSwingAmount, float ageInTicks,
+            float netHeadYaw, float headPitch, float scaleFactor, Entity entity, CallbackInfo ci) {
+        if (this.combatives$getSwimAnimationFor(entity) <= 0.0F
+                || entity instanceof EntityPlayer
+                && CombativesVisualPoseHelper.isLandCrawling((EntityPlayer) entity)) {
+            this.combatives$applyVisualLean(entity);
+        }
+    }
+
+    @Unique private void combatives$restoreCrawlLegBase() {
         if (!this.combatives$crawlLegBaseCaptured) return;
         this.bipedLeftLeg.rotateAngleX = this.combatives$leftLegBaseX;
         this.bipedLeftLeg.rotateAngleY = this.combatives$leftLegBaseY;
@@ -206,6 +214,7 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
     @Override
     public void combatives$restoreVisualLean() {
         this.combatives$restoreLeanBase();
+        this.combatives$restoreCrawlLegBase();
     }
 
     @Unique private void combatives$restoreLeanBase() {

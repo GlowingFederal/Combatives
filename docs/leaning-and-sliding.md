@@ -54,10 +54,14 @@ geometry continues to use the existing geometry packet.
 
 Client presentation evaluates the same server-approved wall limit from the
 smooth vanilla render-timeline eye and adds cosmetic roll. Authoritative gameplay
-continues to evaluate the current-tick eye. Lean applies one bounded additive roll to the animated
-body, head, arms, and legs. Each leg receives 75% of the torso roll, a very
-small mirrored brace, and a subtle lateral X-pivot shift. Existing X-axis walk
-animation is untouched. Every changed angle and pivot is captured after vanilla
+continues to evaluate the current-tick eye. The shared `LeanVisualPose` rolls the
+torso and its animated head/shoulder/hip attachments around the pelvis, with a
+small pelvis shift toward the supporting leg. The opposite leg counter-braces
+while the near leg follows slightly; a small hip overlap closes the rigid-cube
+seam. Left/right poses mirror each other. Existing walk and ADS pitch/yaw
+animation is untouched. Cosmetic pivot and leg-roll adjustments do not change
+the established values consumed by Flan's gameplay hitbox snapshots.
+Every changed angle and X/Y pivot is captured after vanilla
 animation and restored after the model render, including armor `ModelBiped`
 instances, so transforms do not accumulate.
 

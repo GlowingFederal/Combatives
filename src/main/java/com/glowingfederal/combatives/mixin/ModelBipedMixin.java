@@ -56,8 +56,20 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
     @Unique private float combatives$rightArmBaseZ;
     @Unique private float combatives$leftLegLeanBaseZ;
     @Unique private float combatives$rightLegLeanBaseZ;
+    @Unique private float combatives$bodyLeanBasePointX;
+    @Unique private float combatives$bodyLeanBasePointY;
+    @Unique private float combatives$headLeanBasePointX;
+    @Unique private float combatives$headLeanBasePointY;
+    @Unique private float combatives$headwearLeanBasePointX;
+    @Unique private float combatives$headwearLeanBasePointY;
+    @Unique private float combatives$leftArmLeanBasePointX;
+    @Unique private float combatives$leftArmLeanBasePointY;
+    @Unique private float combatives$rightArmLeanBasePointX;
+    @Unique private float combatives$rightArmLeanBasePointY;
     @Unique private float combatives$leftLegLeanBasePointX;
+    @Unique private float combatives$leftLegLeanBasePointY;
     @Unique private float combatives$rightLegLeanBasePointX;
+    @Unique private float combatives$rightLegLeanBasePointY;
 
     // Custom armour calls setRotationAngles directly, bypassing ModelBiped.render.
     @ModifyVariable(method = "setRotationAngles", at = @At("HEAD"), argsOnly = true, ordinal = 4)
@@ -185,16 +197,35 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
                     entity instanceof EntityPlayer
                         ? com.glowingfederal.combatives.movement.LeanGeometry.acceptedLean((EntityPlayer) entity)
                         : ((com.glowingfederal.combatives.movement.ICombativesLocomotion) entity).getLean());
+            float originX = this.bipedBody.rotationPointX;
+            float originY = this.bipedBody.rotationPointY;
+            float pelvisY = (this.bipedLeftLeg.rotationPointY + this.bipedRightLeg.rotationPointY) * 0.5F - originY;
+            this.combatives$leanPivot(this.bipedBody, pose, originX, originY, pelvisY);
+            this.combatives$leanPivot(this.bipedHead, pose, originX, originY, pelvisY);
+            this.combatives$leanPivot(this.bipedHeadwear, pose, originX, originY, pelvisY);
+            this.combatives$leanPivot(this.bipedLeftArm, pose, originX, originY, pelvisY);
+            this.combatives$leanPivot(this.bipedRightArm, pose, originX, originY, pelvisY);
+            this.combatives$leanPivot(this.bipedLeftLeg, pose, originX, originY, pelvisY);
+            this.combatives$leanPivot(this.bipedRightLeg, pose, originX, originY, pelvisY);
+            // Overlap the differently rolled rigid cubes slightly to seal the hip seam.
+            this.bipedLeftLeg.rotationPointY -= pose.hipInset;
+            this.bipedRightLeg.rotationPointY -= pose.hipInset;
             this.bipedBody.rotateAngleZ += pose.bodyRoll;
             this.bipedHead.rotateAngleZ += pose.headRoll;
             this.bipedHeadwear.rotateAngleZ += pose.headRoll;
             this.bipedLeftArm.rotateAngleZ += pose.armRoll;
             this.bipedRightArm.rotateAngleZ += pose.armRoll;
-            this.bipedLeftLeg.rotateAngleZ += pose.legRoll + pose.leftLegBrace;
-            this.bipedRightLeg.rotateAngleZ += pose.legRoll + pose.rightLegBrace;
-            this.bipedLeftLeg.rotationPointX += pose.legPivotOffset;
-            this.bipedRightLeg.rotationPointX += pose.legPivotOffset;
+            this.bipedLeftLeg.rotateAngleZ += pose.leftLegVisualRoll;
+            this.bipedRightLeg.rotateAngleZ += pose.rightLegVisualRoll;
         }
+    }
+
+    @Unique private void combatives$leanPivot(ModelRenderer part, LeanVisualPose pose,
+            float originX, float originY, float pelvisY) {
+        float x = part.rotationPointX - originX;
+        float y = part.rotationPointY - originY;
+        part.rotationPointX += pose.pivotOffsetX(x, y, pelvisY);
+        part.rotationPointY += pose.pivotOffsetY(x, y, pelvisY);
     }
 
     @Unique private void combatives$captureLeanBase() {
@@ -206,8 +237,20 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
         this.combatives$rightArmBaseZ = this.bipedRightArm.rotateAngleZ;
         this.combatives$leftLegLeanBaseZ = this.bipedLeftLeg.rotateAngleZ;
         this.combatives$rightLegLeanBaseZ = this.bipedRightLeg.rotateAngleZ;
+        this.combatives$bodyLeanBasePointX = this.bipedBody.rotationPointX;
+        this.combatives$bodyLeanBasePointY = this.bipedBody.rotationPointY;
+        this.combatives$headLeanBasePointX = this.bipedHead.rotationPointX;
+        this.combatives$headLeanBasePointY = this.bipedHead.rotationPointY;
+        this.combatives$headwearLeanBasePointX = this.bipedHeadwear.rotationPointX;
+        this.combatives$headwearLeanBasePointY = this.bipedHeadwear.rotationPointY;
+        this.combatives$leftArmLeanBasePointX = this.bipedLeftArm.rotationPointX;
+        this.combatives$leftArmLeanBasePointY = this.bipedLeftArm.rotationPointY;
+        this.combatives$rightArmLeanBasePointX = this.bipedRightArm.rotationPointX;
+        this.combatives$rightArmLeanBasePointY = this.bipedRightArm.rotationPointY;
         this.combatives$leftLegLeanBasePointX = this.bipedLeftLeg.rotationPointX;
+        this.combatives$leftLegLeanBasePointY = this.bipedLeftLeg.rotationPointY;
         this.combatives$rightLegLeanBasePointX = this.bipedRightLeg.rotationPointX;
+        this.combatives$rightLegLeanBasePointY = this.bipedRightLeg.rotationPointY;
         this.combatives$leanBaseCaptured = true;
     }
 
@@ -226,8 +269,20 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
         this.bipedRightArm.rotateAngleZ = this.combatives$rightArmBaseZ;
         this.bipedLeftLeg.rotateAngleZ = this.combatives$leftLegLeanBaseZ;
         this.bipedRightLeg.rotateAngleZ = this.combatives$rightLegLeanBaseZ;
+        this.bipedBody.rotationPointX = this.combatives$bodyLeanBasePointX;
+        this.bipedBody.rotationPointY = this.combatives$bodyLeanBasePointY;
+        this.bipedHead.rotationPointX = this.combatives$headLeanBasePointX;
+        this.bipedHead.rotationPointY = this.combatives$headLeanBasePointY;
+        this.bipedHeadwear.rotationPointX = this.combatives$headwearLeanBasePointX;
+        this.bipedHeadwear.rotationPointY = this.combatives$headwearLeanBasePointY;
+        this.bipedLeftArm.rotationPointX = this.combatives$leftArmLeanBasePointX;
+        this.bipedLeftArm.rotationPointY = this.combatives$leftArmLeanBasePointY;
+        this.bipedRightArm.rotationPointX = this.combatives$rightArmLeanBasePointX;
+        this.bipedRightArm.rotationPointY = this.combatives$rightArmLeanBasePointY;
         this.bipedLeftLeg.rotationPointX = this.combatives$leftLegLeanBasePointX;
+        this.bipedLeftLeg.rotationPointY = this.combatives$leftLegLeanBasePointY;
         this.bipedRightLeg.rotationPointX = this.combatives$rightLegLeanBasePointX;
+        this.bipedRightLeg.rotationPointY = this.combatives$rightLegLeanBasePointY;
         this.combatives$leanBaseCaptured = false;
     }
 

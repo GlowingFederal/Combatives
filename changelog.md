@@ -413,3 +413,10 @@
 - Source inspection confirms that all eight headings now feed identical scalar
   pose values into `ModelBiped`; visual appearance, body/head turning during a
   lean, and optional armour rendering still require in-game verification.
+
+2026-09-09 03:51 — Connect third-person lean at the pelvis
+
+- Rotate animated head, shoulder and hip attachments with the torso around the pelvis instead of leaving leg roots behind the torso's rolled lower edge. Add restrained opposite-leg bracing, near-leg follow and slight hip overlap; preserve underlying walk and ADS pitch/yaw.
+- Keep one shared LeanVisualPose, mirrored left/right formulas, and capture/restore every changed X/Y pivot at existing cleanup boundaries. Flan's armour consumes the same biped parts; gameplay snapshot values, lean authority, camera, networking and crawl/swim ordering remain unchanged.
+- Java 8 offline compileJava and Mixin annotation processing passed. Source/diff and symmetry checks performed; no runtime launch, packaging or in-game claims. Standing, walking, sprinting, turning, release/toggling, HMG ADS and Flan's armour need visual testing on both sides.
+

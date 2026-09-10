@@ -90,3 +90,28 @@ The authoritative ray uses the server player's current `rotationYaw`. The interp
 Flan's `ItemTeamArmour#getArmorModel` returns a reusable `ModelCustomArmour`. That class extends `ModelBiped`, but overrides `render`: it calls inherited `setRotationAngles`, then copies each biped parent part's rotations and pivots into its `ModelRendererTurbo` head/body/arm/leg arrays before rendering them independently. Thus the normal `ModelBiped.render` return hook does not run for Flan's armour. Combatives applies its one shared biped lean pose before those copies and a narrow optional Flan's adapter restores the captured animated biped state when the custom render returns. This supports armour using Flan's `ModelCustomArmour` architecture without item-name checks, leaves custom child geometry/animation intact, and prevents reusable model state from accumulating lean.
 
 Sliding remains disabled by default and is unchanged by this compatibility path.
+
+## Optional jump restrictions
+
+`JumpRestrictions.register(String, Predicate<EntityPlayer>)` accepts common-side
+policies during mod initialization. Providers must own their server policy and
+use synchronized data for client prediction; predicates must not mutate movement
+or pose. Combatives' existing `EntityLivingBase.jump()` HEAD hook evaluates these
+policies and still performs crawl-key/standing-clearance handling before returning.
+An allowed jump keeps vanilla vertical velocity. This API has no optional-mod
+class references and does not change horizontal shaping or pose authority.
+
+Updated HMG registers its weapon-weight policy reflectively. Combatives then owns
+its jump cancellation; HMG's standalone coremod branch becomes a no-op. With no
+compatible API, HMG retains its own pre-jump fallback. HMG supplies server mobility
+snapshots, heavy rejection and medium landing delays, and bypasses active flight.
+It no longer clamps velocity or teleports players to undo jumps. Light weapons
+and Combatives-only operation retain their existing jump path. HMG policy sync
+requires matching updated HMG builds on both sides.
+
+For reproduction, enable `verboseMovementDebug` and HMG's `-Dhmg.jumpTrace=true`
+on both JVMs. HMG records jump-hook ownership/rejection and weight/timer values;
+Combatives vertical traces include logical side, tick, flight and airborne flags.
+In-game transformer ordering, creative flight/landing, crawl plus heavy weapons,
+standing clearance, switching, and dedicated/integrated prediction remain to be
+validated. The hook does not add validation of vanilla C03 position reports.

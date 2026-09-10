@@ -420,3 +420,9 @@
 - Keep one shared LeanVisualPose, mirrored left/right formulas, and capture/restore every changed X/Y pivot at existing cleanup boundaries. Flan's armour consumes the same biped parts; gameplay snapshot values, lean authority, camera, networking and crawl/swim ordering remain unchanged.
 - Java 8 offline compileJava and Mixin annotation processing passed. Source/diff and symmetry checks performed; no runtime launch, packaging or in-game claims. Standing, walking, sprinting, turning, release/toggling, HMG ADS and Flan's armour need visual testing on both sides.
 
+
+2026-09-10 03:02 — Share jump rejection with optional HMG weight policy
+
+- Added an initialization-time common predicate registry and resolved optional blockers in the existing jump HEAD hook. HMG can register through reflection without a Combatives dependency on HMG classes; successful registration makes Combatives own HMG jump rejection.
+- Preserved crawl-key release/standing clearance even when weight also rejects the jump, and retained vanilla velocity and existing horizontal/pose/network behavior. Added tick, logical-side, airborne and flight fields to existing verbose vertical diagnostics.
+- Documented API ownership and HMG fallback/synchronization requirements. Java 8 offline compileJava and Mixin annotation processing passed. No packaging, reobfuscation, launch or in-game checks; combined heavy/crawl, creative flight, switching, transformer order and dedicated/integrated behavior require runtime validation.

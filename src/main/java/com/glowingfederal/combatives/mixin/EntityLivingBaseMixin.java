@@ -6,6 +6,7 @@ import com.glowingfederal.combatives.movement.ICombativesMovementState;
 import com.glowingfederal.combatives.movement.MovementController;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.movement.MovementProfile;
+import com.glowingfederal.combatives.movement.JumpRestrictions;
 import com.glowingfederal.combatives.interaction.InteractionRay;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -77,7 +78,7 @@ public abstract class EntityLivingBaseMixin extends Entity {
             at = @At("HEAD"),
             cancellable = true
     )
-    private void combatives$cancelCrawlJump(CallbackInfo ci) {
+    private void combatives$cancelRestrictedJump(CallbackInfo ci) {
         EntityLivingBase self = (EntityLivingBase) (Object) this;
         EntityPlayer player =
                 self instanceof EntityPlayer ? (EntityPlayer) self : null;
@@ -86,6 +87,13 @@ public abstract class EntityLivingBaseMixin extends Entity {
                 "jump:head",
                 player
         );
+
+        // Resolve optional policies at the same entry point; still process crawl
+        // clearance below even when a weapon rejects this jump.
+        boolean weaponBlocksJump = JumpRestrictions.shouldRejectJump(player);
+        if (weaponBlocksJump) {
+            ci.cancel();
+        }
 
         if (!(self instanceof ICombativesPlayerPose)) {
             return;
@@ -398,6 +406,10 @@ public abstract class EntityLivingBaseMixin extends Entity {
                         + " collidedV="
                         + player.isCollidedVertically
                         + " fallDistance=" + player.fallDistance
+                        + " tick=" + player.ticksExisted
+                        + " side=" + (player.worldObj.isRemote ? "CLIENT" : "SERVER")
+                        + " isAirBorne=" + player.isAirBorne
+                        + " flying=" + player.capabilities.isFlying
                         + " stepHeight=" + player.stepHeight
                         + " inWater="
                         + this.combatives$travelStartInWater

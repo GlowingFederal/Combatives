@@ -31,6 +31,15 @@ public abstract class EntityPlayerSPMixin implements ICombativesClientPlayerSwim
 
     @Inject(method = "isSneaking", at = @At("HEAD"), cancellable = true)
     private void combatives$isSneaking(CallbackInfoReturnable<Boolean> cir) {
+        EntityPlayerSP self = (EntityPlayerSP) (Object) this;
+        if (self.isRiding()) {
+            /* A mount owns dismount input.  In particular, vehicle mods may
+             * temporarily consume the real sneak input while implementing a
+             * hold-to-dismount policy.  The mount overlap must not turn that
+             * suppressed input back into Combatives' forced-crouch signal. */
+            cir.setReturnValue(this.isActuallySneaking());
+            return;
+        }
         cir.setReturnValue(this.combatives$isCrouching);
     }
 
@@ -143,7 +152,9 @@ public abstract class EntityPlayerSPMixin implements ICombativesClientPlayerSwim
         }
 
         this.combatives$updatePlayerMoveState();
-        this.combatives$isCrouching = this.combatives$isCrouching(!pose.isPoseClear(Pose.STANDING));
+        this.combatives$isCrouching = self.isRiding()
+                ? this.isActuallySneaking()
+                : this.combatives$isCrouching(!pose.isPoseClear(Pose.STANDING));
 
         if (((EntityPlayerSP) (Object) this).isSprinting() != this.combatives$movementStorage.isSprinting && (((EntityPlayerSP) (Object) this).isInWater() || pose.isSwimming())) {
             MovementDiagnostics.debug(self, "client restored Combatives water sprint state");

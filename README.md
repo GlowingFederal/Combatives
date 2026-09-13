@@ -57,7 +57,8 @@ pathological input spikes, but is separate from normal camera effects.
   does not match a changed MPM build, MPM retains its own targeting behavior.
 - Mounted pose handling uses Minecraft's generic riding relationship rather
   than hard-coded mount classes. Rideable mods remain responsible for choosing
-  valid dismount positions.
+  valid dismount positions and any custom dismount input policy; Combatives
+  only clears its own pose/movement history after the riding relationship ends.
 - Compatibility is deliberately defensive, but universal mod compatibility is
   not claimed. See the [player geometry and MPM compatibility notes](docs/player-geometry-and-mpm-compatibility.md),
   [mounted camera ownership audit](docs/mounted-camera-ownership.md), and

@@ -38,8 +38,14 @@ ownership violation was possible for vanilla horses and any custom mount.
 * Combatives' procedural tail transforms remain additive while mounted, including registered
   horse/vehicle camera behaviors. They do not take ownership of the base seat position.
 * On dismount, `isRiding()` becomes false and ownership returns immediately to current accepted
-  player geometry. The existing dismount handoff remains responsible for standing clearance;
-  there is no cached mounted offset to leak into the next frame.
+  player geometry. The existing dismount handoff remains responsible for standing clearance.
+  Combatives clears its crawl, swim, slide, lean, movement-snapshot, and animation state, then
+  rebases interpolation history to the current player coordinates selected by the mount. It does
+  not call `setPosition`, move the AABB, search for clearance, or alter the selected exit.
+* While mounted, local `isSneaking()` reflects only the real movement input. Expected overlap
+  with a mount cannot synthesize Combatives' forced-crouch result, so a vehicle mod may suppress
+  that input while it owns a delayed dismount policy. Vanilla mounts still receive the ordinary
+  sneak input and retain their normal immediate dismount behavior.
 
 The normal boundary remains the vanilla riding relationship, so it applies equally to horses,
 MCHeli's direct rider view, and custom mounts. MCHeli also has a distinct gunner/always-camera
@@ -101,3 +107,9 @@ base camera Y, and procedural/final Y. Normal users receive no additional loggin
    person and enter/exit repeatedly while watching for a one-frame height jump.
 10. Repeat with a tank and another ground vehicle as driver and, where supported, passenger or
     gunner. Exercise vehicle weapon aiming and confirm ordinary block targeting after dismount.
+11. For an MCHeli build with hold-to-dismount enabled, tap Sneak and confirm the rider remains
+    mounted; then hold it for the complete native delay and confirm exactly one vehicle-owned
+    dismount. Repeat with a vanilla horse and confirm ordinary Sneak dismount remains immediate.
+12. After each exit, exercise crawl, swim, slide, lean, bob, and FOV transitions and confirm the
+    first unmounted frame starts from the mount-selected player coordinates without a retained
+    seat displacement.

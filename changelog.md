@@ -426,3 +426,16 @@
 - Added an initialization-time common predicate registry and resolved optional blockers in the existing jump HEAD hook. HMG can register through reflection without a Combatives dependency on HMG classes; successful registration makes Combatives own HMG jump rejection.
 - Preserved crawl-key release/standing clearance even when weight also rejects the jump, and retained vanilla velocity and existing horizontal/pose/network behavior. Added tick, logical-side, airborne and flight fields to existing verbose vertical diagnostics.
 - Documented API ownership and HMG fallback/synchronization requirements. Java 8 offline compileJava and Mixin annotation processing passed. No packaging, reobfuscation, launch or in-game checks; combined heavy/crawl, creative flight, switching, transformer order and dedicated/integrated behavior require runtime validation.
+
+2026-09-13 18:47 — Preserve mount dismount ownership and resynchronize movement state
+
+- Prevented expected rider/mount overlap from becoming Combatives' forced-crouch `isSneaking()`
+  result. While riding, only the real movement input is exposed, allowing MC Heli to suppress it
+  during its native hold-to-dismount window while vanilla mounts retain normal Sneak dismounting.
+- Made the existing generic riding transition clear crawl, swim, slide, lean, movement snapshot,
+  and pose-animation state on both sides. Dismount now rebases interpolation and camera history to
+  the player coordinates already selected by the mount without calling a positioning method,
+  changing the AABB, checking a mod class, or implementing a dismount timer.
+- Updated mounted-ownership documentation and the manual regression matrix. Java 8 `compileJava`
+  and Mixin annotation processing passed; repeated MC Heli/vanilla mount behavior and
+  integrated/dedicated in-game synchronization still require runtime validation.

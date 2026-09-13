@@ -525,8 +525,11 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
 
     @Inject(method = "onUpdate", at = @At(value = "INVOKE", target = "cpw/mods/fml/common/FMLCommonHandler.onPlayerPostTick(Lnet/minecraft/entity/player/EntityPlayer;)V", shift = At.Shift.AFTER, remap = false))
     private void combatives$postPostTick(CallbackInfo ci) {
-        this.combatives$updateMountLifecycle();
+        boolean mountStateChanged = this.combatives$updateMountLifecycle();
         this.updatePose();
+        if (mountStateChanged && !this.worldObj.isRemote && this.getPlayer() instanceof EntityPlayerMP) {
+            PoseSync.broadcastAuthoritativePose((EntityPlayerMP) this.getPlayer(), true);
+        }
         this.combatives$warnUnexpectedStepHeight("post-player-tick");
         if (this.eyeHeight != this.previousEyeHeight) this.recalculateEyeHeight();
     }
@@ -623,21 +626,54 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         this.combatives$selectPose(finalPose);
     }
 
-    private void combatives$updateMountLifecycle() {
+    private boolean combatives$updateMountLifecycle() {
         Entity current = this.ridingEntity;
         if (current == this.combativesLastRidingEntity) {
-            return;
+            return false;
         }
+        boolean movementStateChanged = false;
         if (this.combativesLastRidingEntity != null && current == null) {
             this.combativesDismountedEntity = this.combativesLastRidingEntity;
             this.combativesDismountHandoff = true;
+            movementStateChanged = this.combatives$resetMountMovementState("dismounted");
+            this.combatives$resynchronizeAfterDismount();
             this.combatives$logMountState("dismount detected", this.combativesDismountedEntity);
         } else if (current != null) {
             this.combativesDismountHandoff = false;
             this.combativesDismountedEntity = null;
+            movementStateChanged = this.combatives$resetMountMovementState("mounted");
             this.combatives$logMountState(this.combativesLastRidingEntity == null ? "mount detected" : "riding entity changed", current);
         }
         this.combativesLastRidingEntity = current;
+        return movementStateChanged;
+    }
+
+    private boolean combatives$resetMountMovementState(String reason) {
+        boolean changed = this.crawlKeyDown || this.isSwimming() || this.getPose() != Pose.STANDING
+                || this.combativesMovementSnapshot != MovementSnapshot.EMPTY
+                || this.combativesLocomotionState != LocomotionState.NORMAL
+                || this.combativesSlideTicks != 0 || this.combativesLean != 0.0F
+                || this.swimAnimation != 0.0F || this.lastSwimAnimation != 0.0F;
+        this.crawlKeyDown = false;
+        this.combatives$setSwimming(false, reason);
+        this.setPose(Pose.STANDING);
+        this.combativesMovementSnapshot = MovementSnapshot.EMPTY;
+        this.combativesLocomotionState = LocomotionState.NORMAL;
+        this.combativesSlideTicks = 0;
+        this.combativesLean = 0.0F;
+        this.swimAnimation = 0.0F;
+        this.lastSwimAnimation = 0.0F;
+        return changed;
+    }
+
+    private void combatives$resynchronizeAfterDismount() {
+        /* The mount's completed exit location is authoritative.  Rebase only
+         * history consumed by Combatives movement/camera calculations; do not
+         * call setPosition, move the AABB, or participate in exit placement. */
+        this.prevPosX = this.lastTickPosX = this.posX;
+        this.prevPosY = this.lastTickPosY = this.posY;
+        this.prevPosZ = this.lastTickPosZ = this.posZ;
+        this.prevDistanceWalkedModified = this.distanceWalkedModified;
     }
 
     private void combatives$logMountState(String event, Entity mount) {

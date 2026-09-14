@@ -55,6 +55,13 @@ public class CombativesCorePlugin implements IFMLLoadingPlugin, IEarlyMixinLoade
 
     @Override
     public List<String> getMixins(Set<String> loadedCoreMods) {
+        /*
+         * This is the sole registration owner for early Combatives mixins.
+         * GTNHMixins installs this returned list into COMMON_MIXIN_CONFIG;
+         * declaring the same classes in that JSON (or the obsolete client
+         * config) permits a second bootstrap path to apply the interaction
+         * hooks again.
+         */
         List<String> mixins = new ArrayList<String>(Arrays.asList(
             "EntityPlayerMixin",
             "EntityMixin",

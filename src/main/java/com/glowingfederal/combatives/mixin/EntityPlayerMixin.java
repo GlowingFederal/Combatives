@@ -64,6 +64,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     private Pose combativesAppliedPose = Pose.STANDING;
     private EffectivePlayerGeometry combativesAppliedGeometry;
     private int combativesGeometryRevision;
+    private int combativesPositionHistoryRevision;
     private int combativesLastStepHeightWarningTick = -200;
     private MovementSnapshot combativesMovementSnapshot = MovementSnapshot.EMPTY;
     private LocomotionState combativesLocomotionState = LocomotionState.NORMAL;
@@ -77,6 +78,9 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     private Entity combativesLastRidingEntity;
     private Entity combativesDismountedEntity;
     private boolean combativesDismountHandoff;
+    private boolean combativesDismountPositionHandoff;
+    private boolean combativesDismountPositionWriteObserved;
+    private int combativesDismountPositionQuietTicks;
     private int combativesLastMountWaitLogTick = -20;
     private int combativesLastMpmRawSize = MpmCompatibility.DEFAULT_RAW_SIZE;
     private float combativesLastMpmScale = 1.0F;
@@ -180,6 +184,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     @Override public void acceptGeometryRevision(int revision) {
         if (revision > this.combativesGeometryRevision) this.combativesGeometryRevision = revision;
     }
+    @Override public int getPositionHistoryRevision() { return this.combativesPositionHistoryRevision; }
     private EffectivePlayerGeometry combatives$resolveGeometry(Pose pose) {
         MpmCompatibility.Geometry geometry = MpmCompatibility.resolve(this.getPlayer());
         this.combativesLastMpmRawSize = geometry.rawSize;
@@ -320,6 +325,9 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         this.combatives$setSwimming(false, reason);
         this.combativesPose = resetPose;
         this.combativesDismountHandoff = false;
+        this.combativesDismountPositionHandoff = false;
+        this.combativesDismountPositionWriteObserved = false;
+        this.combativesDismountPositionQuietTicks = 0;
         this.combativesDismountedEntity = null;
         this.combativesLastRidingEntity = this.ridingEntity;
         this.combativesMovementSnapshot = MovementSnapshot.EMPTY;
@@ -526,6 +534,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     @Inject(method = "onUpdate", at = @At(value = "INVOKE", target = "cpw/mods/fml/common/FMLCommonHandler.onPlayerPostTick(Lnet/minecraft/entity/player/EntityPlayer;)V", shift = At.Shift.AFTER, remap = false))
     private void combatives$postPostTick(CallbackInfo ci) {
         boolean mountStateChanged = this.combatives$updateMountLifecycle();
+        this.combatives$ageDismountPositionHandoff(mountStateChanged);
         this.updatePose();
         if (mountStateChanged && !this.worldObj.isRemote && this.getPlayer() instanceof EntityPlayerMP) {
             PoseSync.broadcastAuthoritativePose((EntityPlayerMP) this.getPlayer(), true);
@@ -635,11 +644,17 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         if (this.combativesLastRidingEntity != null && current == null) {
             this.combativesDismountedEntity = this.combativesLastRidingEntity;
             this.combativesDismountHandoff = true;
+            this.combativesDismountPositionHandoff = true;
+            this.combativesDismountPositionWriteObserved = false;
+            this.combativesDismountPositionQuietTicks = 0;
             movementStateChanged = this.combatives$resetMountMovementState("dismounted");
             this.combatives$resynchronizeAfterDismount();
             this.combatives$logMountState("dismount detected", this.combativesDismountedEntity);
         } else if (current != null) {
             this.combativesDismountHandoff = false;
+            this.combativesDismountPositionHandoff = false;
+            this.combativesDismountPositionWriteObserved = false;
+            this.combativesDismountPositionQuietTicks = 0;
             this.combativesDismountedEntity = null;
             movementStateChanged = this.combatives$resetMountMovementState("mounted");
             this.combatives$logMountState(this.combativesLastRidingEntity == null ? "mount detected" : "riding entity changed", current);
@@ -674,6 +689,38 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         this.prevPosY = this.lastTickPosY = this.posY;
         this.prevPosZ = this.lastTickPosZ = this.posZ;
         this.prevDistanceWalkedModified = this.distanceWalkedModified;
+        this.combativesPositionHistoryRevision++;
+    }
+
+    @Override
+    public void onPositionSetAfterDismount() {
+        if (!this.combativesDismountPositionHandoff || this.isRiding()) {
+            return;
+        }
+        /* Some mounts choose an exit after detaching and may repeat that
+         * authoritative setPosition for a few vehicle ticks. Observe that
+         * generic Entity contract instead of naming a mount or predicting its
+         * timing. The position and AABB have already been selected by the
+         * caller; only Combatives-owned history is rebased here. */
+        this.combatives$resynchronizeAfterDismount();
+        this.combativesMovementSnapshot = MovementSnapshot.EMPTY;
+        this.combativesDismountPositionWriteObserved = true;
+        this.combativesDismountPositionQuietTicks = 0;
+    }
+
+    private void combatives$ageDismountPositionHandoff(boolean mountStateChanged) {
+        if (!this.combativesDismountPositionHandoff || mountStateChanged) {
+            return;
+        }
+        if (this.combativesDismountPositionWriteObserved) {
+            this.combativesDismountPositionWriteObserved = false;
+            this.combativesDismountPositionQuietTicks = 0;
+            return;
+        }
+        if (++this.combativesDismountPositionQuietTicks >= 2) {
+            this.combativesDismountPositionHandoff = false;
+            this.combativesDismountPositionQuietTicks = 0;
+        }
     }
 
     private void combatives$logMountState(String event, Entity mount) {

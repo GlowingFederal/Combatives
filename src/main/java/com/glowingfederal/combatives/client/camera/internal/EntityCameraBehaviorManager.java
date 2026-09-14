@@ -3,6 +3,7 @@ package com.glowingfederal.combatives.client.camera.internal;
 import com.combatives.api.camera.entity.*;
 import com.glowingfederal.combatives.Combatives;
 import com.glowingfederal.combatives.config.CombativesConfig;
+import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,14 +19,17 @@ public final class EntityCameraBehaviorManager {
     private Entity mount, previousMount;
     private EntityBehaviorEnvironment environment;
     private long lastTick = Long.MIN_VALUE;
+    private int positionHistoryRevision = Integer.MIN_VALUE;
     private EntityCameraBehaviorManager() {}
 
     public void update(EntityPlayerSP rider, float partialTicks) {
         // The observed camera entity is the local player while unmounted and the mount while
         // mounted. This keeps the sampler/provider path generic without running two samplers.
         Entity current=rider==null?null:(rider.ridingEntity==null?rider:rider.ridingEntity); long tick=rider==null?0:rider.ticksExisted; Entity previous=mount;
+        int currentPositionRevision=rider instanceof ICombativesPlayerPose?((ICombativesPlayerPose)rider).getPositionHistoryRevision():0;
         MountTransition transition=transition(previous,current);
-        if(current!=mount){previousMount=previous;MountCameraContext detach=context(rider,previous,previous,null,transition,tick,partialTicks);detachAll(detach);sampler.reset();mount=current;lastTick=Long.MIN_VALUE;environment=current==null?null:environment(rider);}
+        if(current!=mount){previousMount=previous;MountCameraContext detach=context(rider,previous,previous,null,transition,tick,partialTicks);detachAll(detach);sampler.reset();mount=current;lastTick=Long.MIN_VALUE;positionHistoryRevision=currentPositionRevision;environment=current==null?null:environment(rider);}
+        else if(currentPositionRevision!=positionHistoryRevision){sampler.reset();lastTick=Long.MIN_VALUE;positionHistoryRevision=currentPositionRevision;}
         if(mount==null)return;
         sampler.sampleTick(mount,tick);
         MountCameraContext context=context(rider,mount,previousMount,current,transition,tick,partialTicks);
@@ -67,6 +71,6 @@ public final class EntityCameraBehaviorManager {
     }
     private void detachAll(MountCameraContext context){for(ActiveProvider provider:active.values())invoke("detach",provider,context);active.clear();}
     private static MountTransition transition(Entity oldMount,Entity newMount){if(oldMount==newMount)return MountTransition.NONE;if(oldMount==null)return MountTransition.ATTACHED;if(newMount==null)return MountTransition.DETACHED;return MountTransition.CHANGED;}
-    public void reset(EntityPlayerSP rider){MountCameraContext context=context(rider,mount,mount,null,MountTransition.DETACHED,rider==null?0:rider.ticksExisted,0);detachAll(context);previousMount=mount;mount=null;environment=null;lastTick=Long.MIN_VALUE;sampler.reset();}
+    public void reset(EntityPlayerSP rider){MountCameraContext context=context(rider,mount,mount,null,MountTransition.DETACHED,rider==null?0:rider.ticksExisted,0);detachAll(context);previousMount=mount;mount=null;environment=null;lastTick=Long.MIN_VALUE;positionHistoryRevision=Integer.MIN_VALUE;sampler.reset();}
     private static final class ActiveProvider { final EntityBehaviorRegistration registration;final EntityCameraBehavior behavior;final CameraEffectSink sink;ActiveProvider(EntityBehaviorRegistration registration,EntityCameraBehavior behavior){this.registration=registration;this.behavior=behavior;sink=new ProviderCameraEffectSink(registration);} }
 }

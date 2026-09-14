@@ -5,13 +5,7 @@
   "refmap": "mixins.combatives.refmap.json",
   "target": "@env(DEFAULT)",
   "compatibilityLevel": "JAVA_8",
-  "mixins": [
-    "EntityPlayerMixin",
-    "EntityMixin",
-    "EntityLivingBaseMixin",
-    "EntityPlayerMPMixin",
-    "NetHandlerPlayServerMixin"
-  ],
+  "mixins": [],
   "client": [],
   "server": []
 }

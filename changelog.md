@@ -439,3 +439,32 @@
 - Updated mounted-ownership documentation and the manual regression matrix. Java 8 `compileJava`
   and Mixin annotation processing passed; repeated MC Heli/vanilla mount behavior and
   integrated/dedicated in-game synchronization still require runtime validation.
+
+<<<<<<< ours
+2026-09-13 23:38 — Follow mount-owned position writes through dismount completion
+
+- Confirmed MC Heli may apply its configured custom exit with `setPosition` after detaching and
+  repeat that authoritative placement for five vehicle ticks. The earlier one-shot dismount reset
+  could therefore leave Combatives history behind a later MC Heli-owned write, exposed by jumping
+  or entering flight.
+- Added a generic post-dismount observer for player `setPosition` calls. While position writes keep
+  arriving, Combatives rebases entity interpolation/walk history, clears its derived movement
+  snapshot, and revision-resets the client camera motion sampler to the position already accepted
+  by the entity; two quiet player ticks close the observer. No mount class, exit coordinates, key
+  timing, position, AABB, velocity, or ground state is overridden.
+- Audited current HMG jump handling: it only rejects at jump entry and observes landing cooldowns,
+  and explicitly bypasses riding and flight without position, velocity, or ground-state writes.
+  Java 8 `compileJava` and Mixin annotation processing passed. In-game MC Heli/HMG/vanilla-mount
+  validation remains to be performed.
+=======
+2026-09-14 04:17 — Give the early loader exclusive interaction-hook ownership
+
+- Removed the duplicate static common/client mixin declarations from the legacy JSON configs. The
+  GTNHMixins `IEarlyMixinLoader` list is now the only registration source for vanilla client and
+  server hooks, preventing a second bootstrap path from applying the same player-controller,
+  targeting, movement, and packet handlers to one physical input.
+- Preserved the exact dynamically selected mixin set, side rules, vanilla hold behavior, targeting
+  corrections, crawl, lean, and optional-mod compatibility. Validation was limited to JSON parsing,
+  registration-source searches, and call-site tracing; single-click and hold behavior still require
+  the requested integrated/dedicated in-game matrix.
+>>>>>>> theirs

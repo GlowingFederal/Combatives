@@ -40,8 +40,11 @@ ownership violation was possible for vanilla horses and any custom mount.
 * On dismount, `isRiding()` becomes false and ownership returns immediately to current accepted
   player geometry. The existing dismount handoff remains responsible for standing clearance.
   Combatives clears its crawl, swim, slide, lean, movement-snapshot, and animation state, then
-  rebases interpolation history to the current player coordinates selected by the mount. It does
-  not call `setPosition`, move the AABB, search for clearance, or alter the selected exit.
+  rebases interpolation history to the current player coordinates selected by the mount. If the
+  mount performs additional `setPosition` calls after detaching, Combatives observes those writes
+  until they stop, rebases entity history, clears the derived movement snapshot, and resets the
+  client motion sampler to that accepted position. It does not call `setPosition`, move the AABB,
+  search for clearance, or alter the selected exit.
 * While mounted, local `isSneaking()` reflects only the real movement input. Expected overlap
   with a mount cannot synthesize Combatives' forced-crouch result, so a vehicle mod may suppress
   that input while it owns a delayed dismount policy. Vanilla mounts still receive the ordinary
@@ -113,3 +116,6 @@ base camera Y, and procedural/final Y. Normal users receive no additional loggin
 12. After each exit, exercise crawl, swim, slide, lean, bob, and FOV transitions and confirm the
     first unmounted frame starts from the mount-selected player coordinates without a retained
     seat displacement.
+13. With an MCHeli content definition that supplies a custom unmount position, jump immediately
+    after exit and repeat while beginning creative flight. Confirm MC Heli's repeated exit-position
+    writes remain authoritative and Combatives does not retain a pre-write movement/camera sample.

@@ -17,9 +17,11 @@ public interface ICombativesPlayerPose {
     EffectivePlayerGeometry getEffectiveGeometry(Pose pose);
     int getGeometryRevision();
     void acceptGeometryRevision(int revision);
+    int getPositionHistoryRevision();
     EntitySize getSize(Pose pose);
     void recalculateSize();
     void resetPoseState(Pose lifecyclePose, String reason);
+    void onPositionSetAfterDismount();
     void logGeometry(String heading, String reason);
     boolean isResizingAllowed();
     boolean isActuallySneaking();

@@ -44,14 +44,39 @@ sweep consume the shared origin/direction. The first-person base camera uses
 the same accepted box-relative anchor; procedural bob, lean, shake, and other
 presentation transforms remain outside gameplay aim.
 
-The server independently constructs the authoritative ray for C07 start-dig
-and C08 block-use packets. The traced block replaces packet coordinates before
-vanilla validation and manager calls; C08 face and relative hit coordinates are
-reconstructed from the same intercept. Stop/abort digging retains vanilla's
-ongoing-mining coordinates, and air-use retains its sentinel packet semantics.
-The packet result is therefore diagnostic input, not authority. Vanilla reach,
-game-mode, protection, and harvest checks remain intact and reach is obtained
-from the server's `ItemInWorldManager`; no tolerance is increased.
+Each C07 or C08 packet owns exactly one block target. The server passes the
+packet's coordinates, face, and (for C08) relative hit coordinates unchanged
+into vanilla handling. This includes all C07 start, abort, and finish packets,
+so the stages of a mining sequence cannot be split by a later server ray. It
+also preserves C08's negative-coordinate air-use sentinel. Vanilla reach,
+build-height, spawn-protection, game-mode, and harvest checks remain the
+authority for whether that packet is accepted.
+
+The server may independently trace the synchronized interaction geometry when
+verbose diagnostics are enabled. That result is comparison data only: it does
+not replace or reject the packet target when player state or world state has
+advanced since the client selected the block.
+
+## Initial presses and held-button continuation
+
+Minecraft 1.7.10 treats the initial press and held continuation separately.
+An initial left click enters `Minecraft#clickMouse` and
+`PlayerControllerMP#clickBlock`. While the button remains down,
+`Minecraft#sendClickBlockToController` continues through
+`PlayerControllerMP#onPlayerDamageBlock`; that continuation must remain active
+for ordinary survival mining. An initial right click enters
+`Minecraft#rightClickMouse`, and a held right button may enter it again only
+after the vanilla `rightClickDelayTimer` expires. Combatives neither adds a
+controller call nor alters that timer.
+
+A later vanilla call is a separate action and takes its own current
+`objectMouseOver` snapshot. If the first action changes the world, that later
+call can legitimately select a neighboring block and send a second C07 or C08
+packet. This is normal repeat behavior, not one ray selecting two blocks. A
+Combatives duplication would instead mean an extra controller call in one tick,
+a hook registered twice, or one packet executed at a target other than its own.
+The mixin JSON lists remain empty and `CombativesCorePlugin` remains the sole
+registration owner.
 
 ## Synchronization and revisions
 
@@ -62,15 +87,14 @@ their target/camera from the synchronized tuple. State-change comparison keeps
 the existing packet stream transition-based rather than sending geometry every
 tick.
 
-Verbose movement diagnostics now include tick and geometry revision in the
-general geometry record. Server interaction records include player, tick,
-revision, pose, position/AABB/size, anchor, yaw/pitch, ray origin/direction,
-reach, independently traced block, packet block, and agreement. Existing
-client targeting logs provide the rendered/interpolated counterpart and final
-block/entity intercept. A revision mismatch identifies synchronization; equal
-revisions with different origins identifies position/orientation timing; equal
-rays with different hits identifies tracing/world disagreement; and a packet
-mismatch identifies the controller/packet boundary.
+Verbose interaction diagnostics label initial and held controller calls plus
+C07/C08 send and receive boundaries. Every record includes the player tick,
+phase, action, complete available packet target, and current client
+`objectMouseOver`. Receive records include the independent server ray target.
+The additional server trace is not performed while verbose diagnostics are
+disabled. Two send records on later ticks demonstrate vanilla held-input
+repetition; one receive record with differing packet and ray targets
+demonstrates timing disagreement without changing packet ownership.
 
 ## Compatibility boundary
 
@@ -83,9 +107,8 @@ does not link Minecraft client or MPM renderer classes.
 
 ## Vehicle-owned transition
 
-The shared mount handoff state is now consulted at every targeting replacement. While mounted, or
-while MC Heli can still commit its final post-detach exit, native camera/ray behavior wins and the
-server retains valid C07/C08 packet coordinates instead of tracing from an unstable player origin.
-After exit writes are quiet, `InteractionRay` becomes authoritative again. C07 stop/abort packets
-and C08 air-use packets never enter replacement, so one packet retains one logical target and all
-vanilla reach, protection, game-mode, and harvest processing remains in place.
+The shared mount handoff state is consulted by client targeting. While mounted,
+or while MC Heli can still commit its bounded final post-detach exit, native
+vehicle camera/ray behavior wins. After exit writes are quiet, the synchronized
+Combatives view ray resumes. This ownership transition never changes a C07 or
+C08 after the client has created it; every packet retains its own logical target.

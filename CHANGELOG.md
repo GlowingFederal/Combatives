@@ -1,3 +1,18 @@
+(PR: Restore packet-owned held interactions)
+
+- Confirmed that holding a mouse button can produce later vanilla controller
+  calls and a second C07 or C08 packet after the first action changes the
+  current client target; one ray trace still owns only one target.
+- Removed all server redirects that replaced C07/C08 coordinates, faces, and
+  hit values with a later independent server ray, keeping complete digging
+  sequences and placement packets bound to their client-selected targets.
+- Kept vanilla survival mining continuation, right-click delay, reach,
+  protection, build-height, game-mode, harvest, air-use, vehicle targeting, and
+  bounded post-dismount behavior unchanged.
+- Added verbose phase/tick diagnostics at controller, packet send, and packet
+  receive boundaries; the server ray is now read-only diagnostic data and is
+  only calculated when verbose diagnostics are enabled.
+
 (0bc1e19 Investigate MorePlayerModels+ compatibility for Combatives)
 
 - Added a source-based MPM+ behavior map, conflict audit, geometry architecture,

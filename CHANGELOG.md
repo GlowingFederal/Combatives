@@ -497,3 +497,15 @@
   in response to later corrections or participates in mount handoff logic.
 - Reconciled pre-existing changelog conflict markers while moving the project history to the
   requested `CHANGELOG.md` filename.
+
+2026-09-20 09:05 — Correct the 1.7.10 digging-packet diagnostic hook
+
+- Corrected the C07 construction diagnostic to target Minecraft 1.7.10's five-integer constructor
+  instead of the newer nested `Action` enum API, restoring compilation without changing packet
+  coordinates, interaction ownership, MPM camera behavior, or HMG point-of-aim behavior.
+- Audited the interaction changes merged in `f881816`: controller and packet hooks only observe
+  state when verbose diagnostics are enabled, and server handling now preserves the complete
+  client-selected C07/C08 target rather than replacing it with a later server ray. MPM camera and
+  targeting transforms and HMG-selected aim therefore remain outside these hooks.
+- Source inspection and compilation validate the descriptor correction; MPM/HMG behavior still
+  requires integrated and dedicated-server in-game regression testing.

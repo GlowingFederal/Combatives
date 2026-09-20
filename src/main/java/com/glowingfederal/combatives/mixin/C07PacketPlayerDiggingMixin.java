@@ -9,9 +9,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(C07PacketPlayerDigging.class)
 public abstract class C07PacketPlayerDiggingMixin {
-    @Inject(method = "<init>(Lnet/minecraft/network/play/client/C07PacketPlayerDigging$Action;IIII)V",
-            at = @At("RETURN"))
-    private void combatives$traceSentPacket(C07PacketPlayerDigging.Action action,
+    @Inject(method = "<init>(IIIII)V", at = @At("RETURN"))
+    private void combatives$traceSentPacket(int action,
             int x, int y, int z, int face, CallbackInfo ci) {
         InteractionDiagnostics.logDigPacket((C07PacketPlayerDigging) (Object) this);
     }

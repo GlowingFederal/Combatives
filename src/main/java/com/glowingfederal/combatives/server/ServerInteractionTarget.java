@@ -25,6 +25,7 @@ public final class ServerInteractionTarget {
         // 4 = drop item
         // 5 = release use item
         if (!(player instanceof ICombativesPlayerPose)
+                || ((ICombativesPlayerPose) player).isVehicleOwnedInteraction()
                 || packet.func_149506_g() != 0) {
             return null;
         }
@@ -69,7 +70,9 @@ public final class ServerInteractionTarget {
 
     public static MovingObjectPosition resolveBlockUse(EntityPlayerMP player,
             C08PacketPlayerBlockPlacement packet) {
-        if (!(player instanceof ICombativesPlayerPose) || packet.func_149576_c() < 0) return null;
+        if (!(player instanceof ICombativesPlayerPose)
+                || ((ICombativesPlayerPose) player).isVehicleOwnedInteraction()
+                || packet.func_149576_c() < 0) return null;
         InteractionRay ray = InteractionRay.authoritative(player);
         MovingObjectPosition hit = ray.traceBlocks(player,
                 player.theItemInWorldManager.getBlockReachDistance());

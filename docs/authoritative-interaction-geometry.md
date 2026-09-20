@@ -80,3 +80,12 @@ geometry. Standing, crouching, crawl/prone, swimming, flight/spin, sleeping,
 and dying poses all use the same box-floor anchor rule. Optional MPM reflection
 remains isolated from client rendering types, so dedicated-server classloading
 does not link Minecraft client or MPM renderer classes.
+
+## Vehicle-owned transition
+
+The shared mount handoff state is now consulted at every targeting replacement. While mounted, or
+while MC Heli can still commit its final post-detach exit, native camera/ray behavior wins and the
+server retains valid C07/C08 packet coordinates instead of tracing from an unstable player origin.
+After exit writes are quiet, `InteractionRay` becomes authoritative again. C07 stop/abort packets
+and C08 air-use packets never enter replacement, so one packet retains one logical target and all
+vanilla reach, protection, game-mode, and harvest processing remains in place.

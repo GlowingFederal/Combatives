@@ -8,6 +8,7 @@ import com.glowingfederal.combatives.movement.MovementDiagnostics;
 import com.glowingfederal.combatives.movement.MovementProfile;
 import com.glowingfederal.combatives.movement.JumpRestrictions;
 import com.glowingfederal.combatives.interaction.InteractionRay;
+import com.glowingfederal.combatives.compat.mcheli.MCHeliCameraCompat;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -27,6 +28,8 @@ public abstract class EntityLivingBaseMixin extends Entity {
     @Redirect(method = "rayTrace", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/EntityLivingBase;getPosition(F)Lnet/minecraft/util/Vec3;"))
     private Vec3 combatives$interactionRayOrigin(EntityLivingBase entity, float partialTicks) {
         return entity instanceof EntityPlayer && entity instanceof ICombativesPlayerPose
+                && !((ICombativesPlayerPose) entity).isVehicleOwnedInteraction()
+                && !MCHeliCameraCompat.ownsCamera(entity)
                 ? InteractionRay.interpolated((EntityPlayer) entity, partialTicks).origin
                 : entity.getPosition(partialTicks);
     }
@@ -34,6 +37,8 @@ public abstract class EntityLivingBaseMixin extends Entity {
     @Redirect(method = "rayTrace", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/EntityLivingBase;getLook(F)Lnet/minecraft/util/Vec3;"))
     private Vec3 combatives$interactionRayDirection(EntityLivingBase entity, float partialTicks) {
         return entity instanceof EntityPlayer && entity instanceof ICombativesPlayerPose
+                && !((ICombativesPlayerPose) entity).isVehicleOwnedInteraction()
+                && !MCHeliCameraCompat.ownsCamera(entity)
                 ? InteractionRay.interpolated((EntityPlayer) entity, partialTicks).direction
                 : entity.getLook(partialTicks);
     }

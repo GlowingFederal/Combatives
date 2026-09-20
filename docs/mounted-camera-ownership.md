@@ -119,3 +119,20 @@ base camera Y, and procedural/final Y. Normal users receive no additional loggin
 13. With an MCHeli content definition that supplies a custom unmount position, jump immediately
     after exit and repeat while beginning creative flight. Confirm MC Heli's repeated exit-position
     writes remain authoritative and Combatives does not retain a pre-write movement/camera sample.
+
+## Bounded exit ownership and collision semantics
+
+Mount ownership is exposed on the common player API as `MOUNTED`, `EXIT_POSITION`,
+`POSE_CLEARANCE`, or `PLAYER`. The client camera and common `EntityLivingBase#rayTrace` hooks both
+leave geometry native during `MOUNTED` and `EXIT_POSITION`; server C07 start-dig and C08 block-use
+likewise keep valid packet coordinates during `EXIT_POSITION`. After two quiet player ticks the
+player owns interaction geometry again. A six-tick hard boundary also closes both observers if a
+compatibility failure or repeated position write would otherwise keep them alive.
+
+Pose expansion filters collision through `MCHeliCollisionCompat`. MC Heli's
+`MCH_BaseVehicleBoundingBox#intersectsWith` includes extra damage and ray boxes even where its
+movement offset methods intentionally return the requested offset unchanged. Those ordinary
+vehicle boxes are therefore not physical pose obstacles. Ship boxes remain solid because their
+offset methods implement deck support and movement; blocks and all unrelated entity boxes are
+never filtered. The adapter uses class names plus one cached reflective field and never links an
+MC Heli class, preserving startup without the mod.

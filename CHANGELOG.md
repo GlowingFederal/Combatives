@@ -440,7 +440,6 @@
   and Mixin annotation processing passed; repeated MC Heli/vanilla mount behavior and
   integrated/dedicated in-game synchronization still require runtime validation.
 
-<<<<<<< ours
 2026-09-13 23:38 — Follow mount-owned position writes through dismount completion
 
 - Confirmed MC Heli may apply its configured custom exit with `setPosition` after detaching and
@@ -456,7 +455,6 @@
   and explicitly bypasses riding and flight without position, velocity, or ground-state writes.
   Java 8 `compileJava` and Mixin annotation processing passed. In-game MC Heli/HMG/vanilla-mount
   validation remains to be performed.
-=======
 2026-09-14 04:17 — Give the early loader exclusive interaction-hook ownership
 
 - Removed the duplicate static common/client mixin declarations from the legacy JSON configs. The
@@ -467,4 +465,20 @@
   corrections, crawl, lean, and optional-mod compatibility. Validation was limited to JSON parsing,
   registration-source searches, and call-site tracing; single-click and hold behavior still require
   the requested integrated/dedicated in-game matrix.
->>>>>>> theirs
+
+2026-09-20 — Fix MC Heli dismount collision, targeting, and falling handoff regressions
+
+- Added a cached, optional MC Heli collision boundary which distinguishes composite damage/ray
+  boxes from physical movement collision. Aircraft composite boxes no longer reject pose
+  clearance; real blocks, unrelated entity collision, and ship deck collision remain solid.
+- Exposed a transition-based common mount handoff state. Mounted and exit-position phases retain
+  vehicle camera/packet ownership, while Combatives targeting resumes only after the exit writes
+  become quiet. Both position observation and clearance fallback are bounded to six player ticks.
+- Applied the ownership decision to both EntityLivingBase ray redirects and server C07/C08 target
+  selection. Start-dig and block-use retain their packet target during the unstable exit phase;
+  stop/abort digging and the C08 air-use sentinel remain unchanged.
+- Kept MC Heli's final exit placement authoritative and retained the 1.7.10 packet/AABB coordinate
+  contract. Once the bounded handoff closes, ordinary falling no longer rebases position history
+  in response to later corrections or participates in mount handoff logic.
+- Reconciled pre-existing changelog conflict markers while moving the project history to the
+  requested `CHANGELOG.md` filename.

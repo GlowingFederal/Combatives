@@ -18,6 +18,8 @@ public interface ICombativesPlayerPose {
     int getGeometryRevision();
     void acceptGeometryRevision(int revision);
     int getPositionHistoryRevision();
+    MountHandoffState getMountHandoffState();
+    boolean isVehicleOwnedInteraction();
     EntitySize getSize(Pose pose);
     void recalculateSize();
     void resetPoseState(Pose lifecyclePose, String reason);

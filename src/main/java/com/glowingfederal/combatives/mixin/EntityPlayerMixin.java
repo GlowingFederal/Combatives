@@ -7,6 +7,8 @@ import com.glowingfederal.combatives.entity.player.EffectivePlayerGeometry;
 import com.glowingfederal.combatives.entity.player.PlayerGeometryResolver;
 import com.glowingfederal.combatives.entity.player.PlayerStepHeight;
 import com.glowingfederal.combatives.compat.mpm.MpmCompatibility;
+import com.glowingfederal.combatives.compat.mcheli.MCHeliCollisionCompat;
+import com.glowingfederal.combatives.entity.player.MountHandoffState;
 import com.glowingfederal.combatives.movement.ICombativesMovementState;
 import com.glowingfederal.combatives.movement.MovementController;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
@@ -81,6 +83,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     private boolean combativesDismountPositionHandoff;
     private boolean combativesDismountPositionWriteObserved;
     private int combativesDismountPositionQuietTicks;
+    private int combativesDismountHandoffTicks;
     private int combativesLastMountWaitLogTick = -20;
     private int combativesLastMpmRawSize = MpmCompatibility.DEFAULT_RAW_SIZE;
     private float combativesLastMpmScale = 1.0F;
@@ -209,8 +212,8 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         if (accepted && (newSize.width > oldSize.width || newSize.height > oldSize.height)) {
             EffectivePlayerGeometry requested = new EffectivePlayerGeometry(this.getPose(), newSize.width,
                     newSize.height, 0.0F);
-            accepted = this.worldObj.getCollidingBoundingBoxes(this,
-                    requested.clearanceBox(this.posX, this.boundingBox.minY, this.posZ)).isEmpty();
+            accepted = !MCHeliCollisionCompat.hasSolidCollision(this.worldObj.getCollidingBoundingBoxes(this,
+                    requested.clearanceBox(this.posX, this.boundingBox.minY, this.posZ)));
         }
         if (accepted) {
             boolean boxMatches = Math.abs((this.boundingBox.maxX - this.boundingBox.minX) - newSize.width) < 1.0E-6D
@@ -328,6 +331,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         this.combativesDismountPositionHandoff = false;
         this.combativesDismountPositionWriteObserved = false;
         this.combativesDismountPositionQuietTicks = 0;
+        this.combativesDismountHandoffTicks = 0;
         this.combativesDismountedEntity = null;
         this.combativesLastRidingEntity = this.ridingEntity;
         this.combativesMovementSnapshot = MovementSnapshot.EMPTY;
@@ -452,7 +456,25 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     @Override public Pose getPose() {
         return this.combativesPose == null ? Pose.STANDING : this.combativesPose;
     }
-    @Override public boolean isPoseClear(Pose pose) { return this.worldObj.getCollidingBoundingBoxes(this, this.getBoundingBox(pose)).isEmpty(); }
+    @Override public boolean isPoseClear(Pose pose) {
+        return !MCHeliCollisionCompat.hasSolidCollision(
+                this.worldObj.getCollidingBoundingBoxes(this, this.getBoundingBox(pose)));
+    }
+    @Override public MountHandoffState getMountHandoffState() {
+        if (this.isRiding()) {
+            return MountHandoffState.MOUNTED;
+        }
+        if (this.combativesDismountPositionHandoff) {
+            return MountHandoffState.EXIT_POSITION;
+        }
+        return this.combativesDismountHandoff
+                ? MountHandoffState.POSE_CLEARANCE : MountHandoffState.PLAYER;
+    }
+    @Override public boolean isVehicleOwnedInteraction() {
+        MountHandoffState handoff = this.getMountHandoffState();
+        return handoff == MountHandoffState.MOUNTED
+                || handoff == MountHandoffState.EXIT_POSITION;
+    }
     @Override public boolean getShouldBeDead() { return this.deathTime > 0; }
     @Override public boolean isSwimming() { return !this.capabilities.isFlying && this.getFlag(6); }
     @Override public boolean isActuallySwimming() { return this.getPose() == Pose.SWIMMING || this.getPose() == Pose.FALL_FLYING; }
@@ -566,7 +588,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         }
 
         if (this.combativesDismountHandoff) {
-            if (!this.isPoseClear(Pose.STANDING)) {
+            if (!this.isPoseClear(Pose.STANDING) && this.combativesDismountHandoffTicks < 6) {
                 // Preserve vanilla's full player box while vanilla or the mount
                 // resolves its exit position. Shrinking here lets a player slide
                 // into vehicle collision that a vanilla-sized rider cannot enter.
@@ -647,6 +669,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
             this.combativesDismountPositionHandoff = true;
             this.combativesDismountPositionWriteObserved = false;
             this.combativesDismountPositionQuietTicks = 0;
+            this.combativesDismountHandoffTicks = 0;
             movementStateChanged = this.combatives$resetMountMovementState("dismounted");
             this.combatives$resynchronizeAfterDismount();
             this.combatives$logMountState("dismount detected", this.combativesDismountedEntity);
@@ -655,6 +678,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
             this.combativesDismountPositionHandoff = false;
             this.combativesDismountPositionWriteObserved = false;
             this.combativesDismountPositionQuietTicks = 0;
+            this.combativesDismountHandoffTicks = 0;
             this.combativesDismountedEntity = null;
             movementStateChanged = this.combatives$resetMountMovementState("mounted");
             this.combatives$logMountState(this.combativesLastRidingEntity == null ? "mount detected" : "riding entity changed", current);
@@ -709,7 +733,20 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     }
 
     private void combatives$ageDismountPositionHandoff(boolean mountStateChanged) {
-        if (!this.combativesDismountPositionHandoff || mountStateChanged) {
+        if ((!this.combativesDismountPositionHandoff && !this.combativesDismountHandoff)
+                || mountStateChanged) {
+            return;
+        }
+        this.combativesDismountHandoffTicks++;
+        if (this.combativesDismountHandoffTicks >= 6) {
+            this.combativesDismountPositionHandoff = false;
+            this.combativesDismountHandoff = false;
+            this.combativesDismountPositionWriteObserved = false;
+            this.combativesDismountPositionQuietTicks = 0;
+            this.combativesDismountedEntity = null;
+            return;
+        }
+        if (!this.combativesDismountPositionHandoff) {
             return;
         }
         if (this.combativesDismountPositionWriteObserved) {

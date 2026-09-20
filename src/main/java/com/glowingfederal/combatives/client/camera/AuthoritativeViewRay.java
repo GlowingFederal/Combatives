@@ -45,7 +45,9 @@ public final class AuthoritativeViewRay {
 
         // A vehicle may pair its orientCamera offset with its own targeting
         // mutations. Do not replace either half of that mounted-camera contract.
-        if (entity.isRiding() || MCHeliCameraCompat.ownsCamera(entity)) {
+        if (entity.isRiding() || MCHeliCameraCompat.ownsCamera(entity)
+                || entity instanceof ICombativesPlayerPose
+                && ((ICombativesPlayerPose) entity).isVehicleOwnedInteraction()) {
             return;
         }
 

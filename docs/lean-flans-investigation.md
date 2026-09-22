@@ -131,7 +131,9 @@ instantiate a biped and call `setRotationAngles` directly; both must skip the
 third-person lean while the shared hand roll is active. Also, SimpleImpl packet
 handlers were applying lean/pose on networking threads. Pending lean requests
 now coalesce per player and are accepted on server tick START; replicated poses
-are applied on the client thread. This adds no cached yaw or new wire format.
+are applied on the client thread. The pose packet now carries requested lean and
+the server-resolved wall-limited lean separately, so observers do not reconstruct
+combat geometry from a different wall trace.
 
 The final changes are:
 
@@ -139,10 +141,12 @@ The final changes are:
 |---|---|
 | `movement.PlayerLocalBasis` | Shared wrapped entity-yaw interpolation, retaining the correct lateral basis. |
 | `interaction.InteractionRay` | Both aim direction and lateral displacement now derive from the same yaw basis. |
-| `movement.LeanGeometry` | Exposes wall-limited semantic lean for visual/snapshot consumers. |
+| `movement.LeanGeometry` | Resolves wall-limited semantic lean on the owning tick and exposes the synchronized accepted value to visual/ray consumers. |
 | `client.camera.CameraController` | Removes tactical lean from world-X translation, world-Z rotation and cosmetic smoothing; other effects retain their existing behavior. |
 | `client.camera.TacticalLeanCamera` (new) | Applies view roll before orientation, inverse legal world displacement afterwards, and tracks the first-person hand scope. |
-| `mixin.EntityRendererMixin` | Calls those camera boundaries, uses wrapped yaw for first-person lean, and applies shared roll once to the hand path. |
+| `mixin.EntityRendererMixin` | Calls those camera boundaries and replaces client player-target narrow-phase AABB tests with render-timeline combat volumes. |
+| `combat.CombatHitVolumes` | Builds head, torso, and lower-core OBBs from the biped scale/pivots plus crouch, prone/swim, head, and pelvis-lean transforms; ray segments are transformed into each local box. |
+| `mixin.EntityArrowMixin`, `EntityThrowableMixin`, `EntityFireballMixin`, `EntityFishHookMixin` | Preserve vanilla broad phases and route server/player narrow intersections through the shared combat volumes. |
 | `mixin.ModelBipedMixin` | Restores lean before recomputing angles, retains it for held items, includes headwear, uses wall-limited lean, and suppresses third-person pose in the hand scope. |
 | `mixin.RendererLivingEntityMixin` | Reads entity yaw for both body and head while leaning without mutating entity fields; restores models after equipment rendering. |
 | `network.message.PacketLeanState` | Queues/clamps semantic requests for tick-thread validation and replication. |
@@ -150,10 +154,10 @@ The final changes are:
 | `network.message.PacketPlayerPoseS2C` | Applies replicated state on the client thread. |
 | `loading.CombativesLateMixins` | Selects common Flan's hooks only when `flansmod` is loaded; selects armour only on clients. |
 | `compat.flans.FlansCustomArmourMixin` | Keeps RETURN cleanup, adds the production SRG render-method name. |
-| `compat.flans.FlansBulletMixin` (new) | Redirects only the handheld constructor's eye-origin factory to the authoritative ray. Existing yaw/pitch, spread, speed and explicit vehicle origins remain intact. |
+| `compat.flans.FlansBulletMixin` (new) | Redirects the handheld constructor's eye-origin factory and the no-snapshot player fallback narrow phase; existing yaw/pitch, spread, speed and explicit vehicle origins remain intact. |
 | `compat.flans.FlansGunFireMixin` (new) | Prevents the gun-button packet's temporary yaw/pitch writes, so shooting consumes accepted player orientation. |
 | `compat.flans.FlansSnapshotMixin` (new) | Aligns leaning snapshot head/body yaw to the same entity yaw and invokes shared-pose adaptation. |
-| `compat.FlansSnapshotPose` (new) | Reflectively applies existing pose roll to cloned snapshot axes and leg brace translation; fixes the leaning snapshot's floor anchor. |
+| `compat.FlansSnapshotPose` (new) | Reflectively replaces Flan's head/body/legs snapshot boxes with the shared transformed volumes and fixes the snapshot floor anchor. |
 | `compat.flans.FlansItemGunMixin` (new) | Lean-aware deployable ray, lock-on origin/direction and lateral melee anchor. These Ultimate-specific secondary hooks are optional (`require=0`); deployable cardinal placement rules and pack melee animations remain intact. |
 | `movement.PlayerLocalBasisTest` (new test) | Checks all requested headings and a continuous yaw sweep, handedness, orthogonality, distance projection, inverse camera matrix and seams. |
 
@@ -163,10 +167,14 @@ package. The invalid armour entry was removed from
 `check`, so future successful builds run the mathematical regression checks.
 All Java class names above are relative to `com.glowingfederal.combatives`.
 
-The common snapshot adapter uses the existing `LeanVisualPose` data class,
-which has no client dependencies despite its package name. It resides outside
-the protected mixin package. No Flan's imports/dependency were added; reflective
-layout failure logs once and disables snapshot adaptation. Optional overridden
+The common snapshot adapter runs for every player snapshot so its root uses the
+accepted AABB floor instead of Flan's local-client-only `1.6` subtraction. It
+then writes the shared head, torso, and lower-core center/basis/local dimensions
+into Flan's existing HEAD, BODY, and LEGS records. Animated arm records are
+removed because the server snapshot does not possess the renderer's gait/held-
+item matrices; Flan-owned shield/item records remain untouched. No Flan's
+imports/dependency were added; reflective layout failure logs once and disables
+snapshot adaptation. Optional overridden
 Minecraft methods explicitly list development and SRG names because `@Pseudo`
 does not automatically map those target method names. Minecraft references
 inside the injections are included in the generated refmap.
@@ -176,28 +184,10 @@ inside the injections are included in the generated refmap.
 * PASS: standalone test against production `PlayerLocalBasis`: eight headings,
   both sides, 5,761 yaw samples (-720 through 720 in 0.25-degree steps), five
   signed distances per sample, inverse camera translation and wrap seams.
-* PASS: all main Java sources compile with Java 8 against locally cached
-  dependencies, using `javac -proc:none` and output under
-  `build/lean-compile-check`. This is a source/API check, not a production jar.
-* PASS: separate annotation-processing check with the project's Mixin 0.7.11
-  processor and MCP-to-SRG mappings. The generated refmap contains the new
-  Minecraft field/invocation targets for the optional hooks.
-* Full Gradle build: attempted with Java 8 and `build --offline --no-daemon`.
-  It failed in `compileJava` with `GC overhead limit exceeded`. The request to
-  retry with a 2 GB Gradle heap was declined. No successful production build,
-  reobfuscation or packaged runtime validation is claimed. The failed build
-  restored the pre-existing build number (2); the user's pre-existing
-  `version.properties` change remains.
+* PASS: the repository's Java 8 `compileJava --offline` task completed with
+  Mixin annotation processing and MCP-to-SRG mappings after the pose-aware
+  combat-volume changes. This is compilation, not reobfuscation or packaging.
 * No singleplayer or dedicated-server game was launched during this task.
-
-To finish packaged validation, the pending command is:
-
-```powershell
-./gradlew.bat build --offline --no-daemon '-Dorg.gradle.jvmargs=-Xmx2G'
-```
-
-Use Java 8 and the existing Gradle cache. A successful build will run
-`verifyLeanBasis`, reobfuscate, and create the project's normal artifacts.
 
 ## Manual test matrix (not yet executed)
 
@@ -233,11 +223,12 @@ LAN observer for singleplayer replication checks.
 ### Practical limits to assess in-game
 
 Network latency still separates prediction, server acceptance and observer
-interpolation; these changes share conventions, not instantaneous delivery.
-Flan's snapshot format has one combined leg box, so it cannot express the two
-opposite per-leg brace angles. The adapter uses the shared leg roll and pivot
-offset without inventing a second leg-hitbox architecture. Its existing
-coarse hitbox dimensions and pack/model scaling remain Flan's responsibility.
+interpolation; the resolved amount is authoritative but delivery is not
+instantaneous. The three-volume layout deliberately combines the pelvis and
+legs, so it cannot express walking/crawling limb swings or the two opposite
+per-leg brace angles. Likewise, arms are not combat volumes because their
+render-time held-item/gait matrices are not authoritative server state. Custom
+model and armour shapes can extend beyond the vanilla-biped-derived boxes.
 The model roll is an anatomical visual pose; the gameplay lean is an
 eye-origin displacement, not a rigid translation of the whole player AABB.
 The existing collision check is a point ray, not a swept head-volume test.

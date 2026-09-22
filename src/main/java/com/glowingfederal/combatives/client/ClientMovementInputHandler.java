@@ -3,6 +3,7 @@ package com.glowingfederal.combatives.client;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.movement.ICombativesLocomotion;
 import com.glowingfederal.combatives.movement.MovementDiagnostics;
+import com.glowingfederal.combatives.movement.LeanGeometry;
 import com.glowingfederal.combatives.network.NetworkHandler;
 import com.glowingfederal.combatives.network.message.PacketCrawlKeyState;
 import com.glowingfederal.combatives.network.message.PacketLeanState;
@@ -50,15 +51,16 @@ public class ClientMovementInputHandler {
         }
         if (!AuthoritativeGameplaySettings.isLeaningEnabled(player)) leanDirection = 0;
 
-        if (leanDirection == this.lastLeanDirection) {
-            return;
-        }
-
-        this.lastLeanDirection = leanDirection;
-
         if (player instanceof ICombativesLocomotion) {
-            ((ICombativesLocomotion) player).setLean(leanDirection);
+            ICombativesLocomotion locomotion = (ICombativesLocomotion) player;
+            locomotion.setLean(leanDirection);
+            // Re-resolve every client tick so local camera/model prediction follows
+            // yaw and wall clearance while the server remains authoritative for observers.
+            locomotion.setAcceptedLean(LeanGeometry.calculateAcceptedLean(player));
         }
+
+        if (leanDirection == this.lastLeanDirection) return;
+        this.lastLeanDirection = leanDirection;
 
         if (NetworkHandler.channel != null) {
             NetworkHandler.channel.sendToServer(new PacketLeanState(leanDirection));

@@ -67,7 +67,11 @@ public class CombativesCorePlugin implements IFMLLoadingPlugin, IEarlyMixinLoade
             "EntityMixin",
             "EntityLivingBaseMixin",
             "EntityPlayerMPMixin",
-            "NetHandlerPlayServerMixin"
+            "NetHandlerPlayServerMixin",
+            "EntityArrowMixin",
+            "EntityThrowableMixin",
+            "EntityFireballMixin",
+            "EntityFishHookMixin"
         ));
 
         if (FMLLaunchHandler.side().isClient()) {

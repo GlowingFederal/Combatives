@@ -7,6 +7,7 @@ import com.glowingfederal.combatives.client.camera.AuthoritativeViewRay;
 import com.glowingfederal.combatives.client.camera.TargetingDiagnostics;
 import com.glowingfederal.combatives.config.CombativesConfig;
 import com.glowingfederal.combatives.compat.mcheli.MCHeliCameraCompat;
+import com.glowingfederal.combatives.combat.CombatHitVolumes;
 import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.entity.player.EffectivePlayerGeometry;
@@ -16,7 +17,11 @@ import net.minecraft.client.renderer.EntityRenderer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
@@ -26,12 +31,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(EntityRenderer.class)
 public abstract class EntityRendererMixin {
+    @Unique private Entity combatives$combatCandidate;
+    @Unique private float combatives$combatCandidateBorder;
+    @Unique private float combatives$combatPartialTicks;
+
     @Redirect(method = "orientCamera", at = @At(value = "FIELD",
             target = "Lnet/minecraft/entity/EntityLivingBase;rotationYaw:F"))
     private float combatives$continuousLeanYaw(EntityLivingBase entity) {
         if (Minecraft.getMinecraft().gameSettings.thirdPersonView == 0 && !entity.isRiding()
                 && entity instanceof com.glowingfederal.combatives.movement.ICombativesLocomotion
-                && ((com.glowingfederal.combatives.movement.ICombativesLocomotion) entity).getLean() != 0.0F) {
+                && ((com.glowingfederal.combatives.movement.ICombativesLocomotion) entity).getAcceptedLean() != 0.0F) {
             return com.glowingfederal.combatives.movement.PlayerLocalBasis.interpolateYaw(
                     entity.prevRotationYaw, entity.rotationYaw, 1.0F);
         }
@@ -48,6 +57,7 @@ public abstract class EntityRendererMixin {
 
     @Inject(method = "getMouseOver", at = @At("HEAD"))
     private void combatives$diagnoseTargetingOrigin(float partialTicks, CallbackInfo ci) {
+        this.combatives$combatPartialTicks = partialTicks;
         TargetingDiagnostics.beforeTargeting(this, partialTicks);
         Entity view = Minecraft.getMinecraft().renderViewEntity;
         if (view instanceof EntityLivingBase) {
@@ -112,6 +122,36 @@ public abstract class EntityRendererMixin {
     private void combatives$applyHandBobbing(float partialTicks, int pass, CallbackInfo ci) {
         TacticalLeanCamera.applyRoll(partialTicks);
         CameraController.INSTANCE.applyHandTransforms(partialTicks);
+    }
+
+    @Redirect(method = "getMouseOver", at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/entity/Entity;getCollisionBorderSize()F"))
+    private float combatives$captureCombatCandidate(Entity entity) {
+        this.combatives$combatCandidate = entity;
+        this.combatives$combatCandidateBorder = entity.getCollisionBorderSize();
+        return this.combatives$combatCandidateBorder;
+    }
+
+    @Redirect(method = "getMouseOver", at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/util/AxisAlignedBB;calculateIntercept(Lnet/minecraft/util/Vec3;Lnet/minecraft/util/Vec3;)Lnet/minecraft/util/MovingObjectPosition;"))
+    private MovingObjectPosition combatives$intersectCombatVolumes(AxisAlignedBB box, Vec3 start, Vec3 end) {
+        if (CombatHitVolumes.supports(this.combatives$combatCandidate)) {
+            com.glowingfederal.combatives.combat.CombatHitResult hit = CombatHitVolumes.intersect(
+                    (EntityPlayer) this.combatives$combatCandidate, start, end,
+                    this.combatives$combatCandidateBorder, this.combatives$combatPartialTicks);
+            return hit == null ? null : new MovingObjectPosition(this.combatives$combatCandidate, hit.hitVec);
+        }
+        return box.calculateIntercept(start, end);
+    }
+
+    @Redirect(method = "getMouseOver", at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/util/AxisAlignedBB;isVecInside(Lnet/minecraft/util/Vec3;)Z"))
+    private boolean combatives$isInsideCombatVolume(AxisAlignedBB box, Vec3 point) {
+        if (CombatHitVolumes.supports(this.combatives$combatCandidate)) {
+            return CombatHitVolumes.contains((EntityPlayer) this.combatives$combatCandidate, point,
+                    this.combatives$combatCandidateBorder, this.combatives$combatPartialTicks);
+        }
+        return box.isVecInside(point);
     }
 
     @Inject(method = "renderHand", at = @At("HEAD"))

@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 public abstract class FlansItemGunMixin {
     @Unique private static boolean combatives$leaning(EntityPlayer player) {
         return player instanceof ICombativesLocomotion && !player.isRiding()
-                && ((ICombativesLocomotion) player).getLean() != 0.0F;
+                && ((ICombativesLocomotion) player).getAcceptedLean() != 0.0F;
     }
 
     @Redirect(method = {"onItemRightClick", "func_77659_a"}, require = 0,

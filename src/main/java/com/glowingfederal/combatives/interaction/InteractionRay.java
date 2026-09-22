@@ -28,8 +28,12 @@ public final class InteractionRay {
 
     /** Tick-authoritative ray used by server interaction validation. */
     public static InteractionRay authoritative(EntityPlayer player) {
-        return applyLean(player, create(player, player.posX, player.boundingBox.minY, player.posZ,
-                player.rotationYaw, player.rotationPitch), player.rotationYaw);
+        return applyLean(player, authoritativeBase(player), player.rotationYaw);
+    }
+
+    public static InteractionRay authoritativeBase(EntityPlayer player) {
+        return create(player, player.posX, player.boundingBox.minY, player.posZ,
+                player.rotationYaw, player.rotationPitch);
     }
 
     /** Same geometry semantics with position/orientation interpolation for rendering. */
@@ -53,8 +57,7 @@ public final class InteractionRay {
 
     private static InteractionRay applyLean(EntityPlayer player, InteractionRay base, float yaw) {
         if (!(player instanceof ICombativesLocomotion)) return base;
-        float lean = ((ICombativesLocomotion) player).getLean();
-        Vec3 offset = LeanGeometry.legalOffset(player, base, lean, yaw);
+        Vec3 offset = LeanGeometry.acceptedOffset(player, yaw);
         if (offset.xCoord == 0.0D && offset.zCoord == 0.0D) return base;
         return new InteractionRay(base.origin.addVector(offset.xCoord, 0.0D, offset.zCoord),
                 base.direction, base.geometryRevision);

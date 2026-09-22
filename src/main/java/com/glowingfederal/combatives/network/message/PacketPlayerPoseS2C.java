@@ -21,17 +21,20 @@ public class PacketPlayerPoseS2C implements IMessage {
     private boolean crawlKeyDown;
     private LocomotionState locomotion = LocomotionState.NORMAL;
     private float lean;
+    private float acceptedLean;
 
     public PacketPlayerPoseS2C() {
     }
 
-    public PacketPlayerPoseS2C(int entityId, Pose pose, boolean swimming, boolean crawlKeyDown, LocomotionState locomotion, float lean) {
+    public PacketPlayerPoseS2C(int entityId, Pose pose, boolean swimming, boolean crawlKeyDown,
+            LocomotionState locomotion, float lean, float acceptedLean) {
         this.entityId = entityId;
         this.pose = pose;
         this.swimming = swimming;
         this.crawlKeyDown = crawlKeyDown;
         this.locomotion = locomotion == null ? LocomotionState.NORMAL : locomotion;
         this.lean = lean;
+        this.acceptedLean = acceptedLean;
     }
 
     @Override
@@ -44,6 +47,7 @@ public class PacketPlayerPoseS2C implements IMessage {
         int locomotionId = buf.readByte();
         this.locomotion = locomotionId >= 0 && locomotionId < LocomotionState.values().length ? LocomotionState.values()[locomotionId] : LocomotionState.NORMAL;
         this.lean = buf.readFloat();
+        this.acceptedLean = buf.readFloat();
     }
 
     @Override
@@ -54,6 +58,7 @@ public class PacketPlayerPoseS2C implements IMessage {
         buf.writeBoolean(this.crawlKeyDown);
         buf.writeByte(this.locomotion.ordinal());
         buf.writeFloat(this.lean);
+        buf.writeFloat(this.acceptedLean);
     }
 
     public static class Handler implements IMessageHandler<PacketPlayerPoseS2C, IMessage> {
@@ -68,6 +73,7 @@ public class PacketPlayerPoseS2C implements IMessage {
                         if (entity instanceof ICombativesLocomotion) {
                             ((ICombativesLocomotion) entity).setLocomotionState(message.locomotion);
                             ((ICombativesLocomotion) entity).setLean(message.lean);
+                            ((ICombativesLocomotion) entity).setAcceptedLean(message.acceptedLean);
                         }
                     }
                 }

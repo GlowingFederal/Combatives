@@ -2,6 +2,7 @@ package com.glowingfederal.combatives.network.message;
 
 import com.glowingfederal.combatives.config.AuthoritativeGameplaySettings;
 import com.glowingfederal.combatives.movement.ICombativesLocomotion;
+import com.glowingfederal.combatives.movement.LeanGeometry;
 import com.glowingfederal.combatives.network.PoseSync;
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
@@ -38,7 +39,9 @@ public class PacketLeanState implements IMessage {
                 float lean = AuthoritativeGameplaySettings.isLeaningEnabled(player) && !player.isRiding() && !player.isPlayerSleeping()
                     && !player.isInWater() && state == com.glowingfederal.combatives.movement.LocomotionState.NORMAL
                     ? Math.max(-1, Math.min(1, request.getValue())) : 0.0F;
-                ((ICombativesLocomotion) player).setLean(lean);
+                ICombativesLocomotion locomotion = (ICombativesLocomotion) player;
+                locomotion.setLean(lean);
+                locomotion.setAcceptedLean(LeanGeometry.calculateAcceptedLean(player));
                 PoseSync.broadcastAuthoritativePose(player, true);
             }
         }

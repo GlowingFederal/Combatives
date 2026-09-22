@@ -52,8 +52,11 @@ floor offset. Pose eye height must never be written into `yOffset`.
 `EntityPlayer#onDeath` is now a hard reset boundary on both logical sides: it
 clears crawl and swim requests, movement and animation transition caches, and
 rebuilds dying geometry from the vanilla player anchor. The server respawn
-event forcibly establishes standing pose, dimensions, AABB, `yOffset`, `ySize`,
-and cached eye geometry before broadcasting the authoritative state. Clients
+event forcibly establishes standing pose, dimensions, AABB, `ySize`, and
+cached eye geometry before broadcasting the authoritative state. It preserves
+the concrete player subclass' vanilla `yOffset` convention: the local player
+uses `1.62`, while server and remote-player implementations normally use zero.
+Clients
 that retain a tracked player through the death/respawn exchange perform the
 same forced standing reset on the authoritative `DYING -> STANDING`
 transition; newly constructed client and server players already initialize
@@ -62,3 +65,26 @@ only and ordinary teleport paths remain untouched. The legacy remote-player
 zero-`yOffset` normalization also now moves its position samples by the matching
 amount when it actually changes the offset, preserving the same AABB anchor for
 an observing client after a lifecycle reset.
+
+Server-accepted pose and scale packets force the corresponding client-side
+resize after they reach the client thread. Local collision lists therefore
+cannot leave the owner or a tracking client with a new rendered pose but stale
+physical dimensions; clearance remains authoritative on the server and remains
+active for client prediction before acceptance.
+
+## Movement bounds versus combat bounds
+
+`Entity.boundingBox` remains the movement/clearance box and continues to obey
+the legacy anchor above. It is deliberately not translated for lean or stretched
+along the prone body, because those changes would alter block collision, tunnel
+clearance, mount placement, and vehicle compatibility.
+
+Combat hit testing instead anchors `CombatHitVolumes` at the same accepted
+`boundingBox.minY`, then applies the render/model transform to head, torso, and
+lower-core local boxes. Tick-authoritative server tests use current position and
+yaw. Client mouse-over uses the target's render interpolation, including an
+interpolated floor computed as `interpolatedPosY + boundingBox.minY - posY`, so
+the selectable geometry occupies the same timeline as the rendered remote
+model. Pose/geometry packets still force the movement-box transition first;
+combat volumes are rebuilt on demand and therefore cannot retain stale pose
+dimensions or offsets.

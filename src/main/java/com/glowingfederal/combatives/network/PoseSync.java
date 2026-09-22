@@ -11,6 +11,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import com.glowingfederal.combatives.movement.ICombativesLocomotion;
 import com.glowingfederal.combatives.movement.LocomotionState;
+import com.glowingfederal.combatives.movement.LeanGeometry;
 
 public final class PoseSync {
     private PoseSync() {
@@ -49,7 +50,7 @@ public final class PoseSync {
         state.setCrawlKeyDown(effectiveCrawlKeyDown);
         state.setSwimming(swimming);
         state.setPose(pose);
-        state.recalculateSize();
+        state.recalculateSize(player.worldObj.isRemote && "server".equals(source));
         if (player.worldObj.isRemote) {
             MovementDiagnostics.verbose(player, "authoritative pose geometry recalculated from " + source + ": pose=" + state.getPose());
         }
@@ -65,7 +66,8 @@ public final class PoseSync {
         ICombativesPlayerPose state = (ICombativesPlayerPose) player;
         ICombativesLocomotion locomotion = player instanceof ICombativesLocomotion ? (ICombativesLocomotion) player : null;
         PacketPlayerPoseS2C packet = new PacketPlayerPoseS2C(player.getEntityId(), state.getPose(), state.isSwimming(), state.isCrawlKeyDown(),
-            locomotion == null ? LocomotionState.NORMAL : locomotion.getLocomotionState(), locomotion == null ? 0.0F : locomotion.getLean());
+            locomotion == null ? LocomotionState.NORMAL : locomotion.getLocomotionState(),
+            locomotion == null ? 0.0F : locomotion.getLean(), LeanGeometry.acceptedLean(player));
         EntitySize size = state.getSize(state.getPose());
         NetworkHandler.channel.sendToAllAround(packet, new NetworkRegistry.TargetPoint(player.dimension, player.posX, player.posY, player.posZ, 512.0D));
         if (includeSelf) {
@@ -82,7 +84,8 @@ public final class PoseSync {
         ICombativesPlayerPose state = (ICombativesPlayerPose) source;
         ICombativesLocomotion locomotion = source instanceof ICombativesLocomotion ? (ICombativesLocomotion) source : null;
         NetworkHandler.channel.sendTo(new PacketPlayerPoseS2C(player.getEntityId(), state.getPose(), state.isSwimming(), state.isCrawlKeyDown(),
-            locomotion == null ? LocomotionState.NORMAL : locomotion.getLocomotionState(), locomotion == null ? 0.0F : locomotion.getLean()), target);
+            locomotion == null ? LocomotionState.NORMAL : locomotion.getLocomotionState(),
+            locomotion == null ? 0.0F : locomotion.getLean(), LeanGeometry.acceptedLean(player)), target);
         MovementDiagnostics.verbose(player, "sent authoritative pose to tracker " + target.getCommandSenderName());
     }
 }

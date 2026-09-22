@@ -33,18 +33,24 @@ public class PacketPlayerGeometryS2C implements IMessage {
     }
     public static class Handler implements IMessageHandler<PacketPlayerGeometryS2C, IMessage> {
         @Override @SideOnly(Side.CLIENT)
-        public IMessage onMessage(PacketPlayerGeometryS2C message, MessageContext ctx) {
-            Entity entity = Minecraft.getMinecraft().theWorld == null ? null
-                    : Minecraft.getMinecraft().theWorld.getEntityByID(message.entityId);
-            if (entity instanceof EntityPlayer && entity instanceof ICombativesPlayerPose) {
-                EntityPlayer player = (EntityPlayer) entity;
-                MpmCompatibility.applyServerGeometry(player, new MpmCompatibility.Geometry(message.rawSize,
-                        message.widthScale, message.heightScale, message.eyeScale, message.fromMpm, null));
-                ICombativesPlayerPose state = (ICombativesPlayerPose) player;
-                state.acceptGeometryRevision(message.revision);
-                state.recalculateSize();
-                state.logGeometry("CLIENT PLAYER GEOMETRY", "server geometry packet");
-            }
+        public IMessage onMessage(final PacketPlayerGeometryS2C message, MessageContext ctx) {
+            Minecraft.getMinecraft().func_152344_a(new Runnable() {
+                @Override public void run() {
+                    Entity entity = Minecraft.getMinecraft().theWorld == null ? null
+                            : Minecraft.getMinecraft().theWorld.getEntityByID(message.entityId);
+                    if (entity instanceof EntityPlayer && entity instanceof ICombativesPlayerPose) {
+                        EntityPlayer player = (EntityPlayer) entity;
+                        MpmCompatibility.applyServerGeometry(player, new MpmCompatibility.Geometry(message.rawSize,
+                                message.widthScale, message.heightScale, message.eyeScale, message.fromMpm, null));
+                        ICombativesPlayerPose state = (ICombativesPlayerPose) player;
+                        state.acceptGeometryRevision(message.revision);
+                        // The server already accepted this physical geometry. A tracker's local
+                        // collision list must not leave it rendering a new pose with an old AABB.
+                        state.recalculateSize(true);
+                        state.logGeometry("CLIENT PLAYER GEOMETRY", "server geometry packet");
+                    }
+                }
+            });
             return null;
         }
     }

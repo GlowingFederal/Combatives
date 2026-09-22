@@ -27,6 +27,61 @@ center-to-desired-position block trace reserves a small wall margin and clamps
 the offset, so the server's authoritative dig/use ray cannot originate beyond
 the blocking wall. Lean never moves or resizes the player's collision box.
 
+The fixed movement footprint is not used as the player combat narrow phase.
+Standing, crouching, crawl, and swim keep their existing centered movement
+AABBs for tunnels, wall collision, mounts, and MC Heli handoff. Combat rays use
+three oriented volumes derived from the rendered vanilla biped instead: head,
+torso, and a combined pelvis/lower-body core. Each ray is transformed from
+world space into a volume's local orthonormal basis and intersected with its
+local AABB. This represents lean roll and the horizontal prone silhouette
+without introducing oriented boxes into world physics.
+
+## Pose-aware combat-volume transform
+
+The volume source dimensions are the rendered model cubes after
+`RenderPlayer`'s `0.9375` scale: head `8 x 8 x 8` model pixels, torso
+`8 x 12 x 4`, and a combined lower core `8 x 12 x 4`. The combined core spans
+the two legs' shared envelope; independently animated arms and legs are not
+added because their render-time gait matrices are not authoritative server
+state.
+
+Transform composition follows the renderer's OpenGL order. In application
+order (rightmost operation first), it is:
+
+```text
+world floor/interpolated position
+  * interpolated body yaw (view yaw while leaning)
+  * land-crawl world-down grounding
+  * blended prone/swim root pitch
+  * full prone local translation
+  * crouch render drop
+  * pelvis-centered lean translation and roll
+  * part pivot, head yaw/pitch or crouch torso pitch
+  * local box center
+```
+
+The model conversion uses one model pixel = `0.9375 / 16` blocks and the
+vanilla `24 / 16 + 0.0078125` baseline before scale. Renderer-local `+Z` is
+player-local backward after the vanilla `180 - yaw` rotation, so the injected
+`-90` degree render pitch becomes `+90` degrees in the combat volume's
+right/up/forward coordinates. This is why prone head/core centers extend along
+the player's forward/back axis instead of the centered `0.6 x 0.6` movement
+box.
+
+Lean reuses `LeanPoseMath`: roll is `-0.16 * acceptedLean` radians and pelvis
+shift is `0.45 * acceptedLean` model pixels. Positive lean therefore moves the
+head/torso along `PlayerLocalBasis.right`, while negative lean is its mirror.
+The basis is evaluated from the same interpolated view yaw used to render a
+leaning body, so cardinal and diagonal headings do not introduce a second sign
+conversion. Client selection uses render-timeline target position/yaw; server
+projectiles and Flan snapshots use current-tick state.
+
+Vanilla client entity selection, arrows, throwables, fireballs, and fishing
+hooks retain their existing broad-phase searches but replace the player-only
+narrow intersection with these volumes. Flan snapshots replace HEAD, BODY, and
+LEGS boxes with the same volume centers, axes, and local bounds; unsupported
+animated arm boxes are removed, while Flan-owned item/shield boxes remain.
+
 The first-person transforms intentionally do not reuse identical numeric signs.
 The render collision sample is based on vanilla's `lastTickPos` interpolation,
 but the resulting tactical displacement remains a player-relative vector. The
@@ -52,9 +107,11 @@ authoritative. Player pose dimensions/eye anchors are fixed gameplay rules,
 while optional MPM hitbox scaling is server authoritative and its resolved
 geometry continues to use the existing geometry packet.
 
-Client presentation evaluates the same server-approved wall limit from the
-smooth vanilla render-timeline eye and adds cosmetic roll. Authoritative gameplay
-continues to evaluate the current-tick eye. The shared `LeanVisualPose` rolls the
+The local client predicts the wall-limited value each tick for responsiveness;
+the server resolves it from the current-tick eye and broadcasts the resolved
+amount whenever it changes. Remote render and combat geometry consume that
+resolved amount instead of repeating a potentially different local wall trace.
+The shared `LeanVisualPose` rolls the
 torso and its animated head/shoulder/hip attachments around the pelvis, with a
 small pelvis shift toward the supporting leg. The opposite leg counter-braces
 while the near leg follows slightly; a small hip overlap closes the rigid-cube
@@ -65,14 +122,25 @@ Every changed angle and X/Y pivot is captured after vanilla
 animation and restored after the model render, including armor `ModelBiped`
 instances, so transforms do not accumulate.
 
-These pose values remain entirely in `ModelBiped` local space. The living-entity
-renderer retains vanilla's interpolated body and head yaw and supplies the one
-model-to-world orientation; leaning does not replace that render orientation
-with entity-facing yaw or otherwise apply yaw to model-local limb pivots.
+The pelvis and part transforms remain in `ModelBiped` local space. While lean is
+accepted, `RenderPlayer` uses interpolated view yaw as the one model-to-world
+orientation; combat volumes use the same yaw. Neutral players retain vanilla
+interpolated body yaw. No yaw is baked into model-local limb pivots.
 
 Dedicated-server, latency, modded-block collision, and animation appearance
 still require in-game validation; this implementation was validated by source
 inspection and call-path tracing only.
+
+Authoritative pose packets carry pose, swim/crawl state, locomotion state,
+requested lean, and the server-resolved wall-limited lean to the owner and
+tracking clients; vanilla entity updates continue to own yaw. The separate
+geometry packet carries server-resolved MPM scale/revision.
+Both packet paths apply on the client thread. Once the server has accepted a
+pose or scale, client reconstruction bypasses local expansion clearance so a
+tracker cannot render the new pose while retaining an older AABB. Ordinary
+local prediction and server pose selection still use the existing obstruction
+checks. Lifecycle resets preserve each concrete 1.7.10 player subclass' own
+`yOffset` convention while rebuilding the box from its stable floor.
 
 ## Player-local lean basis and Flan's armour
 

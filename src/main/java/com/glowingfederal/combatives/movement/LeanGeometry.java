@@ -1,6 +1,8 @@
 package com.glowingfederal.combatives.movement;
 
 import com.glowingfederal.combatives.config.AuthoritativeGameplaySettings;
+import com.glowingfederal.combatives.entity.Pose;
+import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.interaction.InteractionRay;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.MovingObjectPosition;
@@ -10,13 +12,39 @@ import net.minecraft.util.Vec3;
 public final class LeanGeometry {
     private LeanGeometry() {}
 
-    /** Wall-limited semantic amount for pose consumers; no separate collision trigonometry. */
+    /** Server-resolved (or locally predicted) semantic amount consumed by render and combat poses. */
     public static float acceptedLean(EntityPlayer player) {
+        if (!(player instanceof ICombativesLocomotion) || !(player instanceof ICombativesPlayerPose)) return 0.0F;
+        ICombativesLocomotion locomotion = (ICombativesLocomotion) player;
+        ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
+        if (!AuthoritativeGameplaySettings.isLeaningEnabled(player)
+                || player.isRiding() || player.isPlayerSleeping() || player.isInWater()
+                || pose.isSwimming() || pose.getPose() == Pose.SWIMMING
+                || locomotion.getLocomotionState() != LocomotionState.NORMAL || !pose.canCrawl()) return 0.0F;
+        return locomotion.getAcceptedLean();
+    }
+
+    /** Resolve a requested lean against current authoritative state and wall clearance. */
+    public static float calculateAcceptedLean(EntityPlayer player) {
+        if (!(player instanceof ICombativesLocomotion) || !(player instanceof ICombativesPlayerPose)) return 0.0F;
+        ICombativesLocomotion locomotion = (ICombativesLocomotion) player;
+        ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
+        float requested = locomotion.getLean();
+        if (requested == 0.0F || !AuthoritativeGameplaySettings.isLeaningEnabled(player)
+                || player.isRiding() || player.isPlayerSleeping() || player.isInWater()
+                || pose.isSwimming() || pose.getPose() == Pose.SWIMMING
+                || locomotion.getLocomotionState() != LocomotionState.NORMAL || !pose.canCrawl()) return 0.0F;
         double max = AuthoritativeGameplaySettings.getMaxLeanDistance(player);
         if (max <= 0.0D) return 0.0F;
-        InteractionRay ray = InteractionRay.authoritative(player);
+        InteractionRay base = InteractionRay.authoritativeBase(player);
+        Vec3 offset = legalOffset(player, base, requested, player.rotationYaw);
         return (float) (PlayerLocalBasis.fromYaw(player.rotationYaw).projectRight(
-                ray.origin.xCoord - player.posX, ray.origin.zCoord - player.posZ) / max);
+                offset.xCoord, offset.zCoord) / max);
+    }
+
+    public static Vec3 acceptedOffset(EntityPlayer player, float yaw) {
+        double max = AuthoritativeGameplaySettings.getMaxLeanDistance(player);
+        return PlayerLocalBasis.fromYaw(yaw).lateralOffset(max * acceptedLean(player));
     }
 
     public static Vec3 legalOffset(EntityPlayer player, InteractionRay base, float lean, float yaw) {

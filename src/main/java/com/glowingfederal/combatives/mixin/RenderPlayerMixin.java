@@ -17,6 +17,7 @@ import org.lwjgl.opengl.GL11;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(RenderPlayer.class)
@@ -29,6 +30,16 @@ public abstract class RenderPlayerMixin extends RendererLivingEntity {
 
     public RenderPlayerMixin(ModelBase model, float shadowSize) {
         super(model, shadowSize);
+    }
+
+    @ModifyVariable(method = "rotateCorpse(Lnet/minecraft/client/entity/AbstractClientPlayer;FFF)V",
+            at = @At("HEAD"), argsOnly = true, ordinal = 1)
+    private float combatives$alignLeaningBodyYaw(float renderedBodyYaw, AbstractClientPlayer player,
+            float animation, float originalBodyYaw, float partialTicks) {
+        float lean = com.glowingfederal.combatives.movement.LeanGeometry.acceptedLean(player);
+        return lean == 0.0F || player.isRiding() ? renderedBodyYaw
+                : com.glowingfederal.combatives.movement.PlayerLocalBasis.interpolateYaw(
+                        player.prevRotationYaw, player.rotationYaw, partialTicks);
     }
 
     @Inject(method = "renderFirstPersonArm", at = @At("HEAD"))
@@ -44,7 +55,9 @@ public abstract class RenderPlayerMixin extends RendererLivingEntity {
             float animation = pose.getSwimAnimation(partialTicks);
             if (animation > 0.0F || pose.isActuallySwimming()) {
             }
-            float targetPitch = player.isInWater() ? -90.0F - player.rotationPitch : -90.0F;
+            float renderedPitch = player.prevRotationPitch
+                    + (player.rotationPitch - player.prevRotationPitch) * partialTicks;
+            float targetPitch = player.isInWater() ? -90.0F - renderedPitch : -90.0F;
             float rotation = MathHelperNew.lerp(animation, 0.0F, targetPitch);
             boolean landCrawl = CombativesVisualPoseHelper.isLandCrawling(player);
 

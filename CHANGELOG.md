@@ -80,3 +80,22 @@
 	  targeting transforms and HMG-selected aim therefore remain outside these hooks.
 	- Source inspection and compilation validate the descriptor correction; MPM/HMG behavior still
 	  requires integrated and dedicated-server in-game regression testing.
+
+	2026-09-21 23:29 — Match combat hit volumes to rendered player poses
+
+	- Traced the vanilla biped, crouch, prone/swim root, pelvis lean, legacy floor anchor, pose packets,
+	  vanilla entity/projectile rays, and Flan's snapshot/fallback paths. Kept the centered movement AABB
+	  for block physics, tunnels, mounts, and MC Heli, but stopped using it as player combat geometry.
+	- Added shared model-local head, torso, and lower-core boxes with rigid transforms. World rays are
+	  transformed into each local box, so crouch follows its model pivots, prone/swim extends along the
+	  visible horizontal body, and lean rotates/translates the head and torso about the rendered pelvis.
+	  Client selection uses target render interpolation; server projectiles use current-tick state.
+	- Routed vanilla mouse-over, arrows, throwables, fireballs, fishing hooks, Flan snapshots, and Flan's
+	  missing-snapshot bullet fallback through the shared volumes. Flan's animated arm boxes are omitted
+	  because their client model matrices are not authoritative; item/shield records remain Flan-owned.
+	- Split requested lean from the authoritative wall-limited amount, synchronized both to owner and
+	  trackers, and made renderer, interaction rays, and combat volumes consume the resolved value. A
+	  leaning body and its combat volumes share interpolated view yaw; neutral body yaw remains vanilla.
+	- Preserved movement/camera ownership, pose geometry, mounts, and MC Heli collision handoff. Java 8
+	  `compileJava --offline` and Mixin annotation processing passed. No game was launched; runtime
+	  appearance, optional-mod injection, latency, and hit behavior still require in-game validation.

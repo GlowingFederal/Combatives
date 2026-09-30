@@ -7,6 +7,4 @@ public interface ICombativesLocomotion {
     void setSlideTicks(int ticks);
     float getLean();
     void setLean(float lean);
-    float getAcceptedLean();
-    void setAcceptedLean(float lean);
 }

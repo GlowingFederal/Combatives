@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class FlansSnapshotMixin {
     @Unique private static boolean combatives$leaning(EntityPlayer player) {
         return player instanceof ICombativesLocomotion && !player.isRiding()
-                && ((ICombativesLocomotion) player).getAcceptedLean() != 0.0F;
+                && ((ICombativesLocomotion) player).getLean() != 0.0F;
     }
 
     @Redirect(method = "<init>", at = @At(value = "FIELD",
@@ -35,9 +35,6 @@ public abstract class FlansSnapshotMixin {
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void combatives$poseSnapshot(EntityPlayer player, CallbackInfo ci) {
-        // The adapter also replaces Flan's local-client-only 1.6 subtraction
-        // with the accepted AABB floor, so run it for neutral and posed players
-        // as well as for lean rotations.
-        FlansSnapshotPose.apply(this, player);
+        if (combatives$leaning(player)) FlansSnapshotPose.apply(this, player);
     }
 }

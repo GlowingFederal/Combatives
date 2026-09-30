@@ -1,7 +1,5 @@
 package com.glowingfederal.combatives.client.model;
 
-import com.glowingfederal.combatives.movement.LeanPoseMath;
-
 /** The single player-local visual lean definition consumed by biped render paths. */
 public final class LeanVisualPose {
     // Established snapshot values are also gameplay inputs; keep them stable.
@@ -47,9 +45,9 @@ public final class LeanVisualPose {
     }
 
     public static LeanVisualPose fromSemanticLean(float lean) {
-        float roll = LeanPoseMath.roll(lean);
+        float roll = -lean * 0.16F;
         float brace = Math.abs(lean) * 0.01F;
         return new LeanVisualPose(roll, roll, roll, roll * 0.75F,
-                brace, -brace, LeanPoseMath.pelvisShiftPixels(lean));
+                brace, -brace, lean * 0.45F);
     }
 }

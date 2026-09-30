@@ -22,7 +22,6 @@ public interface ICombativesPlayerPose {
     boolean isVehicleOwnedInteraction();
     EntitySize getSize(Pose pose);
     void recalculateSize();
-    void recalculateSize(boolean authoritative);
     void resetPoseState(Pose lifecyclePose, String reason);
     void onPositionSetAfterDismount();
     void logGeometry(String heading, String reason);

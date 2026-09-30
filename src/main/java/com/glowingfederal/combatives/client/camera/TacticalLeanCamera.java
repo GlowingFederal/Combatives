@@ -2,6 +2,8 @@ package com.glowingfederal.combatives.client.camera;
 
 import com.glowingfederal.combatives.config.CombativesConfig;
 import com.glowingfederal.combatives.config.AuthoritativeGameplaySettings;
+import com.glowingfederal.combatives.interaction.InteractionRay;
+import com.glowingfederal.combatives.movement.ICombativesLocomotion;
 import com.glowingfederal.combatives.movement.LeanGeometry;
 import com.glowingfederal.combatives.movement.PlayerLocalBasis;
 import net.minecraft.client.Minecraft;
@@ -50,7 +52,10 @@ public final class TacticalLeanCamera {
     }
 
     private static Vec3 leanOffset(EntityPlayer player, float partialTicks, float yaw) {
-        return LeanGeometry.acceptedOffset(player, yaw);
+        float requested = player instanceof ICombativesLocomotion
+                ? ((ICombativesLocomotion) player).getLean() : 0.0F;
+        return LeanGeometry.legalOffset(player, InteractionRay.interpolatedBase(player, partialTicks),
+                requested, yaw);
     }
 
     public static void beginHand() { renderingHand = true; }

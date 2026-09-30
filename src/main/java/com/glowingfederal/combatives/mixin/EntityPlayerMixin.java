@@ -8,7 +8,6 @@ import com.glowingfederal.combatives.entity.player.PlayerGeometryResolver;
 import com.glowingfederal.combatives.entity.player.PlayerStepHeight;
 import com.glowingfederal.combatives.compat.mpm.MpmCompatibility;
 import com.glowingfederal.combatives.compat.mcheli.MCHeliCollisionCompat;
-import com.glowingfederal.combatives.config.AuthoritativeGameplaySettings;
 import com.glowingfederal.combatives.entity.player.MountHandoffState;
 import com.glowingfederal.combatives.movement.ICombativesMovementState;
 import com.glowingfederal.combatives.movement.MovementController;
@@ -73,7 +72,6 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     private LocomotionState combativesLocomotionState = LocomotionState.NORMAL;
     private int combativesSlideTicks;
     private float combativesLean;
-    private float combativesAcceptedLean;
     private LocomotionState combativesLastDiagnosticState = LocomotionState.NORMAL;
     private Pose combativesLastDiagnosticPose = Pose.STANDING;
     private boolean combativesLastDiagnosticGround;
@@ -137,21 +135,10 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         }
         this.eyesInWater = this.isInsideOfMaterial(Material.water);
         this.updateSwimming();
-        if (!this.worldObj.isRemote) {
-            float oldRequested = this.combativesLean;
-            float oldAccepted = this.combativesAcceptedLean;
-            if (this.combativesLean != 0.0F
-                    && (!AuthoritativeGameplaySettings.isLeaningEnabled(this.getPlayer())
-                    || this.isInWater() || this.isSwimming() || this.getPose() == Pose.SWIMMING
-                    || this.combativesLocomotionState != LocomotionState.NORMAL || !this.canCrawl())) {
-                this.combativesLean = 0.0F;
-            }
-            this.combativesAcceptedLean = com.glowingfederal.combatives.movement.LeanGeometry.calculateAcceptedLean(this.getPlayer());
-            if ((Float.compare(oldRequested, this.combativesLean) != 0
-                    || Math.abs(oldAccepted - this.combativesAcceptedLean) > 1.0E-4F)
-                    && this.getPlayer() instanceof EntityPlayerMP) {
-                PoseSync.broadcastAuthoritativePose((EntityPlayerMP) this.getPlayer(), true);
-            }
+        if (!this.worldObj.isRemote && this.combativesLean != 0.0F
+                && (this.isSwimming() || this.getPose() == Pose.SWIMMING || !this.canCrawl())) {
+            this.combativesLean = 0.0F;
+            if (this.getPlayer() instanceof EntityPlayerMP) PoseSync.broadcastAuthoritativePose((EntityPlayerMP) this.getPlayer(), true);
         }
         this.recalculateSize();
         this.combatives$diagnoseMovementTransitions();
@@ -217,17 +204,12 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
 
     @Override
     public void recalculateSize() {
-        this.recalculateSize(false);
-    }
-
-    @Override
-    public void recalculateSize(boolean authoritative) {
         EntitySize oldSize = this.combativesSize == null ? STANDING_SIZE : this.combativesSize;
         EffectivePlayerGeometry requestedGeometry = this.getEffectiveGeometry(this.getPose());
         EntitySize newSize = new EntitySize(requestedGeometry.width, requestedGeometry.height,
                 this.getPose() == Pose.SLEEPING || this.getPose() == Pose.DYING);
         boolean accepted = this.isResizingAllowed();
-        if (!authoritative && accepted && (newSize.width > oldSize.width || newSize.height > oldSize.height)) {
+        if (accepted && (newSize.width > oldSize.width || newSize.height > oldSize.height)) {
             EffectivePlayerGeometry requested = new EffectivePlayerGeometry(this.getPose(), newSize.width,
                     newSize.height, 0.0F);
             accepted = !MCHeliCollisionCompat.hasSolidCollision(this.worldObj.getCollidingBoundingBoxes(this,
@@ -356,15 +338,16 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         this.combativesLocomotionState = LocomotionState.NORMAL;
         this.combativesSlideTicks = 0;
         this.combativesLean = 0.0F;
-        this.combativesAcceptedLean = 0.0F;
         this.swimAnimation = 0.0F;
         this.lastSwimAnimation = 0.0F;
 
         /* yOffset is part of 1.7.10's position/AABB anchor, not pose eye
-         * geometry. EntityPlayerSP uses the local-player 1.62 anchor while
-         * EntityPlayerMP and EntityOtherPlayerMP normally use zero. Preserve
-         * the concrete player's current vanilla anchor instead of projecting
-         * one subclass' coordinate convention onto every logical side. */
+         * geometry.  A pose packet used to change it after resizing, leaving
+         * posY and minY in different coordinate frames.  The next resize then
+         * reapplied that difference as a vertical move.  Lifecycle reset is a
+         * forced transition, so establish the vanilla player anchor before
+         * rebuilding the box and all cached eye geometry. */
+        this.yOffset = 1.62F;
         this.ySize = 0.0F;
         EntitySize oldSize = this.combativesSize == null ? STANDING_SIZE : this.combativesSize;
         EffectivePlayerGeometry geometry = this.combatives$resolveGeometry(resetPose);
@@ -525,8 +508,6 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
     @Override public void setSlideTicks(int ticks) { this.combativesSlideTicks = Math.max(0, ticks); }
     @Override public float getLean() { return this.combativesLean; }
     @Override public void setLean(float lean) { this.combativesLean = MathHelper.clamp_float(lean, -1.0F, 1.0F); }
-    @Override public float getAcceptedLean() { return this.combativesAcceptedLean; }
-    @Override public void setAcceptedLean(float lean) { this.combativesAcceptedLean = MathHelper.clamp_float(lean, -1.0F, 1.0F); }
     @Override public boolean isCrawlKeyDown() { return this.canCrawl() && this.crawlKeyDown; }
     @Override public void setCrawlKeyDown(boolean down) {
         if (down && !this.canCrawl()) {
@@ -710,7 +691,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         boolean changed = this.crawlKeyDown || this.isSwimming() || this.getPose() != Pose.STANDING
                 || this.combativesMovementSnapshot != MovementSnapshot.EMPTY
                 || this.combativesLocomotionState != LocomotionState.NORMAL
-                || this.combativesSlideTicks != 0 || this.combativesLean != 0.0F || this.combativesAcceptedLean != 0.0F
+                || this.combativesSlideTicks != 0 || this.combativesLean != 0.0F
                 || this.swimAnimation != 0.0F || this.lastSwimAnimation != 0.0F;
         this.crawlKeyDown = false;
         this.combatives$setSwimming(false, reason);
@@ -719,7 +700,6 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         this.combativesLocomotionState = LocomotionState.NORMAL;
         this.combativesSlideTicks = 0;
         this.combativesLean = 0.0F;
-        this.combativesAcceptedLean = 0.0F;
         this.swimAnimation = 0.0F;
         this.lastSwimAnimation = 0.0F;
         return changed;

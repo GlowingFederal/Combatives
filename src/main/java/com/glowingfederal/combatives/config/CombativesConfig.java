@@ -2,7 +2,6 @@ package com.glowingfederal.combatives.config;
 
 import java.io.File;
 
-import com.glowingfederal.combatives.build.BuildInfo;
 import net.minecraftforge.common.config.Configuration;
 import org.apache.logging.log4j.Logger;
 
@@ -59,75 +58,7 @@ public final class CombativesConfig {
     private CombativesConfig() {
     }
 
-    private static void applyCanonicalGameplayDefaults() {
-        enableCombativesCamera = CombativesConfigDefaults.ENABLE_COMBATIVES_CAMERA;
-        enableProceduralBob = CombativesConfigDefaults.ENABLE_PROCEDURAL_BOB;
-        enableMovementLean = CombativesConfigDefaults.ENABLE_MOVEMENT_LEAN;
-        enableMovementFov = CombativesConfigDefaults.ENABLE_MOVEMENT_FOV;
-        enableCameraRotations = CombativesConfigDefaults.ENABLE_CAMERA_ROTATIONS;
-        enableCameraShake = CombativesConfigDefaults.ENABLE_CAMERA_SHAKE;
-        maxCameraYawDegrees = CombativesConfigDefaults.MAX_CAMERA_YAW_DEGREES;
-        enableMouseDeltaClamp = CombativesConfigDefaults.ENABLE_MOUSE_DELTA_CLAMP;
-        maxMouseDelta = CombativesConfigDefaults.MAX_MOUSE_DELTA;
-        enableLandingCameraFeedback = CombativesConfigDefaults.ENABLE_LANDING_CAMERA_FEEDBACK;
-        landingFeedbackStrength = CombativesConfigDefaults.LANDING_FEEDBACK_STRENGTH;
-        enablePlayerFreefallCamera = CombativesConfigDefaults.ENABLE_PLAYER_FREEFALL_CAMERA;
-        playerFreefallCameraStrength = CombativesConfigDefaults.PLAYER_FREEFALL_CAMERA_STRENGTH;
-        enablePlayerInertiaCamera = CombativesConfigDefaults.ENABLE_PLAYER_INERTIA_CAMERA;
-        playerInertiaCameraStrength = CombativesConfigDefaults.PLAYER_INERTIA_CAMERA_STRENGTH;
-        enablePlayerCollisionCamera = CombativesConfigDefaults.ENABLE_PLAYER_COLLISION_CAMERA;
-        playerCollisionCameraStrength = CombativesConfigDefaults.PLAYER_COLLISION_CAMERA_STRENGTH;
-        enableExplosionCameraFeedback = CombativesConfigDefaults.ENABLE_EXPLOSION_CAMERA_FEEDBACK;
-        explosionFeedbackStrength = CombativesConfigDefaults.EXPLOSION_FEEDBACK_STRENGTH;
-        enableHorseCamera = CombativesConfigDefaults.ENABLE_HORSE_CAMERA;
-        horseCameraAmplitude = CombativesConfigDefaults.HORSE_CAMERA_AMPLITUDE;
-        horseTerrainImpulse = CombativesConfigDefaults.HORSE_TERRAIN_IMPULSE;
-        horseLanding = CombativesConfigDefaults.HORSE_LANDING;
-        horseTurningRoll = CombativesConfigDefaults.HORSE_TURNING_ROLL;
-        enableCrawlCamera = CombativesConfigDefaults.ENABLE_CRAWL_CAMERA;
-        crawlCameraAmplitude = CombativesConfigDefaults.CRAWL_CAMERA_AMPLITUDE;
-        crawlTransitionMillis = CombativesConfigDefaults.CRAWL_TRANSITION_MILLIS;
-        enableLeaning = CombativesConfigDefaults.ENABLE_LEANING;
-        maxLeanDistance = CombativesConfigDefaults.MAX_LEAN_DISTANCE;
-        maxLeanRoll = CombativesConfigDefaults.MAX_LEAN_ROLL;
-        leanInterpolation = CombativesConfigDefaults.LEAN_INTERPOLATION;
-        enableSliding = CombativesConfigDefaults.ENABLE_SLIDING;
-        slideMinimumEntrySpeed = CombativesConfigDefaults.SLIDE_MINIMUM_ENTRY_SPEED;
-        slideExitSpeed = CombativesConfigDefaults.SLIDE_EXIT_SPEED;
-        slideDeceleration = CombativesConfigDefaults.SLIDE_DECELERATION;
-        slideSteeringInfluence = CombativesConfigDefaults.SLIDE_STEERING_INFLUENCE;
-        slideMaximumTicks = CombativesConfigDefaults.SLIDE_MAXIMUM_TICKS;
-        enableMpmHitboxScaling = CombativesConfigDefaults.ENABLE_MPM_HITBOX_SCALING;
-    }
-
-    private static File fairplayConfigFile(File suggestedConfigFile) {
-        File parent = suggestedConfigFile.getParentFile();
-        return new File(parent == null ? new File(".") : parent, "Combatives-Fairplay.cfg");
-    }
-
-    private static void loadFairplay(File suggestedConfigFile) {
-        applyCanonicalGameplayDefaults();
-
-        Configuration config = new Configuration(fairplayConfigFile(suggestedConfigFile));
-        config.load();
-        boolean debug = config.getBoolean("debug", CATEGORY_DEBUG, CombativesConfigDefaults.DEBUG, "Enable general Combatives movement and camera diagnostics.");
-        boolean verboseDebug = config.getBoolean("verboseDebug", CATEGORY_DEBUG, CombativesConfigDefaults.VERBOSE_DEBUG, "Enable verbose per-frame/per-tick Combatives movement and camera diagnostics. This implies debug output.");
-        debugMovement = debug;
-        debugCamera = debug;
-        debugMpmPov = debug;
-        verboseMovementDebug = verboseDebug;
-        verboseCameraDebug = verboseDebug;
-
-        if (config.hasChanged()) {
-            config.save();
-        }
-    }
-
     public static void load(File configFile) {
-        if (BuildInfo.FAIRPLAY_BUILD) {
-            loadFairplay(configFile);
-            return;
-        }
         Configuration config = new Configuration(configFile);
         config.load();
 

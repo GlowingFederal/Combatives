@@ -90,3 +90,10 @@
 	  the server player box displaced from the requested floor.
 	- Added a verbose post-teleport anchor trace. Pose synchronization and the
 	  existing vehicle dismount handoff retain their ownership and timing.
+
+	2026-09-30 02:30 — Remove obsolete Fairplay jar variant
+
+	- Removed Fairplay-specific resource generation, jar packaging, and build task wiring.
+	- Retired the Fairplay build flag and its separate configuration path. Standard builds
+	  continue to use Combatives.cfg, with normal jar reobfuscation, refmap, coreplugin
+	  manifest, version increment, and tests unchanged.

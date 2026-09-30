@@ -80,10 +80,6 @@ categories cover:
 - MorePlayerModels+ physical hitbox scaling; and
 - general or verbose movement/camera diagnostics.
 
-The separately distributed Fairplay build uses `Combatives-Fairplay.cfg`; it
-locks gameplay and camera values to project defaults and exposes only general
-and verbose diagnostics.
-
 ## Developers and contributors
 
 This is an old-style ForgeGradle 1.2 project. Keep its versions intact: do not
@@ -99,7 +95,7 @@ cleanup.
    when a ForgeGradle workspace must be prepared, then `./gradlew idea` or
    `./gradlew eclipse` if the corresponding IDE metadata is wanted.
 4. Build the production artifacts with `./gradlew build`. Production builds
-   increment the build number and create the normal and Fairplay jars under
+   increment the build number and create the production jar under
    `build/libs/`.
 
 Useful entry points:

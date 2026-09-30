@@ -110,8 +110,7 @@ def productionTaskNames = [
         "assemble",
         "reobf",
         "reobfJar",
-        "uploadArchives",
-        "fairplayJar"
+        "uploadArchives"
 ] as Set
 
 def requestedTaskNames = gradle.startParameter.taskNames.collect {
@@ -256,38 +255,6 @@ reobf {
 }
 
 // --------------------------------------------------
-// Build metadata
-// --------------------------------------------------
-
-task generateNormalBuildInfo {
-    def outputFile = file(
-            "${buildDir}/generated-resources/" +
-                    "combatives/normal/combatives-build.properties"
-    )
-
-    outputs.file outputFile
-
-    doLast {
-        outputFile.parentFile.mkdirs()
-        outputFile.text = "fairplayBuild=false\n"
-    }
-}
-
-task generateFairplayBuildInfo {
-    def outputFile = file(
-            "${buildDir}/generated-resources/" +
-                    "combatives/fairplay/combatives-build.properties"
-    )
-
-    outputs.file outputFile
-
-    doLast {
-        outputFile.parentFile.mkdirs()
-        outputFile.text = "fairplayBuild=true\n"
-    }
-}
-
-// --------------------------------------------------
 // Normal resources
 // --------------------------------------------------
 
@@ -307,19 +274,10 @@ processResources {
 }
 
 jar {
-    dependsOn generateNormalBuildInfo
-
     from(combativesRefmapFile) {
         into ""
     }
 
-    from(
-            "${buildDir}/generated-resources/combatives/normal"
-    ) {
-        include "combatives-build.properties"
-        into ""
-    }
-
     manifest {
         attributes(
                 "ForceLoadAsMod": "true",
@@ -330,112 +288,6 @@ jar {
         )
     }
 }
-
-// --------------------------------------------------
-// Fairplay resources
-// --------------------------------------------------
-
-task processFairplayResources(type: Copy) {
-    from(sourceSets.main.resources.srcDirs) {
-        include "mcmod.info"
-
-        expand(
-                version: project.version,
-                modName: "Combatives Fairplay"
-        )
-    }
-
-    into file(
-            "${buildDir}/generated-resources/" +
-                    "combatives/fairplayResources"
-    )
-}
-
-// --------------------------------------------------
-// Fairplay jar
-// --------------------------------------------------
-
-/*
- * Do not package sourceSets.main.output here.
- *
- * sourceSets.main.output contains MCP-named development bytecode before
- * ForgeGradle reobfuscation. Packaging it directly caused production
- * NoSuchMethodError and NoSuchFieldError crashes.
- *
- * Instead, this task opens the normal jar only after the normal jar has
- * passed through ForgeGradle's reobf task. It then replaces only:
- *
- *   - mcmod.info
- *   - combatives-build.properties
- *
- * All classes, mixins, refmaps, and manifests otherwise come from the
- * same production-safe artifact.
- */
-task fairplayJar(
-        type: Jar,
-        dependsOn: [
-                reobf,
-                generateFairplayBuildInfo,
-                processFairplayResources
-        ]
-) {
-    baseName = "Combatives-Fairplay"
-    extension = "jar"
-
-    /*
-     * Resolve the normal jar lazily. At execution time the reobf task has
-     * already rewritten it in place.
-     */
-    from {
-        zipTree(tasks.jar.archivePath)
-    }
-
-    /*
-     * Replace these entries with Fairplay-specific versions.
-     */
-    exclude "mcmod.info"
-    exclude "combatives-build.properties"
-
-    /*
-     * Avoid copying the old archive manifest as a normal ZIP entry.
-     * This Jar task generates the final manifest below.
-     */
-    exclude "META-INF/MANIFEST.MF"
-
-    from(
-            "${buildDir}/generated-resources/combatives/fairplay"
-    ) {
-        include "combatives-build.properties"
-        into ""
-    }
-
-    from(
-            "${buildDir}/generated-resources/" +
-                    "combatives/fairplayResources"
-    ) {
-        include "mcmod.info"
-        into ""
-    }
-
-    manifest {
-        attributes(
-                "ForceLoadAsMod": "true",
-                "FMLCorePlugin":
-                        "com.glowingfederal.combatives.loading." +
-                                "CombativesCorePlugin",
-                "FMLCorePluginContainsFMLMod": "true"
-        )
-    }
-}
-
-/*
- * Enforce the expected order even if Gradle changes task scheduling:
- *
- * jar -> reobf -> fairplayJar -> assemble
- */
-fairplayJar.mustRunAfter reobf
-
-assemble.dependsOn fairplayJar
 
 // Exercise the production yaw helper without needing a running client/server.
 task verifyLeanBasis(type: JavaExec, dependsOn: testClasses) {

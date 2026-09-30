@@ -57,8 +57,30 @@ and cached eye geometry before broadcasting the authoritative state. Clients
 that retain a tracked player through the death/respawn exchange perform the
 same forced standing reset on the authoritative `DYING -> STANDING`
 transition; newly constructed client and server players already initialize
-with standing geometry. Dimension changes retain their existing synchronization
-only and ordinary teleport paths remain untouched. The legacy remote-player
-zero-`yOffset` normalization also now moves its position samples by the matching
-amount when it actually changes the offset, preserving the same AABB anchor for
-an observing client after a lifecycle reset.
+with standing geometry. Dimension changes retain their existing synchronization.
+The legacy remote-player zero-`yOffset` normalization also moves its position
+samples by the matching amount when it actually changes the offset, preserving
+the same AABB anchor for an observing client after a lifecycle reset.
+
+## Explicit teleport reset boundary
+
+Minecraft 1.7.10 initializes `EntityPlayerMP` and `EntityOtherPlayerMP` with
+`yOffset = 0`, but the local client player uses `1.62`. Combatives' forced
+pose reset previously set `1.62` for all three. `/tp ~ ~ ~` computes its
+destination from the server player's current `posY`, then calls
+`EntityPlayerMP#setPositionAndUpdate`. The reset ran at that method's entry,
+so even a same-position teleport changed the server AABB anchor before
+`NetHandlerPlayServer#setPlayerLocation` applied the original Y. The server
+then treated a player box displaced below the requested floor as current,
+while the S08 correction rebuilt the local client box with its own anchor.
+
+Forced pose resets now restore the vanilla anchor for each representation:
+zero on the server and remote clients, `1.62` on the local client. The reset
+still clears Combatives pose and movement state and does not change the
+teleport destination or mount-owned exit placement. With
+`verboseMovementDebug`, `server teleport anchor` records requested Y, final
+`posY`, AABB floor, `yOffset`, `ySize`, and floor delta after the teleport.
+For `/tp ~ ~ ~` while standing on solid ground, the expected final
+`boxFloor - requestedY` is approximately zero. Repeat after crawling and
+after a vehicle dismount; also check an ordinary distant teleport and remote
+player rendering on an integrated and dedicated server.

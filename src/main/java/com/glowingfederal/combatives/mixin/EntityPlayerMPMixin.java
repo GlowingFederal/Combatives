@@ -41,6 +41,15 @@ public abstract class EntityPlayerMPMixin extends EntityPlayer {
         PoseSync.broadcastAuthoritativePose((EntityPlayerMP) (Object) this, true);
     }
 
+    @Inject(method = "setPositionAndUpdate", at = @At("RETURN"))
+    private void combatives$traceTeleportAnchor(double x, double y, double z, CallbackInfo ci) {
+        if (!MovementDiagnostics.isVerboseEnabled()) return;
+        MovementDiagnostics.verbose(this, "server teleport anchor requestedY=" + y
+            + " posY=" + this.posY + " boxFloor=" + this.boundingBox.minY
+            + " yOffset=" + this.yOffset + " ySize=" + this.ySize
+            + " floorDelta=" + (this.boundingBox.minY - y));
+    }
+
     @Override
     public float getDefaultEyeHeight() {
         ICombativesPlayerPose pose = this.combatives$getPoseState();

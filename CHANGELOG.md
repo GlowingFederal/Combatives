@@ -80,3 +80,13 @@
 	  targeting transforms and HMG-selected aim therefore remain outside these hooks.
 	- Source inspection and compilation validate the descriptor correction; MPM/HMG behavior still
 	  requires integrated and dedicated-server in-game regression testing.
+
+	2026-09-30 02:07 — Restore player position anchors on explicit teleport
+
+	- Corrected Combatives' forced pose reset to use Minecraft 1.7.10's distinct
+	  position anchors: zero for server and remote client players, 1.62 for the
+	  local client. A same-position teleport previously set the server anchor to
+	  the local-client value before applying its original destination Y, leaving
+	  the server player box displaced from the requested floor.
+	- Added a verbose post-teleport anchor trace. Pose synchronization and the
+	  existing vehicle dismount handoff retain their ownership and timing.

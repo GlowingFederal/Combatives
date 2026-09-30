@@ -3,6 +3,7 @@ package com.glowingfederal.combatives.mixin;
 import com.glowingfederal.combatives.entity.EntitySize;
 import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
+import com.glowingfederal.combatives.entity.player.ICombativesRemotePlayer;
 import com.glowingfederal.combatives.entity.player.EffectivePlayerGeometry;
 import com.glowingfederal.combatives.entity.player.PlayerGeometryResolver;
 import com.glowingfederal.combatives.entity.player.PlayerStepHeight;
@@ -342,12 +343,11 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements ICom
         this.lastSwimAnimation = 0.0F;
 
         /* yOffset is part of 1.7.10's position/AABB anchor, not pose eye
-         * geometry.  A pose packet used to change it after resizing, leaving
-         * posY and minY in different coordinate frames.  The next resize then
-         * reapplied that difference as a vertical move.  Lifecycle reset is a
-         * forced transition, so establish the vanilla player anchor before
-         * rebuilding the box and all cached eye geometry. */
-        this.yOffset = 1.62F;
+         * geometry. Server and remote client players use zero; the local
+         * client player uses 1.62. NetHandlerPlayServer#setPlayerLocation treats
+         * its Y argument as the server player's box floor. Keep that contract
+         * when a forced pose reset precedes a teleport. */
+        this.yOffset = this.worldObj.isRemote && !(this instanceof ICombativesRemotePlayer) ? 1.62F : 0.0F;
         this.ySize = 0.0F;
         EntitySize oldSize = this.combativesSize == null ? STANDING_SIZE : this.combativesSize;
         EffectivePlayerGeometry geometry = this.combatives$resolveGeometry(resetPose);

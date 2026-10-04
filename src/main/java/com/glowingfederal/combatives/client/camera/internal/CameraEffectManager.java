@@ -9,6 +9,7 @@ import java.util.*;
 
 public final class CameraEffectManager {
     private static final int MAX_IMPULSES=64, MAX_CONTINUOUS=32, MAX_FRAME_CONTRIBUTIONS=64; private static final ArrayList<Active> impulses=new ArrayList<Active>(); private static final ArrayList<Handle> continuous=new ArrayList<Handle>(); private static final ArrayList<FrameContribution> frameContributions=new ArrayList<FrameContribution>(); private static float pitch,yaw,roll,x,y,z,fov;
+    private static long simulationTick;
     private CameraEffectManager(){}
     public static boolean isAvailable(){return Minecraft.getMinecraft()!=null&&CombativesConfig.enableCombativesCamera;}
     public static boolean trigger(CameraEffectType type, CameraEffectContext ctx, float strength){ if(type==null) return reject("missing_type"); strength=safe(strength,0,1); if(strength<=0)return reject("zero_strength"); return submitImpulse(preset(type,ctx,strength)); }
@@ -17,11 +18,45 @@ public final class CameraEffectManager {
     static CameraEffectHandle startContinuousEffectForDevelopmentTest(ContinuousCameraEffect e){ CameraImpulse clean=e==null?null:sanitize(e.getImpulse()); if(clean==null||!hasProcessableChannel(clean))return Handle.INACTIVE; Handle h=new Handle(clean,safe(e.getStrength(),0,1)); continuous.add(h); return h; }
     public static boolean submitFrameContribution(CameraImpulse in,float strength){ if(!isAvailable())return false; CameraImpulse clean=sanitize(in); strength=safe(strength,0,1); if(clean==null||strength<=0||!hasProcessableChannel(clean))return false; if(frameContributions.size()>=MAX_FRAME_CONTRIBUTIONS)frameContributions.remove(0); frameContributions.add(new FrameContribution(clean,strength)); return true; }
     public static CameraEffectHandle startContinuousEffect(ContinuousCameraEffect e){ if(!isAvailable()||e==null)return Handle.INACTIVE; CameraImpulse clean=sanitize(e.getImpulse()); if(clean==null||!hasProcessableChannel(clean))return Handle.INACTIVE; if(continuous.size()>=MAX_CONTINUOUS)continuous.remove(0).stop(); Handle h=new Handle(clean,safe(e.getStrength(),0,1)); continuous.add(h); logDebug("camera API continuous effect created id="+h.impulse.getEffectId()+" pitch="+h.impulse.getPitch()+" yaw="+h.impulse.getYaw()+" roll="+h.impulse.getRoll()+" translation=("+h.impulse.getTranslateX()+","+h.impulse.getTranslateY()+","+h.impulse.getTranslateZ()+") fov="+h.impulse.getFov()); return h; }
-    public static void update(EntityPlayerSP player){ pitch=yaw=roll=x=y=z=fov=0; tick(impulses,false,player); for(FrameContribution frame:frameContributions)contribute(frame.impulse,frame.strength,player,1F); frameContributions.clear(); for(int n=continuous.size()-1;n>=0;n--){Handle h=continuous.get(n); if(!h.active){continuous.remove(n);continue;} if(h.enabled) contribute(h.impulse,h.strength,player,0.6F);} saturateClamp(); }
+    public static void tick() {
+        simulationTick++;
+        for (int n = impulses.size() - 1; n >= 0; n--) {
+            Active active = impulses.get(n);
+            active.age += 0.05F;
+            // Keep the previous endpoint until all renders of this tick can sample it.
+            if (active.age > Math.max(0.05F, active.impulse.getDuration()) + 0.05F) {
+                impulses.remove(n);
+                logDebug("camera API impulse expired id=" + active.impulse.getEffectId());
+            }
+        }
+        for (int n = continuous.size() - 1; n >= 0; n--) {
+            if (!continuous.get(n).active) continuous.remove(n);
+        }
+    }
+
+    /** Analytic envelopes/oscillation on the interpolated game timeline, never render-call age. */
+    public static void sample(EntityPlayerSP player, float partialTicks) {
+        pitch=yaw=roll=x=y=z=fov=0;
+        float p = safe(partialTicks, 0, 1);
+        double time = (Math.max(0L, simulationTick - 1L) + p) * 0.05D;
+        for (Active active : impulses) {
+            float age = Math.max(0, active.age - 0.05F + p * 0.05F);
+            float duration = Math.max(0.05F, active.impulse.getDuration());
+            if (age >= duration) continue;
+            float attack = safe(active.impulse.getAttackTime(), 0, duration);
+            float envelope = age < attack ? age / Math.max(0.0001F, attack) : 1.0F - age / duration;
+            contribute(active.impulse, safe(envelope, 0, 1) * active.strength, player, 1F, age);
+        }
+        for (FrameContribution frame : frameContributions) contribute(frame.impulse, frame.strength, player, 1F, time);
+        frameContributions.clear();
+        for (Handle handle : continuous) {
+            if (handle.active && handle.enabled) contribute(handle.impulse, handle.strength, player, 0.6F, time);
+        }
+        saturateClamp();
+    }
     public static float getPitch(){return pitch;} public static float getYaw(){return yaw;} public static float getRoll(){return roll;} public static float getX(){return x;} public static float getY(){return y;} public static float getZ(){return z;} public static float getFov(){return fov;}
-    public static void reset(){impulses.clear(); continuous.clear(); frameContributions.clear(); pitch=yaw=roll=x=y=z=fov=0;}
-    private static void tick(ArrayList<Active> list, boolean cont, EntityPlayerSP p){ for(int n=list.size()-1;n>=0;n--){Active a=list.get(n); a.age+=1F/20F; float d=Math.max(0.05F,a.impulse.getDuration()); if(a.age>d){list.remove(n); logDebug("camera API impulse expired id="+a.impulse.getEffectId()); continue;} float t=a.age/d; float env=t<safe(a.impulse.getAttackTime(),0,d)/d? t/Math.max(0.01F,a.impulse.getAttackTime()/d) : 1F-t; contribute(a.impulse, safe(env,0,1)*a.strength,p,1F);} }
-    private static void contribute(CameraImpulse i,float s,EntityPlayerSP p,float contScale){ float fall=falloff(i,p); float osc=i.getFrequency()>0?(float)Math.sin(System.nanoTime()/1000000000.0D*i.getFrequency()*6.28318D):1F; float k=s*fall*osc*priority(i.getPriority())*contScale; pitch+=i.getPitch()*k; yaw+=i.getYaw()*k; roll+=i.getRoll()*k; x+=i.getTranslateX()*k; y+=i.getTranslateY()*k; z+=i.getTranslateZ()*k; fov+=i.getFov()*k; if(Combatives.logger!=null&&CombativesConfig.verboseCameraDebug)Combatives.logger.info("camera API active effect id={} pitch={} yaw={} roll={} translation=({},{},{}) fov={} sampleScale={}", i.getEffectId(), i.getPitch()*k, i.getYaw()*k, i.getRoll()*k, i.getTranslateX()*k, i.getTranslateY()*k, i.getTranslateZ()*k, i.getFov()*k, k); }
+    public static void reset(){for(Handle handle:continuous)handle.stop(); impulses.clear(); continuous.clear(); frameContributions.clear(); simulationTick=0; pitch=yaw=roll=x=y=z=fov=0;}
+    private static void contribute(CameraImpulse i,float s,EntityPlayerSP p,float contScale,double time){ float fall=falloff(i,p); float osc=i.getFrequency()>0?(float)Math.sin(time*i.getFrequency()*Math.PI*2D):1F; float k=s*fall*osc*priority(i.getPriority())*contScale; pitch+=i.getPitch()*k; yaw+=i.getYaw()*k; roll+=i.getRoll()*k; x+=i.getTranslateX()*k; y+=i.getTranslateY()*k; z+=i.getTranslateZ()*k; fov+=i.getFov()*k; if(Combatives.logger!=null&&CombativesConfig.verboseCameraDebug)Combatives.logger.info("camera API active effect id={} pitch={} yaw={} roll={} translation=({},{},{}) fov={} sampleScale={}", i.getEffectId(), i.getPitch()*k, i.getYaw()*k, i.getRoll()*k, i.getTranslateX()*k, i.getTranslateY()*k, i.getTranslateZ()*k, i.getFov()*k, k); }
     private static CameraImpulse preset(CameraEffectType t,CameraEffectContext c,float s){ String id="combatives:"+t.name().toLowerCase(Locale.ROOT); CameraImpulse.Builder b=CameraImpulse.builder(id).duration(t==CameraEffectType.ENVIRONMENTAL_RUMBLE?1.2F:0.35F).priority(t==CameraEffectType.EXPLOSION?CameraPriority.STRONG:CameraPriority.NORMAL); if(c!=null){ if(c.getSourceEntity()!=null)b.sourceEntity(c.getSourceEntity()); if(c.hasPosition())b.position(c.getX(),c.getY(),c.getZ()); } switch(t){case EXPLOSION:b.rotation(8*s,0,4*s).translation(0,0.16F*s,-0.14F*s).fov(2*s);break;case LANDING:b.rotation(6*s,0,1*s).translation(0,-0.12F*s,-0.05F*s);break;case WEAPON_FIRE:b.rotation(-2*s,0,0.8F*s).translation(0,0,-0.04F*s).duration(0.18F);break;case VEHICLE_COLLISION:b.rotation(7*s,0,3*s).translation(0,0.12F*s,-0.12F*s);break;case ENVIRONMENTAL_RUMBLE:b.rotation(1.2F*s,0,1.2F*s).translation(0.02F*s,0.025F*s,0).oscillationFrequency(8F);break;default:b.rotation(3*s,0,1.5F*s).translation(0,0.05F*s,-0.04F*s);} return b.build(); }
     private static CameraImpulse sanitize(CameraImpulse i){ if(i==null||!validId(i.getEffectId()))return null; if(!finite(i.getPitch())||!finite(i.getYaw())||!finite(i.getRoll())||!finite(i.getTranslateX())||!finite(i.getTranslateY())||!finite(i.getTranslateZ())||!finite(i.getFov()))return null; if(!finite(i.getDuration())||i.getDuration()<=0||i.getDuration()>30||!finite(i.getAttackTime())||i.getAttackTime()<0||!finite(i.getFrequency())||i.getFrequency()<0||i.getFrequency()>80)return null; if(i.hasPosition()&&(!finite((float)i.getX())||!finite((float)i.getY())||!finite((float)i.getZ())))return null; return i; }
     private static boolean hasProcessableChannel(CameraImpulse i){return i.getPitch()!=0||i.getYaw()!=0||i.getRoll()!=0||i.getTranslateX()!=0||i.getTranslateY()!=0||i.getTranslateZ()!=0||i.getFov()!=0;}

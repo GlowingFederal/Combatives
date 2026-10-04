@@ -19,14 +19,15 @@ public final class ShakeController {
     private float explosionX, explosionY, explosionZ, explosionPitch, explosionRoll;
     private float explosionVelX, explosionVelY, explosionVelZ, explosionVelPitch, explosionVelRoll;
     private float shockX, shockY, shockZ, shockPitch, shockRoll, shockAge = 1.0F;
-    private long lastUpdateNanos;
-
-    public void update(MovementCameraState state, float partialTicks) {
-        float dt = getFrameDeltaSeconds();
-
-        updateLandingSpring(dt);
-        updateExplosionSpring(dt);
-        updateShock(dt);
+    public void tick() {
+        // Fixed substeps keep the stiff impact spring stable at 20 TPS. Render count
+        // cannot advance this simulation, including stereo/shader camera passes.
+        float dt = 1.0F / 60.0F;
+        for (int step = 0; step < 3; step++) {
+            updateLandingSpring(dt);
+            updateExplosionSpring(dt);
+            updateShock(dt);
+        }
 
         float landingCompression = clamp(landingPosition, -0.35F, 1.35F);
         float landingVelocityShape = clamp(landingVelocity * 0.09F, -0.8F, 0.8F);
@@ -43,7 +44,8 @@ public final class ShakeController {
 
         float landingEnergy = Math.min(1.0F, Math.abs(landingPosition) + Math.abs(landingVelocity) * 0.08F);
         float explosionEnergy = Math.min(1.0F, Math.abs(explosionX) * 18.0F + Math.abs(explosionY) * 14.0F + Math.abs(explosionZ) * 18.0F + Math.abs(shockPitch) * 0.2F);
-        bobSuppression += ((Math.max(landingEnergy, explosionEnergy) * 0.55F) - bobSuppression) * Math.min(1.0F, dt * 8.0F);
+        bobSuppression += ((Math.max(landingEnergy, explosionEnergy) * 0.55F) - bobSuppression)
+                * (1.0F - (float) Math.exp(-0.05F * 8.0F));
     }
 
     private void updateLandingSpring(float dt) {
@@ -144,20 +146,9 @@ public final class ShakeController {
         }
     }
 
-    private float getFrameDeltaSeconds() {
-        long now = System.nanoTime();
-        if (lastUpdateNanos == 0L) {
-            lastUpdateNanos = now;
-            return 1.0F / 60.0F;
-        }
-        float dt = (now - lastUpdateNanos) / 1000000000.0F;
-        lastUpdateNanos = now;
-        return clamp(dt, 1.0F / 240.0F, 0.05F);
-    }
-
     private static float smoothstep(float t) { t = clamp(t, 0.0F, 1.0F); return t * t * (3.0F - 2.0F * t); }
     private static float clamp(float v, float min, float max) { return v < min ? min : v > max ? max : v; }
-    public void reset() { pitch = roll = vertical = forward = lateral = bobSuppression = landingPosition = landingVelocity = landingRollBias = explosionX = explosionY = explosionZ = explosionPitch = explosionRoll = explosionVelX = explosionVelY = explosionVelZ = explosionVelPitch = explosionVelRoll = shockX = shockY = shockZ = shockPitch = shockRoll = 0.0F; shockAge = 1.0F; lastUpdateNanos = 0L; }
+    public void reset() { pitch = roll = vertical = forward = lateral = bobSuppression = landingPosition = landingVelocity = landingRollBias = explosionX = explosionY = explosionZ = explosionPitch = explosionRoll = explosionVelX = explosionVelY = explosionVelZ = explosionVelPitch = explosionVelRoll = shockX = shockY = shockZ = shockPitch = shockRoll = 0.0F; shockAge = 1.0F; }
     public float getPitch() { return pitch; }
     public float getRoll() { return roll; }
     public float getVertical() { return vertical; }

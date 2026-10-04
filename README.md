@@ -38,6 +38,11 @@ and disabled by default; crawling itself is not dependent on that effect. An
 optional, default-off raw mouse-delta safety clamp exists for diagnosing
 pathological input spikes, but is separate from normal camera effects.
 
+Camera simulation runs on client ticks, with render interpolation and game-time
+recoil envelopes. Cosmetic transforms use view space before vanilla camera
+placement; tactical lean rolls all three views but displaces only the first-person
+gameplay eye. See the [camera pipeline and FPS regression matrix](docs/camera-api.md#camera-pipeline-and-timing).
+
 ## Requirements and compatibility
 
 | Component | Requirement |

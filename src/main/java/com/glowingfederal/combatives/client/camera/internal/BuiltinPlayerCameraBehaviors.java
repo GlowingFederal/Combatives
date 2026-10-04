@@ -45,10 +45,11 @@ public final class BuiltinPlayerCameraBehaviors {
         private static final CameraImpulse CYCLE_NEG=CameraImpulse.builder("combatives:crawl_cycle_neg").rotation(-0.34F,0,0).translation(0,-0.014F,0.018F).duration(0.1F).priority(CameraPriority.BACKGROUND).build();
         private static final CameraImpulse POSTURE=CameraImpulse.builder("combatives:crawl_posture").rotation(0.65F,0,0).translation(0,-0.035F,-0.012F).duration(0.1F).priority(CameraPriority.BACKGROUND).build();
         private static final CameraImpulse PULL=CameraImpulse.builder("combatives:crawl_pull").translation(0,-0.012F,-0.018F).duration(0.16F).attackTime(0.035F).priority(CameraPriority.BACKGROUND).build();
-        private float blend,phase,motionWeight; private int cycle;
-        void reset(){blend=phase=motionWeight=0;cycle=0;}
+        private float blend,phase,motionWeight,previousBlend,previousPhase,previousMotionWeight; private int cycle;
+        void reset(){blend=phase=motionWeight=previousBlend=previousPhase=previousMotionWeight=0;cycle=0;}
         public void onTick(MountCameraContext c,CameraEffectSink sink){
             EntityPlayerSP p=player(c);EntityMotionSample m=c.getMotion();if(p==null||m.isDiscontinuity()){reset();return;}
+            previousBlend=blend; previousPhase=phase; previousMotionWeight=motionWeight;
             boolean crawling=false;
             ICombativesPlayerPose pose=null;
             if(p instanceof ICombativesPlayerPose){
@@ -67,11 +68,13 @@ public final class BuiltinPlayerCameraBehaviors {
             EntityCameraBehaviorDiagnostics.crawl(crawling,pose!=null&&pose.isSwimming(),p.isInWater(),pose==null?"unavailable":pose.getPose(),blend,motionWeight,phase,0,0,false);
         }
         public void onRender(MountCameraContext c,CameraEffectSink sink){
-            if(blend<=0.001F)return;
-            float amp=clamp(blend*CombativesConfig.crawlCameraAmplitude,0,1);
+            float renderBlend=lerp(previousBlend,blend,c.getPartialTicks());
+            float renderMotion=lerp(previousMotionWeight,motionWeight,c.getPartialTicks());
+            if(renderBlend<=0.001F)return;
+            float amp=clamp(renderBlend*CombativesConfig.crawlCameraAmplitude,0,1);
             boolean postureAccepted=sink.emitFrame(POSTURE,amp);
-            float wave=(float)Math.sin(phase+c.getPartialTicks()*0.43F*motionWeight);
-            float cycleStrength=Math.abs(wave)*amp*motionWeight;
+            float wave=(float)Math.sin(lerp(previousPhase,phase,c.getPartialTicks()));
+            float cycleStrength=Math.abs(wave)*amp*renderMotion;
             boolean cycleAccepted=cycleStrength>0.001F&&sink.emitFrame(wave>=0?CYCLE_POS:CYCLE_NEG,cycleStrength);
             EntityCameraBehaviorDiagnostics.crawl(true,false,false,Pose.SWIMMING,blend,motionWeight,phase,wave,cycleStrength,postureAccepted||cycleAccepted);
         }
@@ -85,17 +88,21 @@ public final class BuiltinPlayerCameraBehaviors {
         void reset() {}
         EntityPlayerSP player(MountCameraContext c) { return c.getRider() instanceof EntityPlayerSP ? (EntityPlayerSP)c.getRider() : null; }
         static float clamp(double value, double min, double max) { return (float)(value < min ? min : value > max ? max : value); }
+        static float lerp(float a,float b,float p){return a+(b-a)*p;}
+        static double lerp(double a,double b,float p){return a+(b-a)*p;}
     }
 
     private static final class Landing extends Base {
         private boolean grounded = true;
         private double fastestDescent; private float greatestFallDistance;
         private float compression, compressionVelocity, compressionTarget, rollBias, impactEnergy, presentationStrength;
+        private float previousCompression, previousRollBias;
         private int compressionHold;
-        void reset() { grounded = true; fastestDescent = 0; greatestFallDistance = 0; compression=compressionVelocity=compressionTarget=rollBias=impactEnergy=presentationStrength=0;compressionHold=0; }
+        void reset() { grounded = true; fastestDescent = 0; greatestFallDistance = 0; compression=compressionVelocity=compressionTarget=rollBias=impactEnergy=presentationStrength=previousCompression=previousRollBias=0;compressionHold=0; }
         public void onTick(MountCameraContext c, CameraEffectSink sink) {
             EntityPlayerSP player=player(c); EntityMotionSample m=c.getMotion();
             if(player==null || m.isDiscontinuity()){reset();grounded=player==null||player.onGround;return;}
+            previousCompression=compression; previousRollBias=rollBias;
             if(!player.onGround) { fastestDescent=Math.min(fastestDescent,m.getVerticalVelocity()); greatestFallDistance=Math.max(greatestFallDistance,player.fallDistance); }
             if(CombativesConfig.enableLandingCameraFeedback && player.onGround && !grounded) {
                 // Preserve the last unsupported sample before presentation filtering can erase it.
@@ -141,17 +148,19 @@ public final class BuiltinPlayerCameraBehaviors {
             EntityCameraBehaviorDiagnostics.motionSample("landing",m);
         }
         public void onRender(MountCameraContext c,CameraEffectSink sink){
-            if(Math.abs(compression)>0.001F&&CombativesConfig.enableLandingCameraFeedback)sink.emitFrame(CameraImpulse.builder("combatives:player_landing")
-                .rotation(5.2F,0,rollBias*1.35F).translation(0,-0.17F,-0.024F).duration(0.1F)
-                .priority(CameraPriority.NORMAL).build(),clamp(compression,0,1));
+            float value=lerp(previousCompression,compression,c.getPartialTicks());
+            if(Math.abs(value)>0.001F&&CombativesConfig.enableLandingCameraFeedback)sink.emitFrame(CameraImpulse.builder("combatives:player_landing")
+                .rotation(5.2F,0,lerp(previousRollBias,rollBias,c.getPartialTicks())*1.35F).translation(0,-0.17F,-0.024F).duration(0.1F)
+                .priority(CameraPriority.NORMAL).build(),clamp(value,0,1));
         }
     }
 
     private static final class Freefall extends Base {
-        private int fallingTicks; private float intensity;
-        void reset(){fallingTicks=0;intensity=0;}
+        private int fallingTicks; private float intensity,previousIntensity;
+        void reset(){fallingTicks=0;intensity=previousIntensity=0;}
         public void onTick(MountCameraContext c,CameraEffectSink sink){
             EntityPlayerSP p=player(c);EntityMotionSample m=c.getMotion();if(p==null||m.isDiscontinuity()){reset();return;}
+            previousIntensity=intensity;
             boolean unsupported=!p.onGround && m.getVerticalVelocity() < -0.27D && m.getVerticalAcceleration() < 0.08D;
             fallingTicks=unsupported?fallingTicks+1:0;
             float speedEnvelope=clamp((-m.getVerticalVelocity()-0.24D)*1.55D,0,1);
@@ -162,17 +171,22 @@ public final class BuiltinPlayerCameraBehaviors {
             EntityCameraBehaviorDiagnostics.motionSample("freefall",m);
         }
         public void onRender(MountCameraContext c,CameraEffectSink sink){
-            if(intensity>0.01F&&CombativesConfig.enablePlayerFreefallCamera) sink.emitFrame(CameraImpulse.builder("combatives:player_freefall")
-                .rotation(0.72F,0,0).translation(0,-0.052F,0.011F).duration(0.1F).priority(CameraPriority.BACKGROUND).build(),clamp(intensity*CombativesConfig.playerFreefallCameraStrength,0,1));
+            float value=lerp(previousIntensity,intensity,c.getPartialTicks());
+            if(value>0.01F&&CombativesConfig.enablePlayerFreefallCamera) sink.emitFrame(CameraImpulse.builder("combatives:player_freefall")
+                .rotation(0.72F,0,0).translation(0,-0.052F,0.011F).duration(0.1F).priority(CameraPriority.BACKGROUND).build(),clamp(value*CombativesConfig.playerFreefallCameraStrength,0,1));
         }
     }
 
     private static final class Inertia extends Base {
         private double forward,lateral,turnLag; private float contribution,compositionWeight;
+        private double previousForward,previousLateral,previousTurnLag;
+        private float previousContribution,previousCompositionWeight;
         private boolean grounded=true; private int takeoffBlend,landingBlend;
-        void reset(){forward=lateral=turnLag=contribution=0;compositionWeight=1;grounded=true;takeoffBlend=landingBlend=0;}
+        void reset(){forward=lateral=turnLag=previousForward=previousLateral=previousTurnLag=0;contribution=previousContribution=0;compositionWeight=previousCompositionWeight=1;grounded=true;takeoffBlend=landingBlend=0;}
         public void onTick(MountCameraContext c,CameraEffectSink sink){
             EntityMotionSample m=c.getMotion();if(m.isDiscontinuity()||!CombativesConfig.enablePlayerInertiaCamera){reset();return;}
+            previousForward=forward;previousLateral=lateral;previousTurnLag=turnLag;
+            previousContribution=contribution;previousCompositionWeight=compositionWeight;
             EntityPlayerSP p=player(c);boolean onGround=p==null||p.onGround;boolean ascending=!onGround&&m.getVerticalVelocity()>0.04D;
             if(grounded&&ascending)takeoffBlend=4;
             if(!grounded&&onGround)landingBlend=3;
@@ -194,9 +208,11 @@ public final class BuiltinPlayerCameraBehaviors {
         }
         private static double slew(double filtered,double raw,double limit,double alpha){double delta=(raw-filtered)*alpha;return filtered+(delta<-limit?-limit:delta>limit?limit:delta);}
         public void onRender(MountCameraContext c,CameraEffectSink sink){
-            if(contribution>0.008F)sink.emitFrame(CameraImpulse.builder("combatives:player_inertia")
-                .rotation(clamp(-forward*4.2D,-1.05D,1.05D),clamp(-turnLag*0.24D,-0.28D,0.28D),clamp(-lateral*2.0D-turnLag*0.22D,-0.65D,0.65D))
-                .translation(clamp(-lateral*0.012D,-0.012D,0.012D),0,clamp(forward*0.018D,-0.018D,0.018D)).duration(0.1F).priority(CameraPriority.BACKGROUND).build(),clamp(CombativesConfig.playerInertiaCameraStrength*compositionWeight,0,1));
+            float p=c.getPartialTicks();
+            double f=lerp(previousForward,forward,p),l=lerp(previousLateral,lateral,p),t=lerp(previousTurnLag,turnLag,p);
+            if(lerp(previousContribution,contribution,p)>0.008F)sink.emitFrame(CameraImpulse.builder("combatives:player_inertia")
+                .rotation(clamp(-f*4.2D,-1.05D,1.05D),clamp(-t*0.24D,-0.28D,0.28D),clamp(-l*2.0D-t*0.22D,-0.65D,0.65D))
+                .translation(clamp(-l*0.012D,-0.012D,0.012D),0,clamp(f*0.018D,-0.018D,0.018D)).duration(0.1F).priority(CameraPriority.BACKGROUND).build(),clamp(CombativesConfig.playerInertiaCameraStrength*lerp(previousCompositionWeight,compositionWeight,p),0,1));
         }
     }
 

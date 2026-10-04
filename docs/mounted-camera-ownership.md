@@ -14,8 +14,8 @@ change the incoming value.
 The local is subtracted from interpolated `posY`. Standing normally supplies the legacy
 zero-like offset. Combatives' crawl/swim geometry instead selects the offset that places the
 camera at interpolated AABB minimum Y plus `eyeAboveMinY`. Sleeping retains vanilla's special
-path. The tail injection adds procedural bob, lean, shake, and other presentation transforms
-after the base origin has been chosen.
+path. Procedural bob, lean, shake, and other presentation transforms now run in view
+space at `orientCamera` HEAD. The first-person tactical world offset remains at TAIL.
 
 ## Confirmed regression
 
@@ -35,8 +35,9 @@ ownership violation was possible for vanilla horses and any custom mount.
 * Mounted targeting is also passed through to vanilla/mod hooks instead of being replaced by
   Combatives' AABB-derived `InteractionRay`. This preserves paired vehicle camera/targeting
   changes and avoids creating a new crosshair mismatch.
-* Combatives' procedural tail transforms remain additive while mounted, including registered
-  horse/vehicle camera behaviors. They do not take ownership of the base seat position.
+* Combatives' procedural view transforms remain additive while mounted, including registered
+  horse/vehicle camera behaviors. They precede vanilla placement/orientation and do not take
+  ownership of the base seat position.
 * On dismount, `isRiding()` becomes false and ownership returns immediately to current accepted
   player geometry. The existing dismount handoff remains responsible for standing clearance.
   Combatives clears its crawl, swim, slide, lean, movement-snapshot, and animation state, then
@@ -78,8 +79,8 @@ camera has already been established.
 does not load, link, reflect over, or mix into any MCHeli class, so Combatives remains safe when
 MCHeli is absent. The check is centralized rather than scattered through general camera code.
 For that dummy, Combatives preserves the incoming `orientCamera` local just as it does for a
-direct rider and labels debug ownership `MCHELI`. Procedural transforms are still composed at
-the `orientCamera` tail, after MCHeli's base. Combatives also leaves `getMouseOver` on its native
+direct rider and labels debug ownership `MCHELI`. Procedural transforms are composed in view
+space before the `orientCamera` placement/orientation, preserving MCHeli's base. Combatives also leaves `getMouseOver` on its native
 path for the dummy, avoiding an AABB-derived ray from a synthetic player; MCHeli weapon/gunner
 aiming remains entirely MCHeli-owned.
 
@@ -88,7 +89,9 @@ aiming remains entirely MCHeli-owned.
 With `debugCamera=true`, a pose or mount-ownership transition logs rider and riding-entity
 classes, incoming offset, calculated pose offset, selected offset and owner, pose, current and
 interpolated `posY`, AABB minimum Y, `yOffset`, `getEyeHeight()`, effective eye-above-minimum,
-base camera Y, and procedural/final Y. Normal users receive no additional logging.
+base camera Y, and view-space translation Y. A view-space translation is not a world
+camera-Y delta and is no longer added to the base to claim a final world height.
+Normal users receive no additional logging.
 
 ## Manual regression checklist
 
@@ -103,7 +106,7 @@ base camera Y, and procedural/final Y. Normal users receive no additional loggin
    seat offset or camera jump beyond the mount's native transition.
 6. Repeat representative checks with MPM geometry/default, scaled, and disguise states.
 7. Repeat with procedural bob, lean, shake, horse behavior, and FOV effects enabled and
-   disabled; effects should compose after, rather than replace, the mounted base camera.
+   disabled; effects should compose with the mounted base camera without replacing its origin.
 8. On a dedicated server, repeat interaction checks before and after riding and confirm server
    hit results agree with the client crosshair.
 9. Test an F-22 and another aircraft in pilot, camera-id, and gunner modes; switch first/third

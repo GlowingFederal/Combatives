@@ -48,8 +48,8 @@ For each camera entity (the player while unmounted, otherwise its mount) the man
 1. Sample the mount once for the current client tick.
 2. Evaluate every matcher and sort all matches deterministically.
 3. Create missing provider instances and call `onAttach` in provider order.
-4. Call `onTick` once when the client tick changes, in provider order.
-5. Call `onRender` for every camera update, in provider order.
+4. Call `onTick` from client tick END, in provider order, using current tick motion and `partialTicks=1`. Rendering does not dispatch tick callbacks.
+5. Call `onRender` for every camera sample, in provider order, with render partial ticks. Providers interpolate previous/current presentation state without integrating it.
 6. Reconcile runtime registry changes. Removed/nonmatching instances receive `onDetach`; retained instances are reordered without losing their state.
 7. On dismount, mount replacement, reset, or registry removal, call `onDetach` and discard the instance.
 
@@ -67,7 +67,7 @@ A factory returning `null` opts out of that reconciliation pass. A provider must
 - horizontal and three-dimensional total speed;
 - wrapped yaw rate and pitch rate per tick.
 
-Forward and lateral components are projected once using the sample's render yaw. Vertical values remain world Y. Linear values are blocks per tick (or blocks per tick squared for acceleration); angular rates are degrees per tick. Providers should use these derived channels rather than independently projecting world vectors.
+Forward and lateral components are projected once using the sample yaw: current yaw for tick callbacks, interpolated yaw for render callbacks. Forward is `(-sin(yaw), cos(yaw))`; the established lateral channel is positive player-left `(cos(yaw), sin(yaw))`. Vertical values remain world Y. Linear values are blocks per tick (or blocks per tick squared for acceleration); angular rates are degrees per tick. Providers should use these derived channels rather than independently projecting world vectors. The camera renderer consumes their intents in view space before vanilla placement/orientation; see the [camera pipeline and regression matrix](camera-api.md#camera-pipeline-and-timing).
 
 The first observation, an entity change, a skipped client tick, or movement beyond the teleport threshold remains a discontinuity. A discontinuity zeroes current/previous derivatives and angular rates, while preserving the observed position and orientation. Providers should reset their own filters when `isDiscontinuity()` is true.
 

@@ -117,7 +117,7 @@ public final class TargetingDiagnostics {
                 frameId, actual.xCoord, actual.yCoord, actual.zCoord);
     }
 
-    /** Called from orientCamera's modified local, before procedural tail transforms. */
+    /** Physical base from orientCamera's modified local, independent of cosmetic view transforms. */
     public static void captureActualCameraOrigin(EntityPlayer player, float partialTicks, float consumedCameraOffset) {
         if (!focused(player) || player.ticksExisted % 100 != 0) return;
         double x = player.prevPosX + (player.posX - player.prevPosX) * partialTicks;
@@ -147,7 +147,7 @@ public final class TargetingDiagnostics {
         float renderYaw = player.prevRotationYaw + (player.rotationYaw - player.prevRotationYaw) * partialTicks;
         float renderPitch = player.prevRotationPitch + (player.rotationPitch - player.prevRotationPitch) * partialTicks;
         CameraController c = CameraController.INSTANCE;
-        Combatives.logger.info("Combatives rendered camera: baseOrigin=[{},{},{}] authoritativePhysicalEyeY={} targetOrigin=[{},{},{}] basePositionDelta=[{},{},{}] renderYaw={} renderPitch={} visualYaw={} visualPitch={} visualRoll={} targetYaw={} targetPitch={} baseYawDelta={} basePitchDelta={} visualTranslation=[{},{},{}] fovModifier={}",
+        Combatives.logger.info("Combatives rendered camera: baseOrigin=[{},{},{}] authoritativePhysicalEyeY={} targetOrigin=[{},{},{}] basePositionDelta=[{},{},{}] renderYaw={} renderPitch={} visualYaw={} visualPitch={} visualRoll={} targetYaw={} targetPitch={} baseYawDelta={} basePitchDelta={} viewTranslation=[{},{},{}] fovModifier={}",
                 x, renderedBaseY, z, physicalCameraBaseY, originX, originY, originZ, x-originX, renderedBaseY-originY, z-originZ,
                 renderYaw, renderPitch, c.getLastYaw(), c.getLastPitch(), c.getLastRoll(), targetYaw, targetPitch,
                 wrapDegrees(renderYaw-targetYaw), renderPitch-targetPitch, c.getLastTranslationX(), c.getLastTranslationY(), c.getLastTranslationZ(), c.getFovModifier());

@@ -14,16 +14,29 @@ import org.lwjgl.opengl.GL11;
 /** Gameplay eye displacement and view-space roll, independent of cosmetic camera effects. */
 public final class TacticalLeanCamera {
     private static boolean renderingHand;
+    private static float previousLean, currentLean;
 
     private TacticalLeanCamera() { }
 
-    private static EntityPlayer player() {
+    private static EntityPlayer player(boolean firstPersonOnly) {
         Minecraft mc = Minecraft.getMinecraft();
-        if (mc == null || mc.gameSettings.thirdPersonView != 0
+        if (mc == null || firstPersonOnly && mc.gameSettings.thirdPersonView != 0
                 || !(mc.renderViewEntity instanceof EntityPlayer)) return null;
         EntityPlayer player = (EntityPlayer) mc.renderViewEntity;
-        return player.isRiding() || player.isPlayerSleeping() ? null : player;
+        return player != mc.thePlayer || player.isRiding() || player.isPlayerSleeping() ? null : player;
     }
+
+    public static void tick(EntityPlayer player) {
+        if (player.isRiding() || player.isPlayerSleeping()) {
+            previousLean = currentLean = 0;
+            return;
+        }
+        previousLean = currentLean;
+        float target = player instanceof ICombativesLocomotion ? LeanGeometry.acceptedLean(player) : 0;
+        currentLean += (target - currentLean) * (float) CombativesConfig.leanInterpolation;
+    }
+
+    public static void reset() { previousLean = currentLean = 0; renderingHand = false; }
 
     /**
      * Before vanilla yaw/pitch: Z is the view axis, so roll preserves the center ray.
@@ -31,10 +44,11 @@ public final class TacticalLeanCamera {
      * the semantic lean sign directly: the visible camera roll is its inverse.
      */
     public static void applyRoll(float partialTicks) {
-        EntityPlayer player = player();
+        EntityPlayer player = player(false);
         if (player == null || !CombativesConfig.enableCameraRotations) return;
         float yaw = PlayerLocalBasis.interpolateYaw(player.prevRotationYaw, player.rotationYaw, partialTicks);
-        Vec3 offset = leanOffset(player, partialTicks, yaw);
+        float lean = previousLean + (currentLean - previousLean) * partialTicks;
+        Vec3 offset = LeanGeometry.legalOffset(player, InteractionRay.interpolatedBase(player, partialTicks), lean, yaw);
         double max = AuthoritativeGameplaySettings.getMaxLeanDistance(player);
         double accepted = max > 0.0D
                 ? PlayerLocalBasis.fromYaw(yaw).projectRight(offset.xCoord, offset.zCoord) / max
@@ -44,7 +58,7 @@ public final class TacticalLeanCamera {
 
     /** After vanilla orientation: translate the world by the inverse camera displacement. */
     public static void applyOffset(float partialTicks) {
-        EntityPlayer player = player();
+        EntityPlayer player = player(true);
         if (player == null) return;
         float yaw = PlayerLocalBasis.interpolateYaw(player.prevRotationYaw, player.rotationYaw, partialTicks);
         Vec3 offset = leanOffset(player, partialTicks, yaw);

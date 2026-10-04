@@ -8,7 +8,7 @@ Vanilla aiming is owned by `EntityRenderer#updateCameraAndRender`: one render-fr
 
 - `CombativesCorePlugin` now offers `EntityRendererMixin` for visual camera effects but no longer offers `MouseHelperMixin`, so Combatives has no active mixin that rewrites raw mouse deltas before vanilla sensitivity scaling.
 - The dormant `MouseHelperMixin` source remains available for future diagnostics, but it is not registered in either the GTNHMixins early-loader list or the legacy client mixin JSON. If it is ever re-enabled, it must be treated as an input-path change because it writes `deltaX` and `deltaY` after `mouseXYChange`.
-- `EntityRendererMixin` does not invoke `mouseXYChange`, read `Mouse.getDX()` / `Mouse.getDY()`, or call `setAngles`; it applies visual-only GL transforms after vanilla camera orientation and low-pose eye-height interpolation inside `orientCamera`.
+- `EntityRendererMixin` does not invoke `mouseXYChange`, read `Mouse.getDX()` / `Mouse.getDY()`, or call `setAngles`; it samples tick-owned presentation state before projection, applies visual-only view-space GL effects before vanilla camera orientation, and selects the accepted physical eye offset inside `orientCamera`. Only the tactical first-person world displacement follows vanilla orientation.
 - `EntitySetAnglesDiagnosticsMixin` is not registered. If aiming spikes need live proof later, prefer temporarily registering diagnostics that observe `setAngles` rather than any hook that mutates mouse deltas.
 
 ## Angelica comparison

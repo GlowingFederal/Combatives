@@ -141,7 +141,7 @@ MUTATION` now labels its position triplets explicitly as raw mutation state; it
 does not claim that those values are ray origins. `BASE POV TRACE` works with or
 without MPM and intercepts the exact `EntityLivingBase#getPosition` and `EntityLivingBase#getLook`
 return values consumed by vanilla `getMouseOver`. The camera sample is emitted
-from the modified `orientCamera` local before procedural tail transforms. Target
+from the modified `orientCamera` local, independently of cosmetic view transforms. Target
 and camera records share a monotonically increasing frame ID, and only the
 camera record reports a same-frame difference.
 

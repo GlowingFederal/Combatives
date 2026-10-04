@@ -11,7 +11,6 @@ import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import com.glowingfederal.combatives.entity.player.EffectivePlayerGeometry;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.renderer.EntityRenderer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -29,16 +28,12 @@ public abstract class EntityRendererMixin {
     @Redirect(method = "orientCamera", at = @At(value = "FIELD",
             target = "Lnet/minecraft/entity/EntityLivingBase;rotationYaw:F"))
     private float combatives$continuousLeanYaw(EntityLivingBase entity) {
-        if (Minecraft.getMinecraft().gameSettings.thirdPersonView == 0 && !entity.isRiding()
-                && entity instanceof com.glowingfederal.combatives.movement.ICombativesLocomotion
-                && ((com.glowingfederal.combatives.movement.ICombativesLocomotion) entity).getLean() != 0.0F) {
+        if (entity == Minecraft.getMinecraft().thePlayer && !entity.isRiding()) {
             return com.glowingfederal.combatives.movement.PlayerLocalBasis.interpolateYaw(
                     entity.prevRotationYaw, entity.rotationYaw, 1.0F);
         }
         return entity.rotationYaw;
     }
-    private float combatives$eyeHeight;
-    private float combatives$previousEyeHeight;
     private float combatives$entityEyeHeight;
     private float combatives$partialTicks;
     private Pose combatives$lastLoggedPose;
@@ -75,23 +70,23 @@ public abstract class EntityRendererMixin {
         return look;
     }
 
+    @Inject(method = "setupCameraTransform", at = @At("HEAD"))
+    private void combatives$sampleCamera(float partialTicks, int pass, CallbackInfo ci) {
+        CameraController.INSTANCE.sample(Minecraft.getMinecraft(), partialTicks);
+    }
+
     @Inject(method = "orientCamera", at = @At("HEAD"))
     private void combatives$capturePartialTicks(float partialTicks, CallbackInfo ci) {
+        // These are VIEW-space transforms. With OpenGL post-multiplication they
+        // must precede vanilla placement/orientation: E * V, never V * E.
+        CameraController.INSTANCE.applyTransforms(partialTicks);
         TacticalLeanCamera.applyRoll(partialTicks);
         this.combatives$partialTicks = partialTicks;
-        Minecraft mc = Minecraft.getMinecraft();
-        EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
-        if (player != null) {
-            CameraController.INSTANCE.update(mc, player, partialTicks);
-        } else {
-            CameraController.INSTANCE.reset();
-        }
     }
 
     @Inject(method = "orientCamera", at = @At("TAIL"))
     private void combatives$applyCameraTransforms(float partialTicks, CallbackInfo ci) {
         TacticalLeanCamera.applyOffset(partialTicks);
-        CameraController.INSTANCE.applyTransforms(partialTicks);
         Entity entity = Minecraft.getMinecraft().renderViewEntity;
         if (entity instanceof EntityPlayer) {
             EntityPlayer player = (EntityPlayer) entity;
@@ -160,8 +155,6 @@ public abstract class EntityRendererMixin {
         float selectedCameraOffset = player.isRiding() || mcheliCamera ? eyeHeight : calculatedPoseOffset;
         this.combatives$entityEyeHeight = selectedCameraOffset;
 
-        this.combatives$eyeHeight = selectedCameraOffset;
-        this.combatives$previousEyeHeight = selectedCameraOffset;
         this.combatives$logCameraOrigin(player, eyeHeight, calculatedPoseOffset, selectedCameraOffset);
         TargetingDiagnostics.captureActualCameraOrigin(player, this.combatives$partialTicks, selectedCameraOffset);
         return selectedCameraOffset;
@@ -224,13 +217,12 @@ public abstract class EntityRendererMixin {
         double vanillaBaseCameraY = interpolatedPosY - incomingCameraOffset;
         double baseCameraY = interpolatedPosY - selectedCameraOffset;
         float proceduralTranslationY = CameraController.INSTANCE.getLastTranslationY();
-        double finalCameraY = baseCameraY + proceduralTranslationY;
         boolean ownershipChanged = this.combatives$lastLoggedMount != player.ridingEntity;
         boolean poseChanged = this.combatives$lastLoggedPose != pose || this.combatives$lastLoggedLowPose != lowPose;
 
         if (poseChanged || ownershipChanged) {
             Combatives.logger.info(
-                    "Combatives camera origin: riderClass={} ridingEntityClass={} pose={} partialTicks={} posY={} interpolatedPosY={} boundingBoxMinY={} yOffset={} getEyeHeight={} effectiveEyeAboveMinY={} incomingCameraOffset={} calculatedPoseOffset={} selectedCameraOffset={} owner={} baseCameraY={} proceduralTranslationY={} finalCameraY={}",
+                    "Combatives camera origin: riderClass={} ridingEntityClass={} pose={} partialTicks={} posY={} interpolatedPosY={} boundingBoxMinY={} yOffset={} getEyeHeight={} effectiveEyeAboveMinY={} incomingCameraOffset={} calculatedPoseOffset={} selectedCameraOffset={} owner={} baseCameraY={} viewTranslationY={}",
                     player.getClass().getName(),
                     player.ridingEntity == null ? "none" : player.ridingEntity.getClass().getName(),
                     pose,
@@ -249,8 +241,7 @@ public abstract class EntityRendererMixin {
                     MCHeliCameraCompat.ownsCamera(player) ? "MCHELI"
                             : player.isRiding() ? "MOUNT" : "COMBATIVES_POSE",
                     baseCameraY,
-                    proceduralTranslationY,
-                    finalCameraY
+                    proceduralTranslationY
             );
             if (!Double.isNaN(this.combatives$lastBaseCameraY) && Math.abs(baseCameraY - this.combatives$lastBaseCameraY) < 1.0E-4D) {
                 Combatives.logger.warn("Combatives camera origin warning: pose changed but base camera Y did not change; previousBaseCameraY={} currentBaseCameraY={} previousPose={} currentPose={}", this.combatives$lastBaseCameraY, baseCameraY, this.combatives$lastLoggedPose, pose);
@@ -266,9 +257,4 @@ public abstract class EntityRendererMixin {
         }
     }
 
-    @Inject(method = "updateRenderer", at = @At("TAIL"))
-    private void combatives$interpolateEyeHeight(CallbackInfo ci) {
-        this.combatives$previousEyeHeight = this.combatives$eyeHeight;
-        this.combatives$eyeHeight += (this.combatives$entityEyeHeight - this.combatives$eyeHeight) * 0.5F;
-    }
 }

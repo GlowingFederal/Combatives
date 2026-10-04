@@ -97,3 +97,21 @@
 	- Retired the Fairplay build flag and its separate configuration path. Standard builds
 	  continue to use Combatives.cfg, with normal jar reobfuscation, refmap, coreplugin
 	  manifest, version increment, and tests unchanged.
+
+	2026-10-04 08:04 — Make camera simulation independent of render rate and facing
+
+	- Moved movement filters, lean/FOV/slide recovery, explosion springs, provider lifecycle
+	  and camera impulse aging to client ticks. Rendering interpolates previous/current
+	  presentation state and samples recoil/vibration envelopes on the game timeline.
+	- Removed shake's forced minimum render delta and render-count impulse expiration.
+	  Fixed spring substeps and converted filter responses retain nominal 60 Hz tuning.
+	- Applied cosmetic translation/pitch/yaw/roll in view space before vanilla camera
+	  placement and orientation, preventing heading-dependent axes and rotation of the
+	  third-person camera position. Player yaw interpolation now handles wrap seams in
+	  both first- and third-person views.
+	- Interpolated built-in landing/freefall/inertia/crawl/horse presentation and tactical
+	  lean roll. Third-person tactical lean adds roll without physical eye displacement;
+	  first-person displacement and server-authoritative wall/interaction geometry remain
+	  unchanged. Mounted base-camera ownership and weapon aiming/ADS remain external.
+	- Cleared camera history on player/world/position-history lifecycle changes and death,
+	  froze simulation during pause, and documented effect ownership and transform order.

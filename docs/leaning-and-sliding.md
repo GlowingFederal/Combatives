@@ -46,6 +46,13 @@ its next connection. This path is identical for dedicated and integrated
 servers; shared JVM statics are not used as the client authority.
 
 `maxLeanRoll` and `leanInterpolation` remain client-only presentation settings.
+Lean roll now filters previous/current accepted lean on client ticks and samples
+it with render partial ticks. It rolls first-person and both third-person views
+before vanilla camera placement/orientation; third-person receives no tactical
+eye translation, so roll cannot orbit the camera around the player. The physical
+first-person offset and interaction ray continue to use gameplay lean directly.
+The complete [camera pipeline](camera-api.md#camera-pipeline-and-timing) documents
+the separate cosmetic movement and API effects.
 All other camera, bob, shake, FOV, mouse, horse, and diagnostic settings are
 also presentation-only. Lean enablement and distance affect aim and are server
 authoritative. Player pose dimensions/eye anchors are fixed gameplay rules,

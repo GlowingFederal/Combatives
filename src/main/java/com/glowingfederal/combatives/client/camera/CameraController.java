@@ -10,6 +10,10 @@ import org.lwjgl.opengl.GL11;
 import com.glowingfederal.combatives.movement.ICombativesLocomotion;
 import com.glowingfederal.combatives.movement.LocomotionState;
 import com.glowingfederal.combatives.movement.PlayerLocalBasis;
+import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.gameevent.TickEvent;
+import net.minecraft.world.World;
 
 public final class CameraController {
     public static final CameraController INSTANCE = new CameraController();
@@ -34,32 +38,68 @@ public final class CameraController {
     private float lastTranslationX, lastTranslationY, lastTranslationZ;
     private float lastPitch, lastYaw, lastRoll;
     private float slideCameraBlend;
+    private float bobSuppression;
+    private final TickState previous = new TickState();
+    private final TickState current = new TickState();
+    private EntityPlayerSP statePlayer;
+    private World stateWorld;
+    private int positionRevision;
 
     private CameraController() {}
 
-    public void update(Minecraft mc, EntityPlayerSP player, float partialTicks) {
-        if (!CombativesConfig.enableCombativesCamera || mc == null || player == null) { reset(); return; }
-        movement.update(player, partialTicks);
-        if (CombativesConfig.enableCameraShake && CombativesConfig.enableLandingCameraFeedback && movement.hasLanded()) shake.addLandingImpulse(movement.getLandingStrength(), movement.getStrafe(), movement.getSpeed());
-        if (CombativesConfig.enableMovementLean) lean.update(movement); else lean.reset();
-        if (CombativesConfig.enableProceduralBob) bob.update(movement); else bob.reset();
-        if (CombativesConfig.enableMovementFov) fov.update(movement); else fov.reset();
-        if (CombativesConfig.enableCameraShake) shake.update(movement, partialTicks); else shake.reset();
-        EntityCameraBehaviorManager.INSTANCE.update(player, partialTicks);
-        CameraEffectManager.update(player);
-        if (player instanceof ICombativesLocomotion) {
-            ICombativesLocomotion locomotion = (ICombativesLocomotion) player;
-            float slideTarget = locomotion.getLocomotionState() == LocomotionState.SLIDING ? 1.0F : 0.0F;
-            slideCameraBlend += (slideTarget - slideCameraBlend) * 0.35F;
+    @SubscribeEvent
+    public void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc.isGamePaused()) return;
+        EntityPlayerSP player = mc.thePlayer;
+        if (player == null || !player.isEntityAlive()) { reset(); return; }
+        int revision = player instanceof ICombativesPlayerPose
+                ? ((ICombativesPlayerPose) player).getPositionHistoryRevision() : 0;
+        if (statePlayer != player || stateWorld != player.worldObj || positionRevision != revision) {
+            reset();
+            statePlayer = player;
+            stateWorld = player.worldObj;
+            positionRevision = revision;
         }
-        leanRoll = lean.getRoll(); leanPitch = lean.getPitch(); bobVertical = bob.getVertical(); bobSway = bob.getSway(); bobPitch = bob.getPitch(); bobRoll = bob.getRoll();
-        shakeVertical = shake.getVertical(); shakeForward = shake.getForward(); shakeLateral = shake.getLateral(); shakePitch = shake.getPitch(); shakeRoll = shake.getRoll(); fovModifier = fov.getModifier();
+        TacticalLeanCamera.tick(player);
+        if (!CombativesConfig.enableCombativesCamera) { resetEffects(); return; }
+        previous.copy(current);
+        movement.tick(player);
+        if (CombativesConfig.enableMovementLean) lean.update(movement); else lean.reset();
+        if (CombativesConfig.enableMovementFov) fov.update(movement); else fov.reset();
+        if (CombativesConfig.enableCameraShake) shake.tick(); else shake.reset();
+        CameraEffectManager.tick();
+        EntityCameraBehaviorManager.INSTANCE.tick(player);
+        float slideTarget = player instanceof ICombativesLocomotion
+                && ((ICombativesLocomotion) player).getLocomotionState() == LocomotionState.SLIDING ? 1.0F : 0.0F;
+        current.slide += (slideTarget - current.slide) * (1.0F - 0.65F * 0.65F * 0.65F);
+        current.leanRoll = lean.getRoll(); current.leanPitch = lean.getPitch();
+        current.vertical = shake.getVertical(); current.forward = shake.getForward(); current.lateral = shake.getLateral();
+        current.pitch = shake.getPitch(); current.roll = shake.getRoll();
+        current.suppression = shake.getBobSuppression(); current.fov = fov.getModifier();
+    }
+
+    /** Pure presentation sampling. Repeated render passes cannot integrate or recover state. */
+    public void sample(Minecraft mc, float partialTicks) {
+        if (!CombativesConfig.enableCombativesCamera || statePlayer == null || statePlayer != mc.thePlayer) return;
+        float p = clamp(partialTicks, 0, 1);
+        movement.sample(statePlayer, p);
+        if (CombativesConfig.enableProceduralBob) bob.update(movement); else bob.reset();
+        leanRoll = lerp(previous.leanRoll, current.leanRoll, p); leanPitch = lerp(previous.leanPitch, current.leanPitch, p);
+        bobVertical = bob.getVertical(); bobSway = bob.getSway(); bobPitch = bob.getPitch(); bobRoll = bob.getRoll();
+        shakeVertical = lerp(previous.vertical, current.vertical, p); shakeForward = lerp(previous.forward, current.forward, p);
+        shakeLateral = lerp(previous.lateral, current.lateral, p); shakePitch = lerp(previous.pitch, current.pitch, p);
+        shakeRoll = lerp(previous.roll, current.roll, p); bobSuppression = lerp(previous.suppression, current.suppression, p);
+        slideCameraBlend = lerp(previous.slide, current.slide, p); fovModifier = lerp(previous.fov, current.fov, p);
+        EntityCameraBehaviorManager.INSTANCE.render(statePlayer, p);
+        CameraEffectManager.sample(statePlayer, p);
     }
 
     public void applyTransforms(float partialTicks) {
         if (!CombativesConfig.enableCombativesCamera) return;
 
-        float bobScale = 1.0F - clamp(shake.getBobSuppression(), 0.0F, 0.8F);
+        float bobScale = 1.0F - clamp(bobSuppression, 0.0F, 0.8F);
         float ambientX = clamp(bobSway * bobScale, -MAX_AMBIENT_X_OFFSET, MAX_AMBIENT_X_OFFSET);
         float ambientY = clamp(bobVertical * bobScale, -MAX_AMBIENT_Y_OFFSET, MAX_AMBIENT_Y_OFFSET);
         float impactX = clamp(shakeLateral + CameraEffectManager.getX(), -MAX_IMPACT_X_OFFSET, MAX_IMPACT_X_OFFSET);
@@ -113,7 +153,17 @@ public final class CameraController {
         return value < min ? min : value > max ? max : value;
     }
 
-    public void reset() { EntityCameraBehaviorManager.INSTANCE.reset(Minecraft.getMinecraft() == null ? null : Minecraft.getMinecraft().thePlayer); lean.reset(); bob.reset(); fov.reset(); shake.reset(); CameraEffectManager.reset(); leanRoll = leanPitch = bobVertical = bobSway = bobPitch = bobRoll = shakeVertical = shakeForward = shakeLateral = shakePitch = shakeRoll = fovModifier = lastTranslationX = lastTranslationY = lastTranslationZ = lastPitch = lastYaw = lastRoll = slideCameraBlend = 0.0F; }
+    public void reset() { resetEffects(); TacticalLeanCamera.reset(); statePlayer = null; stateWorld = null; }
+
+    private void resetEffects() { EntityCameraBehaviorManager.INSTANCE.reset(statePlayer); movement.reset(); lean.reset(); bob.reset(); fov.reset(); shake.reset(); CameraEffectManager.reset(); previous.clear(); current.clear(); leanRoll = leanPitch = bobVertical = bobSway = bobPitch = bobRoll = shakeVertical = shakeForward = shakeLateral = shakePitch = shakeRoll = fovModifier = lastTranslationX = lastTranslationY = lastTranslationZ = lastPitch = lastYaw = lastRoll = slideCameraBlend = bobSuppression = 0.0F; }
+
+    private static float lerp(float a, float b, float p) { return a + (b - a) * p; }
+
+    private static final class TickState {
+        float leanRoll, leanPitch, vertical, forward, lateral, pitch, roll, suppression, slide, fov;
+        void copy(TickState s) { leanRoll=s.leanRoll; leanPitch=s.leanPitch; vertical=s.vertical; forward=s.forward; lateral=s.lateral; pitch=s.pitch; roll=s.roll; suppression=s.suppression; slide=s.slide; fov=s.fov; }
+        void clear() { leanRoll=leanPitch=vertical=forward=lateral=pitch=roll=suppression=slide=fov=0; }
+    }
 
     public void addExplosionFeedback(EntityPlayerSP player, double x, double y, double z, float strength) {
         if (!CombativesConfig.enableCombativesCamera || !CombativesConfig.enableCameraShake || !CombativesConfig.enableExplosionCameraFeedback || player == null) {

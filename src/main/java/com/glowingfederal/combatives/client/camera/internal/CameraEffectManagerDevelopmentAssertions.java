@@ -30,7 +30,7 @@ public final class CameraEffectManagerDevelopmentAssertions {
             assertYaw("REFRESH_SAME_ID yaw", impulse("dev:refresh").rotation(0, 2, 0).stackingMode(CameraStackingMode.REFRESH_SAME_ID).build(), 0.1F, 4.0F, impulse("dev:refresh").rotation(0, 4, 0).stackingMode(CameraStackingMode.REFRESH_SAME_ID).build());
             CameraEffectManager.reset();
             CameraEffectHandle handle = CameraEffectManager.startContinuousEffectForDevelopmentTest(ContinuousCameraEffect.builder(impulse("dev:continuous").rotation(0, 2, 0).build()).strength(1).build());
-            CameraEffectManager.update(null);
+            CameraEffectManager.tick(); CameraEffectManager.sample(null, 1);
             assertTrue("continuous yaw", handle.isActive() && CameraEffectManager.getYaw() > 0.1F);
             assertYaw("yaw saturation", impulse("dev:saturation").rotation(0, 100, 0).build(), 0.1F, 4.0F);
             assertYaw("yaw clamp", impulse("dev:clamp").rotation(0, 1000, 0).build(), 0.1F, 4.0F);
@@ -46,7 +46,7 @@ public final class CameraEffectManagerDevelopmentAssertions {
     }
 
     private static CameraImpulse.Builder impulse(String id) { return CameraImpulse.builder(id).duration(0.35F); }
-    private static void assertYaw(String name, CameraImpulse first, float min, float max, CameraImpulse... more) { CameraEffectManager.reset(); assertTrue(name, CameraEffectManager.submitImpulseForDevelopmentTest(first)); for (CameraImpulse i : more) CameraEffectManager.submitImpulseForDevelopmentTest(i); CameraEffectManager.update(null); assertTrue(name, CameraEffectManager.getYaw() >= min && CameraEffectManager.getYaw() <= max); }
-    private static void assertChannel(String name, CameraImpulse impulse, char channel) { CameraEffectManager.reset(); assertTrue(name, CameraEffectManager.submitImpulseForDevelopmentTest(impulse)); CameraEffectManager.update(null); float value = channel=='p'?CameraEffectManager.getPitch():channel=='y'?CameraEffectManager.getYaw():channel=='r'?CameraEffectManager.getRoll():channel=='x'?CameraEffectManager.getX():channel=='v'?CameraEffectManager.getY():channel=='z'?CameraEffectManager.getZ():CameraEffectManager.getFov(); assertTrue(name, value > 0.0F); }
+    private static void assertYaw(String name, CameraImpulse first, float min, float max, CameraImpulse... more) { CameraEffectManager.reset(); assertTrue(name, CameraEffectManager.submitImpulseForDevelopmentTest(first)); for (CameraImpulse i : more) CameraEffectManager.submitImpulseForDevelopmentTest(i); CameraEffectManager.tick(); CameraEffectManager.sample(null, 1); assertTrue(name, CameraEffectManager.getYaw() >= min && CameraEffectManager.getYaw() <= max); }
+    private static void assertChannel(String name, CameraImpulse impulse, char channel) { CameraEffectManager.reset(); assertTrue(name, CameraEffectManager.submitImpulseForDevelopmentTest(impulse)); CameraEffectManager.tick(); CameraEffectManager.sample(null, 1); float value = channel=='p'?CameraEffectManager.getPitch():channel=='y'?CameraEffectManager.getYaw():channel=='r'?CameraEffectManager.getRoll():channel=='x'?CameraEffectManager.getX():channel=='v'?CameraEffectManager.getY():channel=='z'?CameraEffectManager.getZ():CameraEffectManager.getFov(); assertTrue(name, value > 0.0F); }
     private static void assertTrue(String name, boolean value) { if (!value) throw new AssertionError("CameraEffectManager development assertion failed: " + name); }
 }

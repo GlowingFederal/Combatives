@@ -56,19 +56,17 @@ applies third-person clipping/follow translations, an optional vertical
 compatibility offset, additive camera-overhaul pitch/yaw/roll and shake, then
 restores entity rotation. It does not target `RenderPlayer` or `ModelBiped`.
 
-Combatives derives the physical camera origin inside vanilla `orientCamera`
-and adds procedural transforms at `TAIL`. Same-point mixin ordering is not a
-public cross-mod contract, but both return hooks multiply incremental GL
-transforms rather than assigning shared yaw/pitch/roll fields. Thus either
-ordering composes a large-scale Combatives physical origin/motion transform
-with An Extra Touch's secondary transform. Its temporary rotation is restored
-after its return work and does not alter authoritative pose geometry.
-
-**NO COMPATIBILITY CHANGE REQUIRED.** A hard dependency, feature suppression,
-or mod-specific offset would make the composition less robust. Decoupled-camera
-interaction remains owned by An Extra Touch when that optional mode is active;
-ordinary first-person targeting remains owned by Combatives' effective
-geometry and authoritative view-ray path.
+Combatives derives the physical camera origin inside vanilla `orientCamera`.
+Its procedural view transforms now precede vanilla placement/orientation at
+`HEAD`; only the first-person tactical world displacement remains at `TAIL`.
+An Extra Touch's independent return transforms still compose afterward. The
+shared HEAD ordering is not a public cross-mod contract and requires in-game
+checking with decoupled yaw/pitch and third-person follow enabled. Combatives
+adds no hard dependency or mod-specific offset. An Extra Touch restores its
+temporary rotation after its return work and does not alter authoritative pose
+geometry. Decoupled-camera interaction remains owned by An Extra Touch when
+that optional mode is active; ordinary first-person targeting remains owned
+by Combatives' effective geometry and authoritative view-ray path.
 
 ## Transition invariants
 

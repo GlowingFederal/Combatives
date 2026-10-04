@@ -22,7 +22,8 @@ public final class EntityCameraBehaviorManager {
     private int positionHistoryRevision = Integer.MIN_VALUE;
     private EntityCameraBehaviorManager() {}
 
-    public void update(EntityPlayerSP rider, float partialTicks) {
+    public void tick(EntityPlayerSP rider) {
+        float partialTicks = 1.0F;
         // The observed camera entity is the local player while unmounted and the mount while
         // mounted. This keeps the sampler/provider path generic without running two samplers.
         Entity current=rider==null?null:(rider.ridingEntity==null?rider:rider.ridingEntity); long tick=rider==null?0:rider.ticksExisted; Entity previous=mount;
@@ -35,7 +36,15 @@ public final class EntityCameraBehaviorManager {
         MountCameraContext context=context(rider,mount,previousMount,current,transition,tick,partialTicks);
         reconcile(context);
         if(tick!=lastTick){for(ActiveProvider provider:active.values())invoke("tick",provider,context);lastTick=tick;}
-        for(ActiveProvider provider:active.values())invoke("render",provider,context);
+    }
+
+    /** Sampling only: attach/detach, derivatives and onTick belong to the client tick. */
+    public void render(EntityPlayerSP rider, float partialTicks) {
+        if (mount == null || rider == null
+                || mount != (rider.ridingEntity == null ? rider : rider.ridingEntity)) return;
+        MountCameraContext context = context(rider, mount, previousMount, mount,
+                MountTransition.NONE, rider.ticksExisted, partialTicks);
+        for (ActiveProvider provider : active.values()) invoke("render", provider, context);
     }
 
     private EntityBehaviorEnvironment environment(EntityPlayerSP rider) {

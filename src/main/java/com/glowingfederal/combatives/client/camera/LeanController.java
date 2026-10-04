@@ -4,7 +4,10 @@ public final class LeanController {
     private float roll, pitch, rollVelocity, pitchVelocity;
     public void update(MovementCameraState state) {
         float scale = state.isCrawling() || state.isSwimming() ? 0.45F : state.isSneaking() ? 0.65F : 1.0F;
-        spring(state.getStrafe() * -1.35F * scale, state.getForward() * -0.45F * scale);
+        // Three fixed 60 Hz spring steps per game tick, independent of rendering.
+        for (int step = 0; step < 3; step++) {
+            spring(state.getStrafe() * -1.35F * scale, state.getForward() * -0.45F * scale);
+        }
     }
     private void spring(float targetRoll, float targetPitch) {
         rollVelocity += (targetRoll - roll) * 0.08F; rollVelocity *= 0.72F; roll += rollVelocity;

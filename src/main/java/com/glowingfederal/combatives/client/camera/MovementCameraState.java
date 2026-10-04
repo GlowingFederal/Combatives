@@ -8,8 +8,9 @@ import net.minecraft.util.MovementInput;
 public final class MovementCameraState {
     private static final float INPUT_DEADZONE = 0.04F;
     private static final float SPEED_DEADZONE = 0.003F;
-    private static final float INPUT_SMOOTHING = 0.22F;
-    private static final float SPEED_SMOOTHING = 0.18F;
+    // Retain the nominal 60 Hz response, evaluated once per 50 ms client tick.
+    private static final float INPUT_SMOOTHING = 1.0F - 0.78F * 0.78F * 0.78F;
+    private static final float SPEED_SMOOTHING = 1.0F - 0.82F * 0.82F * 0.82F;
 
     private float forward;
     private float strafe;
@@ -25,7 +26,7 @@ public final class MovementCameraState {
     private boolean landed;
     private float landingStrength;
 
-    public void update(EntityPlayerSP player, float partialTicks) {
+    public void tick(EntityPlayerSP player) {
         MovementInput input = player.movementInput;
         float targetForward = input == null ? 0.0F : applyDeadzone(input.moveForward, INPUT_DEADZONE);
         float targetStrafe = input == null ? 0.0F : applyDeadzone(input.moveStrafe, INPUT_DEADZONE);
@@ -35,11 +36,6 @@ public final class MovementCameraState {
         this.forward += (targetForward - this.forward) * INPUT_SMOOTHING;
         this.strafe += (targetStrafe - this.strafe) * INPUT_SMOOTHING;
         this.speed += (horizontalSpeed - this.speed) * SPEED_SMOOTHING;
-
-        float walkedDelta = player.distanceWalkedModified - player.prevDistanceWalkedModified;
-        this.walkPhase = -(player.distanceWalkedModified + walkedDelta * partialTicks);
-        this.vanillaCameraYaw = player.prevCameraYaw + (player.cameraYaw - player.prevCameraYaw) * partialTicks;
-        this.vanillaCameraPitch = player.prevCameraPitch + (player.cameraPitch - player.prevCameraPitch) * partialTicks;
 
         this.grounded = player.onGround;
         this.sneaking = player.isSneaking();
@@ -54,6 +50,19 @@ public final class MovementCameraState {
         // Landing interpretation now belongs exclusively to the entity motion provider.
         this.landed = false;
         this.landingStrength = 0.0F;
+    }
+
+    /** Read-only sampling of vanilla's tick endpoints; partialTicks is never a time step. */
+    public void sample(EntityPlayerSP player, float partialTicks) {
+        this.walkPhase = -(player.prevDistanceWalkedModified
+                + (player.distanceWalkedModified - player.prevDistanceWalkedModified) * partialTicks);
+        this.vanillaCameraYaw = player.prevCameraYaw + (player.cameraYaw - player.prevCameraYaw) * partialTicks;
+        this.vanillaCameraPitch = player.prevCameraPitch + (player.cameraPitch - player.prevCameraPitch) * partialTicks;
+    }
+
+    public void reset() {
+        forward = strafe = speed = walkPhase = vanillaCameraYaw = vanillaCameraPitch = landingStrength = 0;
+        crawling = swimming = sneaking = sprinting = grounded = landed = false;
     }
 
     private static float applyDeadzone(float value, float deadzone) {

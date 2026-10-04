@@ -39,18 +39,20 @@ public final class BuiltinHorseCameraBehavior {
         private static final CameraImpulse LAND = CameraImpulse.builder("combatives:horse_landing").translation(0,-0.09F,-0.018F).rotation(3.2F,0,0).duration(0.32F).attackTime(0.055F).priority(CameraPriority.NORMAL).build();
 
         private float amplitude, cadence, acceleration, roll, fallbackPhase;
+        private float previousAmplitude, previousAcceleration, previousRoll, previousFallbackPhase;
         private boolean grounded = true;
         private double descent;
         private float fall;
 
         public void onAttach(MountCameraContext context, CameraEffectSink sink) { reset(); }
         public void onDetach(MountCameraContext context, CameraEffectSink sink) { reset(); }
-        private void reset() { amplitude=cadence=acceleration=roll=fallbackPhase=0; grounded=true; descent=0; fall=0; }
+        private void reset() { amplitude=cadence=acceleration=roll=fallbackPhase=previousAmplitude=previousAcceleration=previousRoll=previousFallbackPhase=0; grounded=true; descent=0; fall=0; }
 
         public void onTick(MountCameraContext context, CameraEffectSink sink) {
             EntityMotionSample motion=context.getMotion();
             EntityHorse horse=context.getMount() instanceof EntityHorse?(EntityHorse)context.getMount():null;
             if(horse==null||motion.isDiscontinuity()||!CombativesConfig.enableHorseCamera){reset();grounded=horse==null||horse.onGround;return;}
+            previousAmplitude=amplitude;previousAcceleration=acceleration;previousRoll=roll;previousFallbackPhase=fallbackPhase;
             float speed=clamp(motion.getHorizontalSpeed(),0,0.65), normalized=smooth(speed,0.005F,0.58F);
             float targetAmplitude=0.018F+0.982F*normalized*normalized;
             float targetCadence=0.08F+1.34F*(float)Math.sqrt(normalized);
@@ -68,16 +70,19 @@ public final class BuiltinHorseCameraBehavior {
             if(!CombativesConfig.enableHorseCamera)return;
             EntityHorse horse=context.getMount() instanceof EntityHorse?(EntityHorse)context.getMount():null;if(horse==null)return;
             float partial=context.getPartialTicks();
+            float renderAmplitude=lerp(previousAmplitude,amplitude,partial);
+            float renderAcceleration=lerp(previousAcceleration,acceleration,partial);
+            float renderRoll=lerp(previousRoll,roll,partial);
             float limbAmount=horse.prevLimbSwingAmount+(horse.limbSwingAmount-horse.prevLimbSwingAmount)*partial;
             float limbPhase=horse.limbSwing-horse.limbSwingAmount*(1F-partial);
-            float stridePhase=limbAmount>0.015F?limbPhase*0.92F:fallbackPhase;
+            float stridePhase=limbAmount>0.015F?limbPhase*0.92F:lerp(previousFallbackPhase,fallbackPhase,partial);
             float wave=(float)Math.sin(stridePhase), loading=wave<0?-wave:0, recovery=wave>0?wave:0;
-            float multiplier=clamp(CombativesConfig.horseCameraAmplitude,0,3), limbEnvelope=clamp(limbAmount*3.2F,0,1), strength=amplitude*multiplier*limbEnvelope;
+            float multiplier=clamp(CombativesConfig.horseCameraAmplitude,0,3), limbEnvelope=clamp(limbAmount*3.2F,0,1), strength=renderAmplitude*multiplier*limbEnvelope;
             float harmonic=0.18F*Math.abs((float)Math.sin(stridePhase*2F));
             if(loading>0)sink.emitFrame(LOADING,clamp((loading+harmonic)*strength,0,1));
             else if(recovery>0)sink.emitFrame(RECOVERY,clamp(recovery*strength,0,1));
-            float accelStrength=clamp(Math.abs(acceleration)*multiplier,0,1);if(accelStrength>0.001F)sink.emitFrame(acceleration>=0?ACCELERATE:DECELERATE,accelStrength);
-            float rollStrength=clamp(Math.abs(roll)*CombativesConfig.horseTurningRoll,0,1);if(rollStrength>0.001F)sink.emitFrame(roll>=0?ROLL_RIGHT:ROLL_LEFT,rollStrength);
+            float accelStrength=clamp(Math.abs(renderAcceleration)*multiplier,0,1);if(accelStrength>0.001F)sink.emitFrame(renderAcceleration>=0?ACCELERATE:DECELERATE,accelStrength);
+            float rollStrength=clamp(Math.abs(renderRoll)*CombativesConfig.horseTurningRoll,0,1);if(rollStrength>0.001F)sink.emitFrame(renderRoll>=0?ROLL_RIGHT:ROLL_LEFT,rollStrength);
             EntityCameraBehaviorDiagnostics.horse((float)context.getMotion().getHorizontalSpeed(),acceleration,stridePhase,amplitude,cadence,loading,roll);
         }
 
@@ -86,5 +91,6 @@ public final class BuiltinHorseCameraBehavior {
         static float landingEnergy(double descent,double previous,float fall){double impact=Math.max(0,-Math.min(descent,previous));return clamp((impact-0.12D)/0.82D*0.72D+(1D-Math.exp(-Math.max(0,fall-1)/7D))*0.28D,0,1);}
         static float smooth(float value,float low,float high){float t=clamp((value-low)/(high-low),0,1);return t*t*(3-2*t);}
         static float clamp(double value,double low,double high){return(float)(value<low?low:value>high?high:value);}
+        static float lerp(float a,float b,float p){return a+(b-a)*p;}
     }
 }

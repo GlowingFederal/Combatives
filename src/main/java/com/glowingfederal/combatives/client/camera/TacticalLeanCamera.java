@@ -1,6 +1,7 @@
 package com.glowingfederal.combatives.client.camera;
 
 import com.glowingfederal.combatives.config.CombativesConfig;
+import com.glowingfederal.combatives.config.CameraVisualSetting;
 import com.glowingfederal.combatives.config.AuthoritativeGameplaySettings;
 import com.glowingfederal.combatives.interaction.InteractionRay;
 import com.glowingfederal.combatives.movement.ICombativesLocomotion;
@@ -11,7 +12,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.Vec3;
 import org.lwjgl.opengl.GL11;
 
-/** Gameplay eye displacement and view-space roll, independent of cosmetic camera effects. */
+/** Tick-owned visual lean. Gameplay rays and collision continue to read authoritative lean. */
 public final class TacticalLeanCamera {
     private static boolean renderingHand;
     private static float previousLean, currentLean;
@@ -33,7 +34,7 @@ public final class TacticalLeanCamera {
         }
         previousLean = currentLean;
         float target = player instanceof ICombativesLocomotion ? LeanGeometry.acceptedLean(player) : 0;
-        currentLean += (target - currentLean) * (float) CombativesConfig.leanInterpolation;
+        currentLean += (target - currentLean) * CameraVisualSetting.LEAN_RESPONSE.get();
     }
 
     public static void reset() { previousLean = currentLean = 0; renderingHand = false; }
@@ -46,29 +47,36 @@ public final class TacticalLeanCamera {
     public static void applyRoll(float partialTicks) {
         EntityPlayer player = player(false);
         if (player == null || !CombativesConfig.enableCameraRotations) return;
-        float yaw = PlayerLocalBasis.interpolateYaw(player.prevRotationYaw, player.rotationYaw, partialTicks);
-        float lean = previousLean + (currentLean - previousLean) * partialTicks;
-        Vec3 offset = LeanGeometry.legalOffset(player, InteractionRay.interpolatedBase(player, partialTicks), lean, yaw);
-        double max = AuthoritativeGameplaySettings.getMaxLeanDistance(player);
-        double accepted = max > 0.0D
-                ? PlayerLocalBasis.fromYaw(yaw).projectRight(offset.xCoord, offset.zCoord) / max
-                : 0.0D;
-        GL11.glRotatef((float) (accepted * CombativesConfig.maxLeanRoll), 0.0F, 0.0F, 1.0F);
+        // Keep the established lean cue independent of cosmetic intensity controls.
+        GL11.glRotatef(getRenderLean(partialTicks) * (float) CombativesConfig.maxLeanRoll,
+                0.0F, 0.0F, 1.0F);
     }
 
     /** After vanilla orientation: translate the world by the inverse camera displacement. */
     public static void applyOffset(float partialTicks) {
         EntityPlayer player = player(true);
         if (player == null) return;
-        float yaw = PlayerLocalBasis.interpolateYaw(player.prevRotationYaw, player.rotationYaw, partialTicks);
-        Vec3 offset = leanOffset(player, partialTicks, yaw);
+        float p = Math.max(0, Math.min(1, partialTicks));
+        float yaw = PlayerLocalBasis.interpolateYaw(player.prevRotationYaw, player.rotationYaw, p);
+        Vec3 offset = renderOffset(player, p, yaw);
         GL11.glTranslated(-offset.xCoord, 0.0D, -offset.zCoord);
     }
 
-    private static Vec3 leanOffset(EntityPlayer player, float partialTicks, float yaw) {
-        float requested = player instanceof ICombativesLocomotion
-                ? ((ICombativesLocomotion) player).getLean() : 0.0F;
-        return LeanGeometry.legalOffset(player, InteractionRay.interpolatedBase(player, partialTicks),
+    /** Shared camera/hand/HUD presentation sample. Never use this for a gameplay ray. */
+    public static float getRenderLean(float partialTicks) {
+        EntityPlayer player = player(false);
+        if (player == null) return 0;
+        float p = Math.max(0, Math.min(1, partialTicks));
+        float yaw = PlayerLocalBasis.interpolateYaw(player.prevRotationYaw, player.rotationYaw, p);
+        Vec3 offset = renderOffset(player, p, yaw);
+        double max = AuthoritativeGameplaySettings.getMaxLeanDistance(player);
+        return max > 0 ? (float) (PlayerLocalBasis.fromYaw(yaw).projectRight(offset.xCoord, offset.zCoord) / max) : 0;
+    }
+
+    private static Vec3 renderOffset(EntityPlayer player, float partialTicks, float yaw) {
+        float p = Math.max(0, Math.min(1, partialTicks));
+        float requested = previousLean + (currentLean - previousLean) * p;
+        return LeanGeometry.legalOffset(player, InteractionRay.interpolatedBase(player, p),
                 requested, yaw);
     }
 

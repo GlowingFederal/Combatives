@@ -3,12 +3,15 @@ package com.glowingfederal.combatives.client.camera.internal;
 import com.combatives.api.camera.*;
 import com.glowingfederal.combatives.Combatives;
 import com.glowingfederal.combatives.config.CombativesConfig;
+import com.glowingfederal.combatives.config.CameraVisualSetting;
+import com.glowingfederal.combatives.client.camera.WeaponCameraPresentation;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import java.util.*;
 
 public final class CameraEffectManager {
     private static final int MAX_IMPULSES=64, MAX_CONTINUOUS=32, MAX_FRAME_CONTRIBUTIONS=64; private static final ArrayList<Active> impulses=new ArrayList<Active>(); private static final ArrayList<Handle> continuous=new ArrayList<Handle>(); private static final ArrayList<FrameContribution> frameContributions=new ArrayList<FrameContribution>(); private static float pitch,yaw,roll,x,y,z,fov;
+    private static float ambientScale = 1F;
     private static long simulationTick;
     private CameraEffectManager(){}
     public static boolean isAvailable(){return Minecraft.getMinecraft()!=null&&CombativesConfig.enableCombativesCamera;}
@@ -38,6 +41,7 @@ public final class CameraEffectManager {
     public static void sample(EntityPlayerSP player, float partialTicks) {
         pitch=yaw=roll=x=y=z=fov=0;
         float p = safe(partialTicks, 0, 1);
+        ambientScale = WeaponCameraPresentation.ambientScale(p);
         double time = (Math.max(0L, simulationTick - 1L) + p) * 0.05D;
         for (Active active : impulses) {
             float age = Math.max(0, active.age - 0.05F + p * 0.05F);
@@ -56,7 +60,7 @@ public final class CameraEffectManager {
     }
     public static float getPitch(){return pitch;} public static float getYaw(){return yaw;} public static float getRoll(){return roll;} public static float getX(){return x;} public static float getY(){return y;} public static float getZ(){return z;} public static float getFov(){return fov;}
     public static void reset(){for(Handle handle:continuous)handle.stop(); impulses.clear(); continuous.clear(); frameContributions.clear(); simulationTick=0; pitch=yaw=roll=x=y=z=fov=0;}
-    private static void contribute(CameraImpulse i,float s,EntityPlayerSP p,float contScale,double time){ float fall=falloff(i,p); float osc=i.getFrequency()>0?(float)Math.sin(time*i.getFrequency()*Math.PI*2D):1F; float k=s*fall*osc*priority(i.getPriority())*contScale; pitch+=i.getPitch()*k; yaw+=i.getYaw()*k; roll+=i.getRoll()*k; x+=i.getTranslateX()*k; y+=i.getTranslateY()*k; z+=i.getTranslateZ()*k; fov+=i.getFov()*k; if(Combatives.logger!=null&&CombativesConfig.verboseCameraDebug)Combatives.logger.info("camera API active effect id={} pitch={} yaw={} roll={} translation=({},{},{}) fov={} sampleScale={}", i.getEffectId(), i.getPitch()*k, i.getYaw()*k, i.getRoll()*k, i.getTranslateX()*k, i.getTranslateY()*k, i.getTranslateZ()*k, i.getFov()*k, k); }
+    private static void contribute(CameraImpulse i,float s,EntityPlayerSP p,float contScale,double time){ float fall=falloff(i,p); float osc=i.getFrequency()>0?(float)Math.sin(time*i.getFrequency()*Math.PI*2D):1F; float k=s*fall*osc*priority(i.getPriority())*contScale*CameraVisualSetting.effectScale(i.getEffectId()); if(CameraVisualSetting.isAmbient(i.getEffectId()))k*=ambientScale; pitch+=i.getPitch()*k; yaw+=i.getYaw()*k; roll+=i.getRoll()*k; x+=i.getTranslateX()*k; y+=i.getTranslateY()*k; z+=i.getTranslateZ()*k; fov+=i.getFov()*k; if(Combatives.logger!=null&&CombativesConfig.verboseCameraDebug)Combatives.logger.info("camera API active effect id={} pitch={} yaw={} roll={} translation=({},{},{}) fov={} sampleScale={}", i.getEffectId(), i.getPitch()*k, i.getYaw()*k, i.getRoll()*k, i.getTranslateX()*k, i.getTranslateY()*k, i.getTranslateZ()*k, i.getFov()*k, k); }
     private static CameraImpulse preset(CameraEffectType t,CameraEffectContext c,float s){ String id="combatives:"+t.name().toLowerCase(Locale.ROOT); CameraImpulse.Builder b=CameraImpulse.builder(id).duration(t==CameraEffectType.ENVIRONMENTAL_RUMBLE?1.2F:0.35F).priority(t==CameraEffectType.EXPLOSION?CameraPriority.STRONG:CameraPriority.NORMAL); if(c!=null){ if(c.getSourceEntity()!=null)b.sourceEntity(c.getSourceEntity()); if(c.hasPosition())b.position(c.getX(),c.getY(),c.getZ()); } switch(t){case EXPLOSION:b.rotation(8*s,0,4*s).translation(0,0.16F*s,-0.14F*s).fov(2*s);break;case LANDING:b.rotation(6*s,0,1*s).translation(0,-0.12F*s,-0.05F*s);break;case WEAPON_FIRE:b.rotation(-2*s,0,0.8F*s).translation(0,0,-0.04F*s).duration(0.18F);break;case VEHICLE_COLLISION:b.rotation(7*s,0,3*s).translation(0,0.12F*s,-0.12F*s);break;case ENVIRONMENTAL_RUMBLE:b.rotation(1.2F*s,0,1.2F*s).translation(0.02F*s,0.025F*s,0).oscillationFrequency(8F);break;default:b.rotation(3*s,0,1.5F*s).translation(0,0.05F*s,-0.04F*s);} return b.build(); }
     private static CameraImpulse sanitize(CameraImpulse i){ if(i==null||!validId(i.getEffectId()))return null; if(!finite(i.getPitch())||!finite(i.getYaw())||!finite(i.getRoll())||!finite(i.getTranslateX())||!finite(i.getTranslateY())||!finite(i.getTranslateZ())||!finite(i.getFov()))return null; if(!finite(i.getDuration())||i.getDuration()<=0||i.getDuration()>30||!finite(i.getAttackTime())||i.getAttackTime()<0||!finite(i.getFrequency())||i.getFrequency()<0||i.getFrequency()>80)return null; if(i.hasPosition()&&(!finite((float)i.getX())||!finite((float)i.getY())||!finite((float)i.getZ())))return null; return i; }
     private static boolean hasProcessableChannel(CameraImpulse i){return i.getPitch()!=0||i.getYaw()!=0||i.getRoll()!=0||i.getTranslateX()!=0||i.getTranslateY()!=0||i.getTranslateZ()!=0||i.getFov()!=0;}

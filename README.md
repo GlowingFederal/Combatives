@@ -128,6 +128,12 @@ material rather than active Combatives source.
 
 ## Combatives Camera API
 
+Client camera effects can be adjusted live from **Options → Camera Effects** or
+**Mods → Combatives → Config**. Changes persist in the normal Combatives client
+configuration. Reset to Defaults restores cosmetic controls only; lean reach,
+weapon aiming recoil, spread, hit registration and collision remain gameplay-owned.
+See [camera controls and defaults](docs/camera-api.md#live-camera-controls-and-presentation-tuning).
+
 Other mods can contribute camera intent without modifying Combatives' renderer
 internals. API version 1 is rooted at
 `com.combatives.api.camera.CombativesCameraAPI` and supports:

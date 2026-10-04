@@ -2,6 +2,12 @@
 
 Both features are entity camera behaviors, not standalone animations. `EntityCameraBehaviorManager` selects either the unmounted local player or its current mount, owns provider attach/detach, samples motion once per tick, and routes render contributions into `CameraEffectManager`. The existing controller then combines this output with bob, lean, shake, FOV, and the sole render transform.
 
+Their amplitude controls are live in the Camera Effects screen. Gait, terrain,
+landing and turn strengths are applied during sampling, including active impulses;
+zero output does not freeze simulation. Crawl strength now covers posture, cycle
+and pull together. Horse loading/recovery templates are slightly stronger, with
+the existing cadence and filters retained. See [defaults](camera-api.md#live-camera-controls-and-presentation-tuning).
+
 ## Horse
 
 The built-in registration matches `EntityHorse` assignably. A continuous normalized speed curve drives smoothly filtered weight and cadence: idle is nearly still, walking is gentle, and faster strides become progressively heavier without gait thresholds. Render-interpolated limb swing drives asymmetric vertical, pitch, and fore/aft loading without yaw; acceleration and deceleration add restrained head inertia. Sampled turn rate is low-pass filtered and emitted as roll only, with a two-degree template limit. Supported vertical acceleration may emit a tiny terrain impulse; an air-to-ground transition derives energy from preserved descent and fall distance and submits a shared landing-style compression impulse.

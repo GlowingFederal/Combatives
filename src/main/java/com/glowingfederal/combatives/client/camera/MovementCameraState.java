@@ -4,6 +4,7 @@ import com.glowingfederal.combatives.entity.Pose;
 import com.glowingfederal.combatives.entity.player.ICombativesPlayerPose;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.util.MovementInput;
+import com.glowingfederal.combatives.config.CameraVisualSetting;
 
 public final class MovementCameraState {
     private static final float INPUT_DEADZONE = 0.04F;
@@ -17,7 +18,6 @@ public final class MovementCameraState {
     private float speed;
     private float walkPhase;
     private float vanillaCameraYaw;
-    private float vanillaCameraPitch;
     private boolean crawling;
     private boolean swimming;
     private boolean sneaking;
@@ -33,9 +33,9 @@ public final class MovementCameraState {
         float horizontalSpeed = (float) Math.sqrt(player.motionX * player.motionX + player.motionZ * player.motionZ);
         if (horizontalSpeed < SPEED_DEADZONE) horizontalSpeed = 0.0F;
 
-        this.forward += (targetForward - this.forward) * INPUT_SMOOTHING;
-        this.strafe += (targetStrafe - this.strafe) * INPUT_SMOOTHING;
-        this.speed += (horizontalSpeed - this.speed) * SPEED_SMOOTHING;
+        this.forward += (targetForward - this.forward) * CameraVisualSetting.response(INPUT_SMOOTHING);
+        this.strafe += (targetStrafe - this.strafe) * CameraVisualSetting.response(INPUT_SMOOTHING);
+        this.speed += (horizontalSpeed - this.speed) * CameraVisualSetting.response(SPEED_SMOOTHING);
 
         this.grounded = player.onGround;
         this.sneaking = player.isSneaking();
@@ -44,7 +44,7 @@ public final class MovementCameraState {
         this.crawling = false;
         if (player instanceof ICombativesPlayerPose) {
             ICombativesPlayerPose pose = (ICombativesPlayerPose) player;
-            this.swimming = pose.isSwimming() || pose.isActuallySwimming();
+            this.swimming = pose.isSwimming() || player.isInWater();
             this.crawling = !this.swimming && pose.getPose() == Pose.SWIMMING;
         }
         // Landing interpretation now belongs exclusively to the entity motion provider.
@@ -57,11 +57,10 @@ public final class MovementCameraState {
         this.walkPhase = -(player.prevDistanceWalkedModified
                 + (player.distanceWalkedModified - player.prevDistanceWalkedModified) * partialTicks);
         this.vanillaCameraYaw = player.prevCameraYaw + (player.cameraYaw - player.prevCameraYaw) * partialTicks;
-        this.vanillaCameraPitch = player.prevCameraPitch + (player.cameraPitch - player.prevCameraPitch) * partialTicks;
     }
 
     public void reset() {
-        forward = strafe = speed = walkPhase = vanillaCameraYaw = vanillaCameraPitch = landingStrength = 0;
+        forward = strafe = speed = walkPhase = vanillaCameraYaw = landingStrength = 0;
         crawling = swimming = sneaking = sprinting = grounded = landed = false;
     }
 
@@ -75,7 +74,6 @@ public final class MovementCameraState {
     public float getSpeed() { return speed; }
     public float getWalkPhase() { return walkPhase; }
     public float getCameraYaw() { return vanillaCameraYaw; }
-    public float getCameraPitch() { return vanillaCameraPitch; }
     public boolean isCrawling() { return crawling; }
     public boolean isSwimming() { return swimming; }
     public boolean isSneaking() { return sneaking; }

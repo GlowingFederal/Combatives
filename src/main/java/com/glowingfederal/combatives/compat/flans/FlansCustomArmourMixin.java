@@ -28,7 +28,9 @@ public abstract class FlansCustomArmourMixin {
             float scaleFactor, CallbackInfo ci) {
         this.combatives$posedArmour = entity instanceof net.minecraft.entity.player.EntityPlayer
                 && (CombativesVisualPoseHelper.getVisualSwimAnimation((net.minecraft.entity.player.EntityPlayer) entity, 1.0F) > 0.0F
-                || entity instanceof ICombativesLocomotion && ((ICombativesLocomotion) entity).getLean() != 0.0F);
+                || (entity == net.minecraft.client.Minecraft.getMinecraft().thePlayer
+                    ? Math.abs(com.glowingfederal.combatives.client.camera.TacticalLeanCamera.getRenderLean(ageInTicks - entity.ticksExisted)) > 0.001F
+                    : entity instanceof ICombativesLocomotion && ((ICombativesLocomotion) entity).getLean() != 0.0F));
     }
 
     // Include the limb helper and the entity render's independently drawn skirts.

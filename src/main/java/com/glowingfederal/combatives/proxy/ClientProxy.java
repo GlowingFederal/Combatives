@@ -22,6 +22,7 @@ public class ClientProxy extends CommonProxy {
     public void init(FMLInitializationEvent event) {
         super.init(event);
         CombativesKeyBindings.register();
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(new com.glowingfederal.combatives.client.gui.CameraOptionsMenu());
         BuiltinPlayerCameraBehaviors.register();
         BuiltinHorseCameraBehavior.register();
         FMLCommonHandler.instance().bus().register(new ClientMovementInputHandler());

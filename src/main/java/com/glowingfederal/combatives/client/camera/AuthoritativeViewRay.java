@@ -10,7 +10,8 @@ import com.glowingfederal.combatives.interaction.InteractionRay;
 import com.glowingfederal.combatives.compat.mcheli.MCHeliCameraCompat;
 
 /**
- * The non-presentational, first-person ray represented by the center pixel.
+ * The non-presentational first-person gameplay ray. During a visual lean
+ * transition its origin can differ from the interpolated rendered eye.
  *
  * <p>The camera height is recorded where {@code orientCamera} selects its base
  * origin, before Combatives' shake/bob/lean transforms.  It is stored relative

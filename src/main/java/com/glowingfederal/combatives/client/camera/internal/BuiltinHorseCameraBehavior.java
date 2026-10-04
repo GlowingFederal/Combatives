@@ -29,8 +29,8 @@ public final class BuiltinHorseCameraBehavior {
     }
 
     static final class Horse implements EntityCameraBehavior {
-        private static final CameraImpulse RECOVERY = CameraImpulse.builder("combatives:horse_stride_recovery").rotation(-1.2F,0,0).translation(0,0.042F,-0.018F).duration(0.1F).priority(CameraPriority.BACKGROUND).build();
-        private static final CameraImpulse LOADING = CameraImpulse.builder("combatives:horse_stride_loading").rotation(1.8F,0,0).translation(0,-0.066F,0.028F).duration(0.1F).priority(CameraPriority.BACKGROUND).build();
+        private static final CameraImpulse RECOVERY = CameraImpulse.builder("combatives:horse_stride_recovery").rotation(-1.5F,0,0).translation(0,0.05F,-0.022F).duration(0.1F).priority(CameraPriority.BACKGROUND).build();
+        private static final CameraImpulse LOADING = CameraImpulse.builder("combatives:horse_stride_loading").rotation(2.2F,0,0).translation(0,-0.075F,0.032F).duration(0.1F).priority(CameraPriority.BACKGROUND).build();
         private static final CameraImpulse ACCELERATE = CameraImpulse.builder("combatives:horse_accelerate").rotation(0.55F,0,0).translation(0,-0.008F,0.025F).duration(0.1F).priority(CameraPriority.BACKGROUND).build();
         private static final CameraImpulse DECELERATE = CameraImpulse.builder("combatives:horse_decelerate").rotation(-0.4F,0,0).translation(0,0.005F,-0.02F).duration(0.1F).priority(CameraPriority.BACKGROUND).build();
         private static final CameraImpulse ROLL_LEFT = CameraImpulse.builder("combatives:horse_turn_left").rotation(0,0,-2F).duration(0.1F).priority(CameraPriority.BACKGROUND).build();
@@ -62,7 +62,7 @@ public final class BuiltinHorseCameraBehavior {
             float targetRoll=clamp(motion.getYawRate()/14F,-1,1); roll+=(targetRoll-roll)*0.18F;
             if(!horse.onGround){descent=Math.min(descent,motion.getVerticalVelocity());fall=Math.max(fall,horse.fallDistance);}
             else if(!grounded){float energy=landingEnergy(descent,motion.getPreviousVelocityY(),fall);if(energy>0.03F)sink.emitImpulse(scaleLanding(energy));descent=0;fall=0;}
-            if(horse.onGround&&grounded&&Math.abs(motion.getVerticalAcceleration())>0.12D&&Math.abs(motion.getVerticalVelocity())<0.24D){float strength=clamp(CombativesConfig.horseTerrainImpulse,0,1);if(strength>0)sink.emitImpulse(scaleTerrain(strength));}
+            if(horse.onGround&&grounded&&Math.abs(motion.getVerticalAcceleration())>0.12D&&Math.abs(motion.getVerticalVelocity())<0.24D){float strength=1F;if(strength>0)sink.emitImpulse(scaleTerrain(strength));}
             grounded=horse.onGround;
         }
 
@@ -77,17 +77,17 @@ public final class BuiltinHorseCameraBehavior {
             float limbPhase=horse.limbSwing-horse.limbSwingAmount*(1F-partial);
             float stridePhase=limbAmount>0.015F?limbPhase*0.92F:lerp(previousFallbackPhase,fallbackPhase,partial);
             float wave=(float)Math.sin(stridePhase), loading=wave<0?-wave:0, recovery=wave>0?wave:0;
-            float multiplier=clamp(CombativesConfig.horseCameraAmplitude,0,3), limbEnvelope=clamp(limbAmount*3.2F,0,1), strength=renderAmplitude*multiplier*limbEnvelope;
+            float multiplier=1F, limbEnvelope=clamp(limbAmount*3.2F,0,1), strength=renderAmplitude*multiplier*limbEnvelope;
             float harmonic=0.18F*Math.abs((float)Math.sin(stridePhase*2F));
             if(loading>0)sink.emitFrame(LOADING,clamp((loading+harmonic)*strength,0,1));
             else if(recovery>0)sink.emitFrame(RECOVERY,clamp(recovery*strength,0,1));
             float accelStrength=clamp(Math.abs(renderAcceleration)*multiplier,0,1);if(accelStrength>0.001F)sink.emitFrame(renderAcceleration>=0?ACCELERATE:DECELERATE,accelStrength);
-            float rollStrength=clamp(Math.abs(renderRoll)*CombativesConfig.horseTurningRoll,0,1);if(rollStrength>0.001F)sink.emitFrame(renderRoll>=0?ROLL_RIGHT:ROLL_LEFT,rollStrength);
+            float rollStrength=clamp(Math.abs(renderRoll),0,1);if(rollStrength>0.001F)sink.emitFrame(renderRoll>=0?ROLL_RIGHT:ROLL_LEFT,rollStrength);
             EntityCameraBehaviorDiagnostics.horse((float)context.getMotion().getHorizontalSpeed(),acceleration,stridePhase,amplitude,cadence,loading,roll);
         }
 
         private CameraImpulse scaleTerrain(float strength){return CameraImpulse.builder("combatives:horse_terrain").translation(0,TERRAIN.getTranslateY()*strength,0).rotation(TERRAIN.getPitch()*strength,0,0).duration(TERRAIN.getDuration()).attackTime(TERRAIN.getAttackTime()).priority(CameraPriority.BACKGROUND).build();}
-        private CameraImpulse scaleLanding(float energy){float strength=clamp(energy*CombativesConfig.horseLanding,0,1);return CameraImpulse.builder("combatives:horse_landing").translation(0,LAND.getTranslateY()*strength,LAND.getTranslateZ()*strength).rotation(LAND.getPitch()*strength,0,0).duration(LAND.getDuration()).attackTime(LAND.getAttackTime()).priority(CameraPriority.NORMAL).build();}
+        private CameraImpulse scaleLanding(float energy){float strength=clamp(energy,0,1);return CameraImpulse.builder("combatives:horse_landing").translation(0,LAND.getTranslateY()*strength,LAND.getTranslateZ()*strength).rotation(LAND.getPitch()*strength,0,0).duration(LAND.getDuration()).attackTime(LAND.getAttackTime()).priority(CameraPriority.NORMAL).build();}
         static float landingEnergy(double descent,double previous,float fall){double impact=Math.max(0,-Math.min(descent,previous));return clamp((impact-0.12D)/0.82D*0.72D+(1D-Math.exp(-Math.max(0,fall-1)/7D))*0.28D,0,1);}
         static float smooth(float value,float low,float high){float t=clamp((value-low)/(high-low),0,1);return t*t*(3-2*t);}
         static float clamp(double value,double low,double high){return(float)(value<low?low:value>high?high:value);}

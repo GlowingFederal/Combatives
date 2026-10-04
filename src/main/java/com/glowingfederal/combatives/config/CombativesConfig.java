@@ -55,12 +55,34 @@ public final class CombativesConfig {
     public static boolean debugMpmPov = CombativesConfigDefaults.DEBUG;
     public static boolean enableMpmHitboxScaling = CombativesConfigDefaults.ENABLE_MPM_HITBOX_SCALING;
 
+    private static Configuration clientConfiguration;
+
+    /** Persist only visual controls; gameplay configuration is never edited by the GUI. */
+    public static void saveCameraSettings() {
+        if (clientConfiguration == null) return;
+        clientConfiguration.get(CATEGORY_CAMERA, "enableCombativesCamera", CombativesConfigDefaults.ENABLE_COMBATIVES_CAMERA).set(enableCombativesCamera);
+        clientConfiguration.get(CATEGORY_CAMERA, "enableProceduralBob", CombativesConfigDefaults.ENABLE_PROCEDURAL_BOB).set(enableProceduralBob);
+        clientConfiguration.get(CATEGORY_CAMERA, "enableMovementLean", CombativesConfigDefaults.ENABLE_MOVEMENT_LEAN).set(enableMovementLean);
+        clientConfiguration.get(CATEGORY_CAMERA, "enableMovementFov", CombativesConfigDefaults.ENABLE_MOVEMENT_FOV).set(enableMovementFov);
+        clientConfiguration.get(CATEGORY_CAMERA, "enableCameraRotations", CombativesConfigDefaults.ENABLE_CAMERA_ROTATIONS).set(enableCameraRotations);
+        clientConfiguration.get(CATEGORY_CAMERA, "enableCameraShake", CombativesConfigDefaults.ENABLE_CAMERA_SHAKE).set(enableCameraShake);
+        clientConfiguration.get(CATEGORY_CAMERA, "enableExplosionCameraFeedback", CombativesConfigDefaults.ENABLE_EXPLOSION_CAMERA_FEEDBACK).set(enableExplosionCameraFeedback);
+        clientConfiguration.get(CATEGORY_CAMERA, "enableLandingCameraFeedback", CombativesConfigDefaults.ENABLE_LANDING_CAMERA_FEEDBACK).set(enableLandingCameraFeedback);
+        clientConfiguration.get(CATEGORY_CAMERA, "enablePlayerFreefallCamera", CombativesConfigDefaults.ENABLE_PLAYER_FREEFALL_CAMERA).set(enablePlayerFreefallCamera);
+        clientConfiguration.get(CATEGORY_CAMERA, "enablePlayerInertiaCamera", CombativesConfigDefaults.ENABLE_PLAYER_INERTIA_CAMERA).set(enablePlayerInertiaCamera);
+        clientConfiguration.get(CATEGORY_CAMERA, "enablePlayerCollisionCamera", CombativesConfigDefaults.ENABLE_PLAYER_COLLISION_CAMERA).set(enablePlayerCollisionCamera);
+        clientConfiguration.get(CATEGORY_CAMERA, "enableCrawlCamera", CombativesConfigDefaults.ENABLE_CRAWL_CAMERA).set(enableCrawlCamera);
+        clientConfiguration.get(CATEGORY_CAMERA, "enableHorseCamera", CombativesConfigDefaults.ENABLE_HORSE_CAMERA).set(enableHorseCamera);
+        CameraVisualSetting.save(clientConfiguration);
+    }
+
     private CombativesConfig() {
     }
 
     public static void load(File configFile) {
         Configuration config = new Configuration(configFile);
         config.load();
+        clientConfiguration = config;
 
         enableCombativesCamera = config.getBoolean("enableCombativesCamera", CATEGORY_CAMERA, enableCombativesCamera, "Enable the client-only Combatives first-person camera controller.");
         enableProceduralBob = config.getBoolean("enableProceduralBob", CATEGORY_CAMERA, enableProceduralBob, "Enable subtle procedural Combatives movement bobbing.");
@@ -72,27 +94,16 @@ public final class CombativesConfig {
         enableMouseDeltaClamp = config.getBoolean("enableMouseDeltaClamp", CATEGORY_CAMERA, enableMouseDeltaClamp, "Clamp pathological raw LWJGL mouse deltas before vanilla camera sensitivity scaling consumes them.");
         maxMouseDelta = config.getInt("maxMouseDelta", CATEGORY_CAMERA, maxMouseDelta, 1, 10000, "Maximum absolute raw mouse delta accepted from LWJGL per mouseXYChange call.");
         enableLandingCameraFeedback = config.getBoolean("enableLandingCameraFeedback", CATEGORY_CAMERA, enableLandingCameraFeedback, "Enable visual-only landing camera dip and recovery impulses.");
-        landingFeedbackStrength = config.getFloat("landingFeedbackStrength", CATEGORY_CAMERA, (float) landingFeedbackStrength, 0.0F, 4.0F, "Multiplier for visual-only landing camera feedback strength.");
         enablePlayerFreefallCamera = config.getBoolean("enablePlayerFreefallCamera", CATEGORY_CAMERA, enablePlayerFreefallCamera, "Enable subtle sustained player freefall anticipation.");
-        playerFreefallCameraStrength = config.getFloat("playerFreefallCameraStrength", CATEGORY_CAMERA, (float)playerFreefallCameraStrength, 0F, 4F, "Strength of player freefall feedback.");
         enablePlayerInertiaCamera = config.getBoolean("enablePlayerInertiaCamera", CATEGORY_CAMERA, enablePlayerInertiaCamera, "Enable conservative motion-sampled player inertia.");
-        playerInertiaCameraStrength = config.getFloat("playerInertiaCameraStrength", CATEGORY_CAMERA, (float)playerInertiaCameraStrength, 0F, 4F, "Strength of player inertia feedback.");
         enablePlayerCollisionCamera = config.getBoolean("enablePlayerCollisionCamera", CATEGORY_CAMERA, enablePlayerCollisionCamera, "Enable meaningful player momentum-loss impacts.");
-        playerCollisionCameraStrength = config.getFloat("playerCollisionCameraStrength", CATEGORY_CAMERA, (float)playerCollisionCameraStrength, 0F, 4F, "Strength of player collision feedback.");
         enableExplosionCameraFeedback = config.getBoolean("enableExplosionCameraFeedback", CATEGORY_CAMERA, enableExplosionCameraFeedback, "Enable visual-only low-frequency explosion camera feedback near client explosions.");
-        explosionFeedbackStrength = config.getFloat("explosionFeedbackStrength", CATEGORY_CAMERA, (float) explosionFeedbackStrength, 0.0F, 4.0F, "Multiplier for visual-only explosion camera feedback strength.");
         enableHorseCamera = config.getBoolean("enableHorseCamera", CATEGORY_CAMERA, enableHorseCamera, "Enable continuous, motion-sampled first-person riding feedback for registered horse mounts.");
-        horseCameraAmplitude = config.getFloat("horseCameraAmplitude", CATEGORY_CAMERA, (float)horseCameraAmplitude, 0F, 3F, "Multiplier for horse gait bob, pitch, and fore/aft travel.");
-        horseTerrainImpulse = config.getFloat("horseTerrainImpulse", CATEGORY_CAMERA, (float)horseTerrainImpulse, 0F, 3F, "Multiplier for subtle horse terrain-compression impulses.");
-        horseLanding = config.getFloat("horseLanding", CATEGORY_CAMERA, (float)horseLanding, 0F, 3F, "Multiplier for horse jump landing compression through the shared impulse pipeline.");
-        horseTurningRoll = config.getFloat("horseTurningRoll", CATEGORY_CAMERA, (float)horseTurningRoll, 0F, 3F, "Multiplier for damped horse turning roll (hard-limited to two degrees before shared saturation).");
         enableCrawlCamera = config.getBoolean("enableCrawlCamera", CATEGORY_CAMERA, enableCrawlCamera, "Enable restrained continuous crawling motion and crawl transitions.");
-        crawlCameraAmplitude = config.getFloat("crawlCameraAmplitude", CATEGORY_CAMERA, (float)crawlCameraAmplitude, 0F, 3F, "Multiplier for crawl-cycle movement and pull impulses.");
         crawlTransitionMillis = config.getInt("crawlTransitionMillis", CATEGORY_CAMERA, crawlTransitionMillis, 150, 250, "Monotonic crawl enter/exit camera blend duration in milliseconds.");
         enableLeaning = config.getBoolean("enableLeaning", CATEGORY_MOVEMENT, enableLeaning, "Enable authoritative tactical leaning.");
         maxLeanDistance = config.getFloat("maxLeanDistance", CATEGORY_MOVEMENT, (float) maxLeanDistance, 0.0F, 0.5F, "Maximum first-person lean displacement in blocks.");
-        maxLeanRoll = config.getFloat("maxLeanRoll", CATEGORY_MOVEMENT, (float) maxLeanRoll, 0.0F, 15.0F, "Maximum first-person lean roll in degrees.");
-        leanInterpolation = config.getFloat("leanInterpolation", CATEGORY_MOVEMENT, (float) leanInterpolation, 0.05F, 1.0F, "Lean interpolation fraction per client tick.");
+        maxLeanRoll = config.getFloat("maxLeanRoll", CATEGORY_MOVEMENT, (float) CombativesConfigDefaults.MAX_LEAN_ROLL, 0.0F, 15.0F, "Legacy tactical lean roll angle in degrees. Excluded from live cosmetic intensity controls; does not alter lean reach.");
         enableSliding = config.getBoolean("enableSliding", CATEGORY_MOVEMENT, enableSliding, "Enable sprint-to-crawl sliding.");
         slideMinimumEntrySpeed = config.getFloat("slideMinimumEntrySpeed", CATEGORY_MOVEMENT, (float) slideMinimumEntrySpeed, 0.05F, 1.0F, "Minimum horizontal blocks per tick required to enter a slide.");
         slideExitSpeed = config.getFloat("slideExitSpeed", CATEGORY_MOVEMENT, (float) slideExitSpeed, 0.01F, 0.5F, "Horizontal speed at which a slide ends.");
@@ -131,6 +142,8 @@ public final class CombativesConfig {
             debugMpmPov,
             "Enable one focused MPM camera/targeting ownership sample every five seconds."
         );
+
+        CameraVisualSetting.load(config);
 
         if (config.hasChanged()) {
             config.save();

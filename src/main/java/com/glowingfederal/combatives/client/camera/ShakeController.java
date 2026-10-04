@@ -4,10 +4,6 @@ import com.glowingfederal.combatives.Combatives;
 import com.glowingfederal.combatives.config.CombativesConfig;
 
 public final class ShakeController {
-    private static final float LANDING_MAX_DIP = 0.16F;
-    private static final float LANDING_MAX_PITCH = 8.0F;
-    private static final float LANDING_MAX_FORWARD = 0.08F;
-    private static final float LANDING_MAX_ROLL = 1.5F;
     private static final float EXPLOSION_MAX_PITCH = 8.0F;
     private static final float EXPLOSION_MAX_ROLL = 4.5F;
     private static final float EXPLOSION_MAX_VERTICAL = 0.16F;
@@ -15,7 +11,6 @@ public final class ShakeController {
     private static final float EXPLOSION_MAX_LATERAL = 0.14F;
 
     private float pitch, roll, vertical, forward, lateral, bobSuppression;
-    private float landingPosition, landingVelocity, landingRollBias;
     private float explosionX, explosionY, explosionZ, explosionPitch, explosionRoll;
     private float explosionVelX, explosionVelY, explosionVelZ, explosionVelPitch, explosionVelRoll;
     private float shockX, shockY, shockZ, shockPitch, shockRoll, shockAge = 1.0F;
@@ -24,39 +19,18 @@ public final class ShakeController {
         // cannot advance this simulation, including stereo/shader camera passes.
         float dt = 1.0F / 60.0F;
         for (int step = 0; step < 3; step++) {
-            updateLandingSpring(dt);
             updateExplosionSpring(dt);
             updateShock(dt);
         }
 
-        float landingCompression = clamp(landingPosition, -0.35F, 1.35F);
-        float landingVelocityShape = clamp(landingVelocity * 0.09F, -0.8F, 0.8F);
-        float landingY = -LANDING_MAX_DIP * landingCompression;
-        float landingPitchOut = LANDING_MAX_PITCH * landingCompression;
-        float landingZ = -LANDING_MAX_FORWARD * landingVelocityShape;
-        float landingRollOut = LANDING_MAX_ROLL * landingCompression * landingRollBias;
-
-        pitch = clamp(landingPitchOut + explosionPitch + shockPitch, -8.0F, 8.0F);
-        roll = clamp(landingRollOut + explosionRoll + shockRoll, -4.5F, 4.5F);
-        vertical = clamp(landingY + explosionY + shockY, -0.2F, 0.2F);
-        forward = clamp(landingZ + explosionZ + shockZ, -0.16F, 0.16F);
+        pitch = clamp(explosionPitch + shockPitch, -8.0F, 8.0F);
+        roll = clamp(explosionRoll + shockRoll, -4.5F, 4.5F);
+        vertical = clamp(explosionY + shockY, -0.2F, 0.2F);
+        forward = clamp(explosionZ + shockZ, -0.16F, 0.16F);
         lateral = clamp(explosionX + shockX, -0.16F, 0.16F);
-
-        float landingEnergy = Math.min(1.0F, Math.abs(landingPosition) + Math.abs(landingVelocity) * 0.08F);
         float explosionEnergy = Math.min(1.0F, Math.abs(explosionX) * 18.0F + Math.abs(explosionY) * 14.0F + Math.abs(explosionZ) * 18.0F + Math.abs(shockPitch) * 0.2F);
-        bobSuppression += ((Math.max(landingEnergy, explosionEnergy) * 0.55F) - bobSuppression)
+        bobSuppression += ((explosionEnergy * 0.55F) - bobSuppression)
                 * (1.0F - (float) Math.exp(-0.05F * 8.0F));
-    }
-
-    private void updateLandingSpring(float dt) {
-        float acceleration = -190.0F * landingPosition - 20.0F * landingVelocity;
-        landingVelocity += acceleration * dt;
-        landingPosition += landingVelocity * dt;
-        landingPosition = clamp(landingPosition, -0.35F, 1.35F);
-        if (Math.abs(landingPosition) < 0.00001F && Math.abs(landingVelocity) < 0.00001F) {
-            landingPosition = 0.0F;
-            landingVelocity = 0.0F;
-        }
     }
 
     private void updateExplosionSpring(float dt) {
@@ -94,29 +68,9 @@ public final class ShakeController {
         }
     }
 
-    public void addLandingImpulse(float severity, float strafe, float speed) {
-        if (!CombativesConfig.enableLandingCameraFeedback) return;
-        float scaledSeverity = clamp(severity * (float) CombativesConfig.landingFeedbackStrength, 0.0F, 1.0F);
-        if (scaledSeverity <= 0.0F) {
-            if (Combatives.logger != null && CombativesConfig.verboseCameraDebug) Combatives.logger.info("Combatives landing impulse rejected: reason=zero_severity, severity={}", severity);
-            return;
-        }
-        float response = (float) Math.pow(scaledSeverity, 0.65F);
-        landingPosition += 0.35F * response;
-        landingVelocity += 32.0F * response;
-        landingVelocity = clamp(landingVelocity, -8.0F, 40.0F);
-        float movementRoll = clamp(strafe * speed * 5.0F, -1.0F, 1.0F);
-        landingRollBias = Math.abs(movementRoll) > 0.12F ? -movementRoll : 0.0F;
-        if (Combatives.logger != null && (CombativesConfig.verboseCameraDebug || (CombativesConfig.debugCamera && response >= 0.35F))) {
-            Combatives.logger.info("Combatives landing impulse created: severity={}, response={}, targetDip={}, targetPitch={}, rollBias={}", scaledSeverity, response, LANDING_MAX_DIP * response, LANDING_MAX_PITCH * response, landingRollBias);
-        }
-    }
-
-    public void addDamageImpulse(float strength) { addLandingImpulse(clamp(strength, 0.0F, 0.5F), 0.0F, 0.0F); }
-
     public void addExplosionImpulse(float response, float localForward, float localRight, float localVertical) {
         if (!CombativesConfig.enableExplosionCameraFeedback) return;
-        float scaled = clamp(response * (float) CombativesConfig.explosionFeedbackStrength, 0.0F, 1.0F);
+        float scaled = clamp(response, 0.0F, 1.0F);
         if (scaled <= 0.0F) {
             if (Combatives.logger != null && CombativesConfig.verboseCameraDebug) Combatives.logger.info("Combatives explosion impulse rejected: reason=zero_response, response={}", response);
             return;
@@ -148,7 +102,7 @@ public final class ShakeController {
 
     private static float smoothstep(float t) { t = clamp(t, 0.0F, 1.0F); return t * t * (3.0F - 2.0F * t); }
     private static float clamp(float v, float min, float max) { return v < min ? min : v > max ? max : v; }
-    public void reset() { pitch = roll = vertical = forward = lateral = bobSuppression = landingPosition = landingVelocity = landingRollBias = explosionX = explosionY = explosionZ = explosionPitch = explosionRoll = explosionVelX = explosionVelY = explosionVelZ = explosionVelPitch = explosionVelRoll = shockX = shockY = shockZ = shockPitch = shockRoll = 0.0F; shockAge = 1.0F; }
+    public void reset() { pitch = roll = vertical = forward = lateral = bobSuppression = explosionX = explosionY = explosionZ = explosionPitch = explosionRoll = explosionVelX = explosionVelY = explosionVelZ = explosionVelPitch = explosionVelRoll = shockX = shockY = shockZ = shockPitch = shockRoll = 0.0F; shockAge = 1.0F; }
     public float getPitch() { return pitch; }
     public float getRoll() { return roll; }
     public float getVertical() { return vertical; }

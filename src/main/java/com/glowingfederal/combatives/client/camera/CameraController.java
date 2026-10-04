@@ -2,6 +2,7 @@ package com.glowingfederal.combatives.client.camera;
 
 import com.glowingfederal.combatives.Combatives;
 import com.glowingfederal.combatives.config.CombativesConfig;
+import com.glowingfederal.combatives.config.CameraVisualSetting;
 import com.glowingfederal.combatives.client.camera.internal.CameraEffectManager;
 import com.glowingfederal.combatives.client.camera.internal.EntityCameraBehaviorManager;
 import net.minecraft.client.Minecraft;
@@ -39,6 +40,7 @@ public final class CameraController {
     private float lastPitch, lastYaw, lastRoll;
     private float slideCameraBlend;
     private float bobSuppression;
+    private float sampledAmbientScale = 1F;
     private final TickState previous = new TickState();
     private final TickState current = new TickState();
     private EntityPlayerSP statePlayer;
@@ -65,6 +67,7 @@ public final class CameraController {
         TacticalLeanCamera.tick(player);
         if (!CombativesConfig.enableCombativesCamera) { resetEffects(); return; }
         previous.copy(current);
+        WeaponCameraPresentation.tick(player);
         movement.tick(player);
         if (CombativesConfig.enableMovementLean) lean.update(movement); else lean.reset();
         if (CombativesConfig.enableMovementFov) fov.update(movement); else fov.reset();
@@ -84,13 +87,21 @@ public final class CameraController {
     public void sample(Minecraft mc, float partialTicks) {
         if (!CombativesConfig.enableCombativesCamera || statePlayer == null || statePlayer != mc.thePlayer) return;
         float p = clamp(partialTicks, 0, 1);
+        float ambientScale = WeaponCameraPresentation.ambientScale(p);
+        sampledAmbientScale = ambientScale;
+        float movementLeanScale = CameraVisualSetting.MOVEMENT_LEAN.get() * ambientScale;
+        float explosionScale = CameraVisualSetting.EXPLOSION.get();
         movement.sample(statePlayer, p);
         if (CombativesConfig.enableProceduralBob) bob.update(movement); else bob.reset();
         leanRoll = lerp(previous.leanRoll, current.leanRoll, p); leanPitch = lerp(previous.leanPitch, current.leanPitch, p);
+        leanRoll *= movementLeanScale; leanPitch *= movementLeanScale;
         bobVertical = bob.getVertical(); bobSway = bob.getSway(); bobPitch = bob.getPitch(); bobRoll = bob.getRoll();
+        bobVertical *= ambientScale; bobSway *= ambientScale; bobPitch *= ambientScale; bobRoll *= ambientScale;
         shakeVertical = lerp(previous.vertical, current.vertical, p); shakeForward = lerp(previous.forward, current.forward, p);
         shakeLateral = lerp(previous.lateral, current.lateral, p); shakePitch = lerp(previous.pitch, current.pitch, p);
         shakeRoll = lerp(previous.roll, current.roll, p); bobSuppression = lerp(previous.suppression, current.suppression, p);
+        shakeVertical *= explosionScale; shakeForward *= explosionScale; shakeLateral *= explosionScale;
+        shakePitch *= explosionScale; shakeRoll *= explosionScale; bobSuppression *= explosionScale;
         slideCameraBlend = lerp(previous.slide, current.slide, p); fovModifier = lerp(previous.fov, current.fov, p);
         EntityCameraBehaviorManager.INSTANCE.render(statePlayer, p);
         CameraEffectManager.sample(statePlayer, p);
@@ -98,6 +109,7 @@ public final class CameraController {
 
     public void applyTransforms(float partialTicks) {
         if (!CombativesConfig.enableCombativesCamera) return;
+        float master = CameraVisualSetting.MASTER.get();
 
         float bobScale = 1.0F - clamp(bobSuppression, 0.0F, 0.8F);
         float ambientX = clamp(bobSway * bobScale, -MAX_AMBIENT_X_OFFSET, MAX_AMBIENT_X_OFFSET);
@@ -105,10 +117,10 @@ public final class CameraController {
         float impactX = clamp(shakeLateral + CameraEffectManager.getX(), -MAX_IMPACT_X_OFFSET, MAX_IMPACT_X_OFFSET);
         float impactY = clamp(shakeVertical + CameraEffectManager.getY(), -MAX_IMPACT_Y_OFFSET, MAX_IMPACT_Y_OFFSET);
         float impactZ = clamp(shakeForward + CameraEffectManager.getZ(), -MAX_IMPACT_Z_OFFSET, MAX_IMPACT_Z_OFFSET);
-        float xOffset = ambientX + impactX;
-        float yOffset = ambientY + impactY - slideCameraBlend * 0.035F;
+        float xOffset = (ambientX + impactX) * master;
+        float yOffset = (ambientY + impactY - slideCameraBlend * 0.035F * CameraVisualSetting.SLIDE.get()) * master;
         this.lastTranslationY = yOffset;
-        float zOffset = impactZ;
+        float zOffset = impactZ * master;
         this.lastTranslationX = xOffset;
         GL11.glTranslatef(xOffset, yOffset, zOffset);
         this.lastTranslationZ = zOffset;
@@ -122,6 +134,7 @@ public final class CameraController {
             yaw = clamp(CameraEffectManager.getYaw(), -CombativesConfig.maxCameraYawDegrees, CombativesConfig.maxCameraYawDegrees);
             pitch = ambientPitch + clamp(shakePitch + CameraEffectManager.getPitch(), -MAX_IMPACT_PITCH_DEGREES, MAX_IMPACT_PITCH_DEGREES);
             roll = ambientRoll + clamp(shakeRoll + CameraEffectManager.getRoll(), -MAX_IMPACT_ROLL_DEGREES, MAX_IMPACT_ROLL_DEGREES);
+            pitch *= master; yaw *= master; roll *= master;
             GL11.glRotatef(pitch, 1.0F, 0.0F, 0.0F);
             GL11.glRotatef(yaw, 0.0F, 1.0F, 0.0F);
             GL11.glRotatef(roll, 0.0F, 0.0F, 1.0F);
@@ -138,13 +151,14 @@ public final class CameraController {
     }
 
     private void applyVanillaStyleBob() {
-        float xOffset = clamp(bobSway, -MAX_AMBIENT_X_OFFSET, MAX_AMBIENT_X_OFFSET);
-        float yOffset = clamp(bobVertical, -MAX_AMBIENT_Y_OFFSET, MAX_AMBIENT_Y_OFFSET);
+        float master = CameraVisualSetting.MASTER.get();
+        float xOffset = clamp(bobSway, -MAX_AMBIENT_X_OFFSET, MAX_AMBIENT_X_OFFSET) * master;
+        float yOffset = clamp(bobVertical, -MAX_AMBIENT_Y_OFFSET, MAX_AMBIENT_Y_OFFSET) * master;
         float zOffset = clamp(0.0F, -MAX_IMPACT_Z_OFFSET, MAX_IMPACT_Z_OFFSET);
         GL11.glTranslatef(xOffset, yOffset, zOffset);
         if (!CombativesConfig.enableCameraRotations) return;
-        GL11.glRotatef(clamp(bobPitch, -MAX_CAMERA_PITCH_DEGREES, MAX_CAMERA_PITCH_DEGREES), 1.0F, 0.0F, 0.0F);
-        GL11.glRotatef(clamp(bobRoll, -MAX_CAMERA_ROLL_DEGREES, MAX_CAMERA_ROLL_DEGREES), 0.0F, 0.0F, 1.0F);
+        GL11.glRotatef(clamp(bobPitch, -MAX_CAMERA_PITCH_DEGREES, MAX_CAMERA_PITCH_DEGREES) * master, 1.0F, 0.0F, 0.0F);
+        GL11.glRotatef(clamp(bobRoll, -MAX_CAMERA_ROLL_DEGREES, MAX_CAMERA_ROLL_DEGREES) * master, 0.0F, 0.0F, 1.0F);
     }
 
 
@@ -155,7 +169,7 @@ public final class CameraController {
 
     public void reset() { resetEffects(); TacticalLeanCamera.reset(); statePlayer = null; stateWorld = null; }
 
-    private void resetEffects() { EntityCameraBehaviorManager.INSTANCE.reset(statePlayer); movement.reset(); lean.reset(); bob.reset(); fov.reset(); shake.reset(); CameraEffectManager.reset(); previous.clear(); current.clear(); leanRoll = leanPitch = bobVertical = bobSway = bobPitch = bobRoll = shakeVertical = shakeForward = shakeLateral = shakePitch = shakeRoll = fovModifier = lastTranslationX = lastTranslationY = lastTranslationZ = lastPitch = lastYaw = lastRoll = slideCameraBlend = bobSuppression = 0.0F; }
+    private void resetEffects() { EntityCameraBehaviorManager.INSTANCE.reset(statePlayer); WeaponCameraPresentation.reset(); sampledAmbientScale = 1F; movement.reset(); lean.reset(); bob.reset(); fov.reset(); shake.reset(); CameraEffectManager.reset(); previous.clear(); current.clear(); leanRoll = leanPitch = bobVertical = bobSway = bobPitch = bobRoll = shakeVertical = shakeForward = shakeLateral = shakePitch = shakeRoll = fovModifier = lastTranslationX = lastTranslationY = lastTranslationZ = lastPitch = lastYaw = lastRoll = slideCameraBlend = bobSuppression = 0.0F; }
 
     private static float lerp(float a, float b, float p) { return a + (b - a) * p; }
 
@@ -196,7 +210,8 @@ public final class CameraController {
         float localVertical = clamp((float) dirY, -1.0F, 1.0F);
         shake.addExplosionImpulse(response, localForward, localRight, localVertical);
     }
-    public float getFovModifier() { return fovModifier + CameraEffectManager.getFov() * 0.01F; }
+    public float getFovModifier() { return (fovModifier * CameraVisualSetting.FOV.get() * sampledAmbientScale
+            + CameraEffectManager.getFov() * 0.01F) * CameraVisualSetting.MASTER.get(); }
     public float getLastTranslationX() { return lastTranslationX; }
     public float getLastTranslationY() { return lastTranslationY; }
     public float getLastTranslationZ() { return lastTranslationZ; }

@@ -115,3 +115,29 @@
 	  unchanged. Mounted base-camera ownership and weapon aiming/ADS remain external.
 	- Cleared camera history on player/world/position-history lifecycle changes and death,
 	  froze simulation during pause, and documented effect ownership and transform order.
+
+	2026-10-04 09:02 — Tune camera presentation and add live visual settings
+
+	- Added a client Camera Effects screen to Options and Forge's Combatives Config entry,
+	  with individual intensities, response controls, visual feature switches, live adjustment,
+	  reset and persistence in the normal client configuration. Legacy keys and public strength
+	  fields remain compatible; gameplay settings and authoritative packets are not edited.
+	- Tuned walk/sprint bob, movement lean, inertia, recoil, freefall and horse gait separately.
+	  Applied provider strengths while sampling and the master to final cosmetic output so
+	  zero intensity does not freeze state, phase or active impulse lifetimes. Optional HMG
+	  and Flan's ADS state attenuates ambient cosmetics without changing weapon zoom or aim.
+	- Replaced overlapping vanilla vertical-velocity bob pitch with a bounded takeoff pulse,
+	  and landing's held target/velocity recovery with short compression and critically damped
+	  settling. Freefall ends on support; the unused secondary landing spring was removed.
+	- Unified camera eye/roll, hand roll and local biped/Flan's armour lean presentation around
+	  interpolated wall-limited visual lean. Shooting, interaction rays, collision, networking,
+	  remote poses and Flan's hit snapshots retain immediate authoritative lean.
+	- Preserved client-tick simulation, fixed explosion substeps and analytic game-time recoil
+	  envelopes. Documented per-effect defaults, ranges, ownership and presentation shapes.
+
+	2026-10-04 09:08 — Keep tactical lean roll outside cosmetic intensity controls
+
+	- Removed the live tactical roll adjustment and excluded tactical roll from the master
+	  cosmetic multiplier, preserving the established relationship between accepted visual
+	  lean and its tilt cue. Actual lean displacement, wall limits and aiming remain unchanged.
+	- Retained the existing file-only maxLeanRoll key for configuration compatibility.

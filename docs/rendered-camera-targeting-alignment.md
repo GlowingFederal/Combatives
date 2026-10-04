@@ -200,6 +200,14 @@ angular offset. Procedural translation, shake, bob, lean, and presentation
 recoil happen after the captured base and intentionally do not affect gameplay
 aim.
 
+Tactical lean presentation now uses previous/current client-tick lean and a shared
+interpolated render value for eye translation, camera/hand roll and local biped
+visuals. The fixed reticle therefore no longer follows a raw-lean eye offset
+ahead of the roll transition. Gameplay targeting continues to use the accepted
+raw lean immediately. During a transition, the rendered eye and authoritative
+leaned origin can deliberately differ; visual response settings must not delay
+interaction validation, bullet origins or collision.
+
 The existing vanilla algorithm remains in charge. Its entity-ray origin/look
 calls and the matching calls inside `EntityLivingBase#rayTrace` receive the
 authoritative pair; reach, block tracing, candidate collection, expanded AABBs,

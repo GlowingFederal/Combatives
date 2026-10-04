@@ -1,6 +1,7 @@
 package com.glowingfederal.combatives.client.camera;
 
 import net.minecraft.util.MathHelper;
+import com.glowingfederal.combatives.config.CameraVisualSetting;
 
 public final class BobController {
     private float vertical;
@@ -9,15 +10,17 @@ public final class BobController {
     private float roll;
 
     public void update(MovementCameraState state) {
-        float intensity = getIntensity(state);
+        float intensity = getIntensity(state) * (state.isSprinting()
+                ? CameraVisualSetting.SPRINT.get() : CameraVisualSetting.WALK.get());
         float walkPhase = state.getWalkPhase() * (float) Math.PI;
         float bobAmount = state.getCameraYaw() * intensity;
-        float pitchInput = state.getCameraPitch() * intensity;
 
         sway = MathHelper.sin(walkPhase) * bobAmount * 0.5F;
         vertical = -Math.abs(MathHelper.cos(walkPhase) * bobAmount);
         roll = MathHelper.sin(walkPhase) * bobAmount * 3.0F;
-        pitch = Math.abs(MathHelper.cos(walkPhase - 0.2F) * bobAmount) * 5.0F + pitchInput;
+        // Vanilla cameraPitch carries vertical-velocity pitch through landing. Takeoff
+        // and landing now have separate bounded providers instead of overlapping it.
+        pitch = Math.abs(MathHelper.cos(walkPhase - 0.2F) * bobAmount) * 5.0F;
     }
 
     private static float getIntensity(MovementCameraState state) {

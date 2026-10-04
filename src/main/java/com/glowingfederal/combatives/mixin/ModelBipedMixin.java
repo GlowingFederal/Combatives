@@ -144,7 +144,7 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
         if (this.combatives$getSwimAnimationFor(entity) <= 0.0F
                 || entity instanceof EntityPlayer
                 && CombativesVisualPoseHelper.isLandCrawling((EntityPlayer) entity)) {
-            this.combatives$applyVisualLean(entity);
+            this.combatives$applyVisualLean(entity, entity == null ? 0F : ageInTicks - entity.ticksExisted);
         }
     }
 
@@ -189,12 +189,14 @@ public abstract class ModelBipedMixin extends ModelBase implements ICombativesMo
         return -65.0F * limbSwing + limbSwing * limbSwing;
     }
 
-    @Unique private void combatives$applyVisualLean(Entity entity) {
+    @Unique private void combatives$applyVisualLean(Entity entity, float partialTicks) {
         if (com.glowingfederal.combatives.client.camera.TacticalLeanCamera.isRenderingHand()) return;
         if (entity instanceof com.glowingfederal.combatives.movement.ICombativesLocomotion) {
             this.combatives$captureLeanBase();
             LeanVisualPose pose = LeanVisualPose.fromSemanticLean(
-                    entity instanceof EntityPlayer
+                    entity == net.minecraft.client.Minecraft.getMinecraft().thePlayer
+                        ? com.glowingfederal.combatives.client.camera.TacticalLeanCamera.getRenderLean(partialTicks)
+                        : entity instanceof EntityPlayer
                         ? com.glowingfederal.combatives.movement.LeanGeometry.acceptedLean((EntityPlayer) entity)
                         : ((com.glowingfederal.combatives.movement.ICombativesLocomotion) entity).getLean());
             float originX = this.bipedBody.rotationPointX;

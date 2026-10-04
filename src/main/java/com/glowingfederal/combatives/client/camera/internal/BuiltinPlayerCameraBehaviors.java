@@ -31,12 +31,13 @@ public final class BuiltinPlayerCameraBehaviors {
         EntityCameraBehaviorRegistry.register("combatives:player_freefall", 20, metadata, EntityMatchers.assignableClass(EntityPlayerSP.class), factory(2));
         EntityCameraBehaviorRegistry.register("combatives:player_inertia", 10, metadata, EntityMatchers.assignableClass(EntityPlayerSP.class), factory(3));
         EntityCameraBehaviorRegistry.register("combatives:player_crawl", 15, metadata, EntityMatchers.assignableClass(EntityPlayerSP.class), factory(4));
+        EntityCameraBehaviorRegistry.register("combatives:player_jump", 25, metadata, EntityMatchers.assignableClass(EntityPlayerSP.class), factory(5));
         registered = true;
     }
 
     private static EntityCameraBehaviorFactory factory(final int kind) {
         return new EntityCameraBehaviorFactory() { public EntityCameraBehavior create() {
-            return kind == 0 ? new Landing() : kind == 1 ? new Collision() : kind == 2 ? new Freefall() : kind == 3 ? new Inertia() : new Crawl();
+            return kind == 0 ? new Landing() : kind == 1 ? new Collision() : kind == 2 ? new Freefall() : kind == 3 ? new Inertia() : kind == 4 ? new Crawl() : new Jump();
         }};
     }
 
@@ -71,7 +72,7 @@ public final class BuiltinPlayerCameraBehaviors {
             float renderBlend=lerp(previousBlend,blend,c.getPartialTicks());
             float renderMotion=lerp(previousMotionWeight,motionWeight,c.getPartialTicks());
             if(renderBlend<=0.001F)return;
-            float amp=clamp(renderBlend*CombativesConfig.crawlCameraAmplitude,0,1);
+            float amp=renderBlend;
             boolean postureAccepted=sink.emitFrame(POSTURE,amp);
             float wave=(float)Math.sin(lerp(previousPhase,phase,c.getPartialTicks()));
             float cycleStrength=Math.abs(wave)*amp*renderMotion;
@@ -92,75 +93,89 @@ public final class BuiltinPlayerCameraBehaviors {
         static double lerp(double a,double b,float p){return a+(b-a)*p;}
     }
 
-    private static final class Landing extends Base {
+    /** One bounded pulse per takeoff; no vertical-velocity pitch carried into support. */
+    private static final class Jump extends Base {
+        private static final CameraImpulse FRAME = CameraImpulse.builder("combatives:player_jump")
+                .rotation(-0.9F,0,0).translation(0,0.012F,0.008F).duration(0.1F).priority(CameraPriority.BACKGROUND).build();
         private boolean grounded = true;
-        private double fastestDescent; private float greatestFallDistance;
-        private float compression, compressionVelocity, compressionTarget, rollBias, impactEnergy, presentationStrength;
-        private float previousCompression, previousRollBias;
-        private int compressionHold;
-        void reset() { grounded = true; fastestDescent = 0; greatestFallDistance = 0; compression=compressionVelocity=compressionTarget=rollBias=impactEnergy=presentationStrength=previousCompression=previousRollBias=0;compressionHold=0; }
+        private float age = 1, previousAge = 1, strength;
+        void reset() { grounded=true; age=previousAge=1; strength=0; }
         public void onTick(MountCameraContext c, CameraEffectSink sink) {
-            EntityPlayerSP player=player(c); EntityMotionSample m=c.getMotion();
-            if(player==null || m.isDiscontinuity()){reset();grounded=player==null||player.onGround;return;}
-            previousCompression=compression; previousRollBias=rollBias;
-            if(!player.onGround) { fastestDescent=Math.min(fastestDescent,m.getVerticalVelocity()); greatestFallDistance=Math.max(greatestFallDistance,player.fallDistance); }
-            if(CombativesConfig.enableLandingCameraFeedback && player.onGround && !grounded) {
-                // Preserve the last unsupported sample before presentation filtering can erase it.
-                // previousVelocityY is especially important on the support tick, where sampled motionY
-                // has commonly already become zero.
-                double preImpactVelocity=Math.min(fastestDescent,m.getPreviousVelocityY());
-                double impactSpeed=Math.max(0,-preImpactVelocity);
-                double momentumLoss=Math.max(0,m.getVerticalVelocity()-preImpactVelocity);
-                double fall=Math.max(0,greatestFallDistance);
-                double speedEnergy=clamp((impactSpeed-0.12D)/0.82D,0,1);
-                double impulseEnergy=clamp(momentumLoss/0.82D,0,1);
-                double distanceEnergy=1D-Math.exp(-Math.max(0,fall-1D)/7D);
-                double runningWeight=clamp((m.getHorizontalSpeed()-0.12D)/0.34D,0,1)*0.08D;
-                impactEnergy=clamp(speedEnergy*0.55D+impulseEnergy*0.27D+distanceEnergy*0.18D+runningWeight,0,1);
-                if(impactEnergy>0.01F) {
-                    // Raw impact energy is captured above; only this presentation value is shaped.
-                    presentationStrength=clamp(Math.pow(impactEnergy,1.22D)*CombativesConfig.landingFeedbackStrength,0,1);
-                    compressionTarget=Math.max(compressionTarget,presentationStrength);
-                    compressionHold=2+(int)(presentationStrength*2.5F);
-                    rollBias=clamp(m.getLateralAcceleration()*0.28D,-0.18D,0.18D);
-                    EntityCameraBehaviorDiagnostics.motionEvent("landing", "phase=impact energy="+impactEnergy+" presentation="+presentationStrength+" preImpactVelocity="+preImpactVelocity+" momentumLoss="+momentumLoss+" fallDistance="+fall+" target="+compressionTarget);
-                }
-                fastestDescent=0; greatestFallDistance=0;
+            EntityPlayerSP p=player(c); EntityMotionSample m=c.getMotion();
+            if(p==null||m.isDiscontinuity()){reset();grounded=p==null||p.onGround;return;}
+            previousAge=age; age+=0.05F;
+            if(grounded&&!p.onGround&&!p.isInWater()&&!p.isOnLadder()&&m.getVerticalVelocity()>0.08D) {
+                strength=clamp(m.getVerticalVelocity()/0.42D,0,1);
+                previousAge=0; age=0.05F;
             }
-            if(compressionHold>0) {
-                compressionHold--;
-                // Drive into the compression rather than snapping to it, then briefly load there.
-                compressionVelocity+=(compressionTarget-compression)*0.46F;
-                compressionVelocity*=0.42F;
-                compression+=compressionVelocity;
-            } else {
-                compressionTarget=0;
-                // Severity lengthens an over-damped, monotonic recovery without adding a bounce train.
-                float recovery=0.13F-0.035F*presentationStrength;
-                compressionVelocity+=(-recovery*compression-0.72F*compressionVelocity);
-                compression+=compressionVelocity;
-                if(compression<0)compression=compressionVelocity=0;
-                if(Math.abs(compression)<0.0005F&&Math.abs(compressionVelocity)<0.0005F)compression=compressionVelocity=0;
-            }
-            compression=clamp(compression,0D,1D);
-            grounded=player.onGround;
-            EntityCameraBehaviorDiagnostics.landing(compressionHold>0?"compression":"recovery",compression,compressionTarget,compressionVelocity,rollBias);
-            EntityCameraBehaviorDiagnostics.motionSample("landing",m);
+            if(p.onGround) strength=0;
+            grounded=p.onGround;
         }
-        public void onRender(MountCameraContext c,CameraEffectSink sink){
-            float value=lerp(previousCompression,compression,c.getPartialTicks());
-            if(Math.abs(value)>0.001F&&CombativesConfig.enableLandingCameraFeedback)sink.emitFrame(CameraImpulse.builder("combatives:player_landing")
-                .rotation(5.2F,0,lerp(previousRollBias,rollBias,c.getPartialTicks())*1.35F).translation(0,-0.17F,-0.024F).duration(0.1F)
-                .priority(CameraPriority.NORMAL).build(),clamp(value,0,1));
+        public void onRender(MountCameraContext c, CameraEffectSink sink) {
+            float t=lerp(previousAge,age,c.getPartialTicks());
+            if(t<0.35F&&strength>0) sink.emitFrame(FRAME,strength*compressionPulse(t,0.065F,32F));
         }
     }
 
+    private static final class Landing extends Base {
+        private static final CameraImpulse FRAME = CameraImpulse.builder("combatives:player_landing")
+                .rotation(3.2F,0,0).translation(0,-0.11F,-0.018F).duration(0.1F).priority(CameraPriority.NORMAL).build();
+        private static final CameraImpulse ROLL_POS = CameraImpulse.builder("combatives:player_landing")
+                .rotation(0,0,1).duration(0.1F).priority(CameraPriority.NORMAL).build();
+        private static final CameraImpulse ROLL_NEG = CameraImpulse.builder("combatives:player_landing")
+                .rotation(0,0,-1).duration(0.1F).priority(CameraPriority.NORMAL).build();
+        private boolean grounded = true;
+        private double fastestDescent;
+        private float greatestFallDistance, age=1, previousAge=1, strength, rollBias;
+        void reset(){grounded=true;fastestDescent=0;greatestFallDistance=strength=rollBias=0;age=previousAge=1;}
+        public void onTick(MountCameraContext c, CameraEffectSink sink) {
+            EntityPlayerSP p=player(c); EntityMotionSample m=c.getMotion();
+            if(p==null||m.isDiscontinuity()){reset();grounded=p==null||p.onGround;return;}
+            previousAge=age; age+=0.05F;
+            if(!p.onGround) {
+                if(grounded) strength=0; // A new airborne phase cannot inherit the previous landing.
+                fastestDescent=Math.min(fastestDescent,m.getVerticalVelocity());
+                greatestFallDistance=Math.max(greatestFallDistance,p.fallDistance);
+            } else if(!grounded) {
+                double preImpact=Math.min(fastestDescent,m.getPreviousVelocityY());
+                double impactSpeed=Math.max(0,-preImpact);
+                double momentumLoss=Math.max(0,m.getVerticalVelocity()-preImpact);
+                double speedEnergy=clamp((impactSpeed-0.12D)/0.82D,0,1);
+                double impulseEnergy=clamp(momentumLoss/0.82D,0,1);
+                double distanceEnergy=1D-Math.exp(-Math.max(0,greatestFallDistance-1D)/7D);
+                float energy=clamp(speedEnergy*0.55D+impulseEnergy*0.27D+distanceEnergy*0.18D,0,1);
+                strength=(float)Math.pow(energy,1.3D);
+                rollBias=clamp(m.getLateralAcceleration()*0.28D,-0.18D,0.18D);
+                previousAge=0; age=0.05F;
+                fastestDescent=0; greatestFallDistance=0;
+                EntityCameraBehaviorDiagnostics.motionEvent("landing","energy="+energy+" strength="+strength+" preImpactVelocity="+preImpact);
+            }
+            grounded=p.onGround;
+            EntityCameraBehaviorDiagnostics.motionSample("landing",m);
+        }
+        public void onRender(MountCameraContext c, CameraEffectSink sink) {
+            float t=lerp(previousAge,age,c.getPartialTicks());
+            if(t>=0.5F||strength<=0||!CombativesConfig.enableLandingCameraFeedback)return;
+            float value=strength*compressionPulse(t,0.065F,28F);
+            sink.emitFrame(FRAME,value);
+            if(Math.abs(rollBias)>0.001F) sink.emitFrame(rollBias>=0?ROLL_POS:ROLL_NEG,value*Math.abs(rollBias));
+        }
+    }
+
+    /** Smooth 65 ms loading followed by the exact critically damped displacement solution. */
+    private static float compressionPulse(float age, float attack, float omega) {
+        if(age<0)return 0;
+        if(age<attack){float t=age/attack;return t*t*(3F-2F*t);}
+        float t=(age-attack)*omega;
+        return (1F+t)*(float)Math.exp(-t);
+    }
     private static final class Freefall extends Base {
         private int fallingTicks; private float intensity,previousIntensity;
         void reset(){fallingTicks=0;intensity=previousIntensity=0;}
         public void onTick(MountCameraContext c,CameraEffectSink sink){
             EntityPlayerSP p=player(c);EntityMotionSample m=c.getMotion();if(p==null||m.isDiscontinuity()){reset();return;}
             previousIntensity=intensity;
+            if(p.onGround){fallingTicks=0;intensity=previousIntensity=0;return;}
             boolean unsupported=!p.onGround && m.getVerticalVelocity() < -0.27D && m.getVerticalAcceleration() < 0.08D;
             fallingTicks=unsupported?fallingTicks+1:0;
             float speedEnvelope=clamp((-m.getVerticalVelocity()-0.24D)*1.55D,0,1);
@@ -173,7 +188,7 @@ public final class BuiltinPlayerCameraBehaviors {
         public void onRender(MountCameraContext c,CameraEffectSink sink){
             float value=lerp(previousIntensity,intensity,c.getPartialTicks());
             if(value>0.01F&&CombativesConfig.enablePlayerFreefallCamera) sink.emitFrame(CameraImpulse.builder("combatives:player_freefall")
-                .rotation(0.72F,0,0).translation(0,-0.052F,0.011F).duration(0.1F).priority(CameraPriority.BACKGROUND).build(),clamp(value*CombativesConfig.playerFreefallCameraStrength,0,1));
+                .rotation(1.0F,0,0).translation(0,-0.045F,0.012F).duration(0.1F).priority(CameraPriority.BACKGROUND).build(),clamp(value,0,1));
         }
     }
 
@@ -211,8 +226,8 @@ public final class BuiltinPlayerCameraBehaviors {
             float p=c.getPartialTicks();
             double f=lerp(previousForward,forward,p),l=lerp(previousLateral,lateral,p),t=lerp(previousTurnLag,turnLag,p);
             if(lerp(previousContribution,contribution,p)>0.008F)sink.emitFrame(CameraImpulse.builder("combatives:player_inertia")
-                .rotation(clamp(-f*4.2D,-1.05D,1.05D),clamp(-t*0.24D,-0.28D,0.28D),clamp(-l*2.0D-t*0.22D,-0.65D,0.65D))
-                .translation(clamp(-l*0.012D,-0.012D,0.012D),0,clamp(f*0.018D,-0.018D,0.018D)).duration(0.1F).priority(CameraPriority.BACKGROUND).build(),clamp(CombativesConfig.playerInertiaCameraStrength*lerp(previousCompositionWeight,compositionWeight,p),0,1));
+                .rotation(clamp(-f*6.3D,-1.6D,1.6D),clamp(-t*0.32D,-0.4D,0.4D),clamp(-l*2.8D-t*0.28D,-0.9D,0.9D))
+                .translation(clamp(-l*0.012D,-0.012D,0.012D),0,clamp(f*0.018D,-0.018D,0.018D)).duration(0.1F).priority(CameraPriority.BACKGROUND).build(),clamp(lerp(previousCompositionWeight,compositionWeight,p),0,1));
         }
     }
 
@@ -224,7 +239,7 @@ public final class BuiltinPlayerCameraBehaviors {
             double loss=previousSpeed-m.getHorizontalSpeed();
             double impulse=Math.sqrt(m.getAccelerationX()*m.getAccelerationX()+m.getAccelerationZ()*m.getAccelerationZ());
             if(cooldown==0&&previousSpeed>0.18D&&loss>0.105D&&impulse>0.13D){
-                float severity=clamp((loss-0.08D)*2.7D+impulse*0.65D,0,1);float strength=clamp(severity*CombativesConfig.playerCollisionCameraStrength,0,1);
+                float severity=clamp((loss-0.08D)*2.7D+impulse*0.65D,0,1);float strength=severity;
                 float forward=clamp(m.getForwardAcceleration()*-3.2D,-1,1),side=clamp(m.getLateralAcceleration()*-3.2D,-1,1);
                 sink.emitImpulse(CameraImpulse.builder("combatives:player_collision").sourceEntity(player(c))
                     .rotation(2.1F*forward*strength,0,1.5F*side*strength).translation(0.025F*side*strength,0,0.045F*forward*strength)

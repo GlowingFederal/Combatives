@@ -13,7 +13,8 @@ import org.apache.logging.log4j.Logger;
     modid = Combatives.MOD_ID,
     name = Combatives.MOD_NAME,
     version = Combatives.VERSION,
-    acceptedMinecraftVersions = "[1.7.10]"
+    acceptedMinecraftVersions = "[1.7.10]",
+    guiFactory = "com.glowingfederal.combatives.client.gui.CameraGuiFactory"
 )
 public class Combatives {
     public static final String MOD_ID = "combatives";

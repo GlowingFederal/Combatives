@@ -141,3 +141,13 @@
 	  cosmetic multiplier, preserving the established relationship between accepted visual
 	  lean and its tilt cue. Actual lean displacement, wall limits and aiming remain unchanged.
 	- Retained the existing file-only maxLeanRoll key for configuration compatibility.
+
+	2026-10-22 22:35 — Preserve the lean eye origin during block tracing
+
+	- Pass a private start vector to Minecraft 1.7.10's mutating voxel ray tracer.
+	  Crossing a block boundary previously displaced the reused eye anchor, amplifying
+	  accepted model/camera lean according to facing and position and corrupting wall margins.
+	- Preserve the existing model pose, yaw interpolation, camera transforms, semantic
+	  left/right input, wall clearance, hitbox definitions and network contracts.
+	- Add native-world regression coverage for cardinal/diagonal headings, NE/SE boundaries,
+	  negative coordinates, repeated/interpolated traces and east/west wall clearance.

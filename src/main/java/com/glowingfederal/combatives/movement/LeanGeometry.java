@@ -27,7 +27,10 @@ public final class LeanGeometry {
         PlayerLocalBasis basis = PlayerLocalBasis.fromYaw(yaw);
         Vec3 desiredOffset = basis.lateralOffset(desiredDistance);
         Vec3 end = base.origin.addVector(desiredOffset.xCoord, 0.0D, desiredOffset.zCoord);
-        MovingObjectPosition hit = player.worldObj.rayTraceBlocks(base.origin, end, false);
+        // 1.7.10's voxel traversal advances its start vector in place, even on a
+        // miss. Keep the eye anchor intact for applyLean and wall-distance math.
+        Vec3 traceStart = Vec3.createVectorHelper(base.origin.xCoord, base.origin.yCoord, base.origin.zCoord);
+        MovingObjectPosition hit = player.worldObj.rayTraceBlocks(traceStart, end, false);
         if (hit == null || hit.hitVec == null) return desiredOffset;
         double available = base.origin.distanceTo(hit.hitVec) - 0.05D;
         if (available <= 0.0D) return Vec3.createVectorHelper(0.0D, 0.0D, 0.0D);

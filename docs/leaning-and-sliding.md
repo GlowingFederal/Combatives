@@ -94,6 +94,15 @@ Gameplay lean keeps the semantic contract `lean < 0 = player left` and `lean > 0
 
 The authoritative ray uses the server player's current `rotationYaw`. The interpolated client ray and camera projection use the same interpolated yaw and position, preventing current-tick and render-tick coordinate spaces from being mixed.
 
+The wall check passes a private copy of the eye origin to Minecraft 1.7.10's
+block ray tracer. Its voxel traversal mutates the start vector even when no
+block is hit. Reusing that mutated origin would add a block-boundary displacement
+to the intended lean and mismeasure the wall margin. The original eye anchor
+therefore remains unchanged for ray construction and accepted-lean projection.
+`LeanGeometryRuntimeTest.verify(player)` exercises this boundary using a real
+disposable flat world on the player's owning thread, including repeated traces,
+interpolation, both lean directions and temporary stone walls restored afterward.
+
 Flan's `ItemTeamArmour#getArmorModel` returns a reusable `ModelCustomArmour`. That class extends `ModelBiped`, but overrides `render`: it calls inherited `setRotationAngles`, then copies each biped parent part's rotations and pivots into its `ModelRendererTurbo` head/body/arm/leg arrays before rendering them independently. Thus the normal `ModelBiped.render` return hook does not run for Flan's armour. Combatives applies its one shared biped lean pose before those copies and a narrow optional Flan's adapter restores the captured animated biped state when the custom render returns. This supports armour using Flan's `ModelCustomArmour` architecture without item-name checks, leaves custom child geometry/animation intact, and prevents reusable model state from accumulating lean.
 
 Sliding remains disabled by default and is unchanged by this compatibility path.
